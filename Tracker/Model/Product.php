@@ -111,6 +111,13 @@ class Product
         {
             $v = self::$valueNames[$name];
             self::$data[$name] = self::$asset->{$v}();
+            
+            if ($name === "getSku" ) {
+                self::$data[$name] = 
+                    empty(self::$data[$name]) ?
+                        self::getId() : self::$data[$name];
+            }
+
             return self::$data[$name];
         }
         return null;

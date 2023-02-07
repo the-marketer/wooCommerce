@@ -132,7 +132,10 @@ class Observer
     public static function registerOrLogIn($user_login, $user = null )
     {
         if (!is_null($user)) {
-            setcookie("mktr", $user->user_email, strtotime( '+30 days' ));
+            setcookie("mktr", (
+                is_array($user) ?
+                    $user["user_email"] : $user->user_email
+            ), strtotime( '+30 days' ));
         }
     }
 

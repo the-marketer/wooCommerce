@@ -24,6 +24,7 @@ class Front
         {
             add_action('template_redirect', array(self::init(), 'routeCheck'));
             add_action('wp_login', array(self::init(), 'registerOrLogIn'), 10, 2);
+            add_action('user_register', array(self::init(), 'registerOrLogIn'), 10, 2 );
             // add_action('woocommerce_loaded', array(self::init(), 'LoadSession'));
             add_action('woocommerce_loaded', array(self::init(), 'loadModule'));
         }

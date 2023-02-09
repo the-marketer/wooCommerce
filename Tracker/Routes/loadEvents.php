@@ -19,15 +19,18 @@ class loadEvents
         }
         return self::$init;
     }
+    
     public static function execute()
     {
         Valid::setParam('mime-type', 'js');
 
         $lines = [];
-
+		// var_dump(WC()->session);
+        // $eventData1 = array();
         foreach (Events::observerGetEvents as $event=>$Name)
         {
             if (!$Name[0]) {
+				// $eventData1[$event] = WC()->session->get($event);
                 $eventData = WC()->session->get($event);
                 if (!empty($eventData))
                 {
@@ -40,7 +43,8 @@ class loadEvents
             }
         }
 
-        //$lines[] = "console.log(1);";
+        // $lines[] = "console.log(1);";
+		// $lines[] = json_encode($eventData1);
         return implode(PHP_EOL, $lines);
     }
 }

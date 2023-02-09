@@ -21,11 +21,15 @@ class clearEvents
 
     public static function execute()
     {
+		
         Valid::setParam('mime-type', 'js');
+
+		// var_dump(WC()->session);
 
         $eventData = WC()->session->get("ClearMktr");
 
         if (!empty($eventData)) {
+            
             foreach ($eventData as $key => $value) {
                 $eventData1 = WC()->session->get($key);
 
@@ -35,9 +39,12 @@ class clearEvents
 
                 WC()->session->set($key, $eventData1);
             }
+
             WC()->session->set("ClearMktr", array());
         }
 
-        return "console.log(2);";
+		$r = "console.log(2);";
+        
+        return "";
     }
 }

@@ -87,6 +87,6 @@ class saveOrder
                 WC()->session->set('saveOrder', array());
             }
         }
-        return 'console.log('.$allGood.','.json_encode(Api::getInfo(), true).');';
+        return 'console.log('.(int) $allGood.','.json_encode(Api::getInfo(), true).');';
     }
 }

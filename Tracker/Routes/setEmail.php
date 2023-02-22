@@ -89,6 +89,6 @@ class setEmail
             WC()->session->set('setEmail', array());
         }
 
-        return 'console.log('.$allGood.');';
+        return 'console.log('.(int)$allGood.');';
     }
 }

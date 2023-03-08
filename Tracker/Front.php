@@ -81,14 +81,22 @@ class Front
             $variation_id === null ? 0 : $variation_id);
     }
 
+    public static $RemoveCartEvent = true;
+    
     public static function RemoveCartEvent($item, $cart = null) {
-        $cart = $cart->cart_contents[$item];
-        Observer::removeFromCart($cart['product_id'], $cart['quantity'],$cart['variation_id']);
+        if (self::$RemoveCartEvent) {
+            self::$RemoveCartEvent = false;
+            $cart = $cart->cart_contents[$item];
+            Observer::removeFromCart($cart['product_id'], $cart['quantity'],$cart['variation_id']);
+        }
     }
 
     public static function RemoveCartEventFilter($item, $cart = null) {
-        Observer::removeFromCart($cart['product_id'], $cart['quantity'],$cart['variation_id']);
-        return $item;
+        if (self::$RemoveCartEvent) {
+            self::$RemoveCartEvent = false;
+            Observer::removeFromCart($cart['product_id'], $cart['quantity'],$cart['variation_id']);
+            return $item;
+        }
     }
 
     public function routeCheck() {

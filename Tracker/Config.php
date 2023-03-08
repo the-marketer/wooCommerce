@@ -78,7 +78,7 @@ class Config
         'tracking_key' => '',
         'rest_key' => '',
         'customer_id'=>'',
-        'cron_feed' => 0,
+        'cron_feed' => 1,
         'update_feed' => 4,
         'cron_review' => 0,
         'update_review' => 4,

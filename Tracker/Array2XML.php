@@ -265,7 +265,7 @@ class Array2XML
             }
         }
         */
-        if (!is_array($arr)) {
+        if (!is_array($arr) && !is_null($arr)) {
             /** @noinspection PhpExpressionAlwaysNullInspection */
             $node->appendChild($xml->createTextNode(self::bool2str($arr)));
         }

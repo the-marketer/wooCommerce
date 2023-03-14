@@ -157,6 +157,27 @@ importScripts("https://t.themarketer.com/firebase.js");';
         return self::callNow($name);
     }
 
+    public static function GET($key) {
+        if (!isset($_GET[$key])) {
+            return null; 
+        }
+        return is_array($_GET[$key]) ? $_GET[$key] : wp_kses_post($_GET[$key]);
+    }
+
+    public static function POST($key) {
+        if (!isset($_POST[$key])) {
+            return null; 
+        }
+        return is_array($_POST[$key]) ? $_POST[$key] : wp_kses_post($_POST[$key]);
+    }
+
+    public static function REQUEST($key) {
+        if (!isset($_REQUEST[$key])) {
+            return null; 
+        }
+        return is_array($_REQUEST[$key]) ? $_REQUEST[$key] : wp_kses_post($_REQUEST[$key]);
+    }
+    
     private static function callNow($name)
     {
         $func = self::funcNames;

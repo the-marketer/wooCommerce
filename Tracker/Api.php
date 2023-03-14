@@ -9,7 +9,8 @@ class Api
 {
     private static $init = null;
 
-    public static function init() {
+    public static function init()
+    {
         if (self::$init == null) {
             self::$init = new self();
         }
@@ -57,24 +58,24 @@ class Api
     /** @noinspection PhpUnused */
     public static function getStatus()
     {
-        return self::$info["http_code"];
+        return wp_remote_retrieve_response_code(self::$exec);
     }
 
     /** @noinspection PhpUnused */
     public static function getInfo()
     {
-        return self::$info;
+        return wp_remote_retrieve_headers(self::$exec);
     }
 
     /** @noinspection PhpUnused */
     public static function getContent()
     {
-        return self::$exec;
+        return wp_remote_retrieve_body(self::$exec);
     }
 
     public static function getBody()
     {
-        return self::$exec;
+        return wp_remote_retrieve_body(self::$exec);
     }
 
     public static function REST($url, $data = [], $post = true)
@@ -84,8 +85,7 @@ class Api
                 return false;
             }
 
-            if (self::$timeOut == null)
-            {
+            if (self::$timeOut == null) {
                 self::$timeOut = 1;
             }
 
@@ -94,39 +94,27 @@ class Api
                 'u' => Config::getCustomerId()
             ], $data);
 
-
             self::$requestType = $post;
 
-            if (self::$requestType)
-            {
-                self::$lastUrl = $url;
-            } else {
-                self::$lastUrl = $url .'?'. http_build_query(self::$params);
-            }
-
-            self::$cURL = \curl_init();
-
-            \curl_setopt(self::$cURL, CURLOPT_CONNECTTIMEOUT, self::$timeOut);
-            \curl_setopt(self::$cURL, CURLOPT_TIMEOUT, self::$timeOut);
-            \curl_setopt(self::$cURL, CURLOPT_URL, self::$lastUrl);
-            \curl_setopt(self::$cURL, CURLOPT_POST, self::$requestType);
-
             if (self::$requestType) {
-                \curl_setopt(self::$cURL, CURLOPT_POSTFIELDS, http_build_query(self::$params));
+
+                self::$lastUrl = $url;
+                self::$exec = wp_remote_post(self::$lastUrl, array(
+                    'method'      => 'POST',
+                    'timeout'     => self::$timeOut,
+                    'body' => self::$params
+                ));
+            } else {
+                self::$lastUrl = $url; // .'?'. http_build_query(self::$params);
+                self::$exec = wp_remote_get(self::$lastUrl, array(
+                    'method'      => 'GET',
+                    'timeout'     => self::$timeOut,
+                    'body' => self::$params
+                ));
             }
 
-            \curl_setopt(self::$cURL, CURLOPT_RETURNTRANSFER, true);
-            \curl_setopt(self::$cURL, CURLOPT_SSL_VERIFYPEER, false);
-
-            self::$exec = \curl_exec(self::$cURL);
-
-            self::$info = \curl_getinfo(self::$cURL);
-
-            \curl_close(self::$cURL);
         } catch (\Exception $e) {
-
         }
         return self::init();
     }
-
 }

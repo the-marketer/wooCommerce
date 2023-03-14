@@ -6,7 +6,7 @@
 namespace Mktr\Tracker\Routes;
 
 use Mktr\Tracker\Model\Order;
-
+use Mktr\Tracker\Config;
 class Orders
 {
     private static $init = null;
@@ -24,9 +24,9 @@ class Orders
         return self::$init;
     }
 
-    public static function get($f = 'fileName'){
-        if (isset(self::$map[$f]))
-        {
+    public static function get($f = 'fileName')
+    {
+        if (isset(self::$map[$f])) {
             return self::$map[$f];
         }
         return null;
@@ -34,8 +34,10 @@ class Orders
 
     public static function execute()
     {
+        $start_date = Config::GET('start_date');
+        $page = Config::GET('page');
         $args = array(
-            'date_created' => '>' . $_GET['start_date'],
+            'date_created' => '>' . $start_date,
             'order' => 'DESC',
             'orderby' => 'date',
             'paginate' => true,
@@ -45,9 +47,9 @@ class Orders
 
         $stop = false;
 
-        if (isset ($_GET['page'])) {
+        if ($page !== null) {
             $stop = true;
-            $args['paged'] = $_GET['page'];
+            $args['paged'] = $page;
         }
 
         $get = array();
@@ -61,12 +63,10 @@ class Orders
                 $pages = $orders->total;
             }
 
-            foreach ($orders->orders as $val)
-            {
+            foreach ($orders->orders as $val) {
                 Order::getById($val);
 
-                if (isset($toSkip[$val]))
-                {
+                if (isset($toSkip[$val])) {
                     unset($toSkip[$val]);
                 } else {
                     if (Order::getParentId()) {
@@ -80,7 +80,6 @@ class Orders
                 }
             }
             $args['paged']++;
-
         } while (0 < $pages);
 
         return $get;

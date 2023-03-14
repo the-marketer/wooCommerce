@@ -1,4 +1,6 @@
-<?php /** @noinspection PhpFullyQualifiedNameUsageInspection */
+<?php
+
+/** @noinspection PhpFullyQualifiedNameUsageInspection */
 
 /**
  * @copyright   © EAX LEX SRL. All rights reserved.
@@ -12,7 +14,7 @@ class Valid
     private static $params = null;
     private static $error = null;
 
-    const mime = array(
+    public const mime = array(
         'xml' => 'application/xhtml+xml',
         'js' => 'application/javascript',
         'json' => 'application/json',
@@ -20,7 +22,8 @@ class Valid
     );
     private static $getOut = null;
 
-    public static function init() {
+    public static function init()
+    {
         if (self::$init == null) {
             self::$init = new self();
         }
@@ -29,18 +32,12 @@ class Valid
 
     public static function getParam($name = null, $def = null)
     {
-        if (self::$params == null)
-        {
-            self::$params = $_GET;
-        }
+        if (isset(self::$params[$name])) {
+            
+            return self::$params[$name];
+        } else if(isset($_GET[$name])) {
 
-        if ($name === null)
-        {
-            return self::$params;
-        }
-
-        if (isset(self::$params[$name]))
-        {
+            self::$params[$name] = is_array($_GET[$name]) ? $_GET[$name] : wp_kses_post($_GET[$name]);
             return self::$params[$name];
         }
 
@@ -51,11 +48,6 @@ class Valid
     /** @noinspection PhpUnused */
     public static function setParam($name, $value)
     {
-        if (self::$params == null)
-        {
-            self::$params = $_GET;
-        }
-
         self::$params[$name] = $value;
 
         return self::init();
@@ -91,68 +83,52 @@ class Valid
 
     public static function check($checkParam = null)
     {
-        if (self::$params == null)
-        {
-            self::$params = $_GET;
-        }
-
-        if ($checkParam === null)
-        {
+        if ($checkParam === null) {
             return null;
         }
 
         self::$error = null;
 
-        foreach ($checkParam as $k=>$v)
-        {
-            if ($v !== null)
-            {
+        foreach ($checkParam as $k=>$v) {
+            if ($v !== null) {
                 $check = explode("|", $v);
-                foreach ($check as $do)
-                {
+                foreach ($check as $do) {
                     if (self::$error === null) {
-                        switch ($do)
-                        {
+                        switch ($do) {
                             case "Required":
-                                if (!isset(self::$params[$k]))
-                                {
+                                if (self::getParam($k) === null ) {
                                     self::$error = "Missing Parameter ". $k;
                                 }
                                 break;
                             case "DateCheck":
-                                if (isset(self::$params[$k]) && !self::validateDate(self::$params[$k]))
-                                {
+                                if (self::getParam($k) !== null && !self::validateDate(self::getParam($k))) {
                                     self::$error = "Incorrect Date ".
                                         $k." - ".
-                                        self::$params[$k] . " - ".
+                                        self::getParam($k) . " - ".
                                         Config::$dateFormat;
                                 }
                                 break;
                             case "StartDate":
-                                if (isset(self::$params[$k]) && strtotime(self::$params[$k]) > \time())
-                                {
+                                if (self::getParam($k) !== null && strtotime(self::getParam($k)) > \time()) {
                                     self::$error = "Incorrect Start Date ".
                                         $k." - ".
-                                        self::$params[$k] . " - Today is ".
+                                        self::getParam($k) . " - Today is ".
                                         date(Config::$dateFormat, \time());
                                 }
                                 break;
                             case "Key":
-                                if (isset(self::$params[$k]) && self::$params[$k] !== Config::getRestKey())
-                                {
-                                    self::$error = "Incorrect REST API Key ". self::$params[$k];
+                                if (self::getParam($k) !== null && self::getParam($k) !== Config::getRestKey()) {
+                                    self::$error = "Incorrect REST API Key ". self::getParam($k);
                                 }
                                 break;
                             case "RuleCheck":
-                                if (isset(self::$params[$k]) && Config::getDiscountRules(self::$params[$k]) === null)
-                                {
-                                    self::$error = "Incorrect Rule Type ". self::$params[$k];
+                                if (self::getParam($k) !== null && Config::getDiscountRules(self::getParam($k)) === null) {
+                                    self::$error = "Incorrect Rule Type ". self::getParam($k);
                                 }
                                 break;
                             case "Int":
-                                if (isset(self::$params[$k]) && !is_numeric(self::$params[$k]))
-                                {
-                                    self::$error = "Incorrect Value ". self::$params[$k];
+                                if (self::getParam($k) !== null && !is_numeric(self::getParam($k))) {
+                                    self::$error = "Incorrect Value ". self::getParam($k);
                                 }
                                 break;
                             case "allow_export":
@@ -224,7 +200,8 @@ class Valid
         return self::$getOut;
     }
 
-    public static function toJson($data = null){
-        return json_encode(($data === null ? array() : $data),JSON_UNESCAPED_SLASHES);
+    public static function toJson($data = null)
+    {
+        return json_encode(($data === null ? array() : $data), JSON_UNESCAPED_SLASHES);
     }
 }

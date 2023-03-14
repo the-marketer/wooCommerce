@@ -11,7 +11,7 @@ class Form
     private static $form_fields = array();
     private static $init = null;
 
-    const defFields = array(
+    public const defFields = array(
         'title' => '',
         'type' => 'text',
         'default' => '',
@@ -23,7 +23,8 @@ class Form
         )
     );
 
-    public static function init() {
+    public static function init()
+    {
         if (self::$init == null) {
             self::$init = new self();
         }
@@ -33,8 +34,7 @@ class Form
 
     public static function formFields($fields)
     {
-        foreach ($fields as $key=>$value)
-        {
+        foreach ($fields as $key=>$value) {
             $fields[$key] = array_merge(self::defFields, $value);
         }
 
@@ -45,21 +45,18 @@ class Form
 
     public static function initProcess()
     {
-        if(isset($_POST[Config::$name]))
-        {
-            $fail = false;
+        $data = Config::POST(Config::$name);
 
-            foreach ($_POST[Config::$name] as $key=>$value)
-            {
-                if (in_array($key, array('tracking_key', 'rest_key', 'customer_id', 'google_tagCode')) && empty($value))
-                {
+        if ($data !== null) {
+            $fail = false;
+            foreach ($data as $key=>$value) {
+                if (in_array($key, array('tracking_key', 'rest_key', 'customer_id', 'google_tagCode')) && empty($value)) {
                     $fail = $key;
                 }
 
                 Config::setValue($key, $value);
 
-                if ($key == 'push_status')
-                {
+                if ($key == 'push_status') {
                     Observer::pushStatus();
                 }
             }
@@ -88,36 +85,32 @@ class Form
         $out[] = '<form method="POST" action="" enctype="multipart/form-data">
     <table class="form-table">';
 
-        foreach (self::$form_fields as $key=>$value)
-        {
+        foreach (self::$form_fields as $key=>$value) {
             $out[] = '        <tr valign="top">
             <th scope="row" class="titledesc">
-                <label ' . ($value['type'] != 'title' ? ' for="'.Config::$name.'_'.$key.'"' : '' ) . '>'.$value['title'].'</label>
+                <label ' . ($value['type'] != 'title' ? ' for="'.Config::$name.'_'.$key.'"' : '') . '>'.$value['title'].'</label>
             </th>
             <td class="forminp">
                 <fieldset>';
 
             $value['default'] = ($value['default'] !== '' ? $value['default'] : Config::getValue($key));
 
-            switch ($value['type'])
-            {
+            switch ($value['type']) {
                 case 'title':
 
-                break;
+                    break;
                 case 'select':
 
                     $out[] = '<select style="width: 100%;max-width: 20rem;"
                         name="'.Config::$name.'['.$key.']" id="'.Config::$name.'_'.$key.'">';
-                    foreach ($value['options'] as $o)
-                    {
-                        $out[] = '<option value="'.$o['value'].'" '.( $value['default'] == $o['value'] ?
+                    foreach ($value['options'] as $o) {
+                        $out[] = '<option value="'.$o['value'].'" '.($value['default'] == $o['value'] ?
                             'selected="selected" ' : '').'>'.$o['label'].'</option>';
                     }
                     $out[] = '</select>';
                     break;
                 default:
-                    if (is_array($value['default']))
-                    {
+                    if (is_array($value['default'])) {
                         $value['default'] = implode('|', $value['default']);
                     }
                     $out[] = '                    <input
@@ -126,14 +119,13 @@ class Form
                         name="'.Config::$name.'['.$key.']"
                         id="'.Config::$name.'_'.$key.'"
                         value="'.$value['default'].'" '.(
-                            $value['holder'] !== '' ?
-                                'placeholder="'.$value['holder'].'" ' : ''
-                        ).'/>';
+                        $value['holder'] !== '' ?
+                            'placeholder="'.$value['holder'].'" ' : ''
+                    ).'/>';
             }
 
 
-            if ($value['description'] !== '' )
-            {
+            if ($value['description'] !== '') {
                 $out[] = '                    <p class="description">'.$value['description'].'</p>';
             }
 
@@ -149,17 +141,15 @@ class Form
     </p>
 </form>';
 
-        if ($clean)
-        {
+        if ($clean) {
             self::clean();
         }
 
-        return implode(PHP_EOL, $out);
+        return ent2ncr(implode(PHP_EOL, $out));
     }
 
     public static function clean()
     {
         self::$form_fields = array();
     }
-
 }

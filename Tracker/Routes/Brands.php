@@ -55,13 +55,14 @@ class Brands
 
             foreach ($cat as $k=>$val)
             {
-
-                $get[] = array(
-                    "name" => $val->name,
-                    'id'=> $val->term_id,
-                    "url" => get_term_link($val->term_id)
-                    // "image_url" => ''
-                );
+                if ($val->name !== null) {
+                    $get[] = array(
+                        "name" => $val->name,
+                        'id'=> $val->term_id,
+                        "url" => get_term_link($val->term_id)
+                        // "image_url" => ''
+                    );
+                }
             }
         }
 

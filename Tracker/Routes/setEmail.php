@@ -42,7 +42,7 @@ class setEmail
                     "email" => $val['email_address']
                 );
 
-                $status = \MailPoet\Models\Subscriber::getWooCommerceSegmentSubscriber($val['email_address'])->status;
+                $status = \MailPoet\Models\Subscriber::findOne($val['email_address'])->status;
 
                 if ($status === \MailPoet\Models\Subscriber::STATUS_SUBSCRIBED)
                 {

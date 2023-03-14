@@ -1,16 +1,16 @@
 <?php
 /**
  * Plugin Name:             TheMarketer
- * Plugin URI:              https://eax.ro/woocommerce
+ * Plugin URI:              https://themarketer.com/integrations/woocommerce
  * Description:             TheMarketer - WooCommerce Version
- * Version:                 1.0.0
- * Author:                  EAX.Ro
- * Author URI:              https://eax.ro
+ * Version:                 1.0.7
+ * Author:                  themarketer.com
+ * Author URI:              https://themarketer.com
  * Text Domain:             mktr
  * License:                 GPL2
  * License URI:             https://www.gnu.org/licenses/gpl-2.0.html
  * WC requires at least:    4.0.0
- * WC tested up to:         6.0.2
+ * WC tested up to:         6.1
  *
  * @package mktr
  */

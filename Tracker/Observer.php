@@ -24,12 +24,12 @@ class Observer
 
     public static function addToCart($product_id, $quantity, $variation_id)
     {
-        Product::getById($variation_id ? : $product_id );
+        Product::getById($variation_id ?: $product_id);
 
         self::$eventName = 'addToCart';
 
         self::$eventData = array(
-            'product_id' => Product::getParentId() == 0 ? Product::getId() :Product::getParentId(),
+            'product_id' => Product::getParentId() == 0 ? Product::getId() : Product::getParentId(),
             'quantity'=> (int) $quantity,
             'variation' => array(
                 'id' => Product::getId(),
@@ -42,7 +42,7 @@ class Observer
 
     public static function removeFromCart($product_id, $quantity, $variation_id)
     {
-        Product::getById($variation_id ? : $product_id );
+        Product::getById($variation_id ?: $product_id);
 
         self::$eventName = 'removeFromCart';
 
@@ -59,12 +59,12 @@ class Observer
     }
     public static function addToWishlist($product_id, $variation_id)
     {
-        Product::getById($variation_id ? : $product_id );
+        Product::getById($variation_id ?: $product_id);
 
         self::$eventName = 'addToWishlist';
 
         self::$eventData = array(
-            'product_id' => Product::getParentId() == 0 ? Product::getId() :Product::getParentId(),
+            'product_id' => Product::getParentId() == 0 ? Product::getId() : Product::getParentId(),
             //'quantity'=> (int) $quantity,
             'variation' => array(
                 'id' => Product::getId(),
@@ -77,7 +77,7 @@ class Observer
 
     public static function removeFromWishlist($product_id, $variation_id)
     {
-        Product::getById($variation_id ? : $product_id );
+        Product::getById($variation_id ?: $product_id);
 
         self::$eventName = 'removeFromWishlist';
 
@@ -97,8 +97,7 @@ class Observer
     {
         FileSystem::setWorkDirectory('base');
 
-        if (Config::getPushStatus() != 0)
-        {
+        if (Config::getPushStatus() != 0) {
             FileSystem::writeFile("firebase-config.js", Config::getFireBase());
             FileSystem::writeFile("firebase-messaging-sw.js", Config::getFireBaseMessaging());
         } else {
@@ -129,20 +128,19 @@ class Observer
         self::SessionSet($orderId);
     }
 
-    public static function registerOrLogIn($user_login, $user = null )
+    public static function registerOrLogIn($user_login, $user = null)
     {
         if (!is_null($user)) {
-            setcookie("mktr", (
+            setcookie("mktr", sanitize_email((
                 is_array($user) ?
                     $user["user_email"] : $user->user_email
-            ), strtotime( '+30 days' ));
+            )), strtotime('+30 days'));
         }
     }
 
     public static function getEmail($email = null, $user = null)
     {
-        if ($user === null)
-        {
+        if ($user === null) {
             $user = get_user_by('email', $email);
         }
 
@@ -153,9 +151,8 @@ class Observer
         if (!empty($user->first_name)) {
             $send['firstname'] = $user->first_name;
         } else {
-            $send['firstname'] = get_user_meta($user->ID,'billing_first_name', true);
-            if (empty($send['firstname']))
-            {
+            $send['firstname'] = get_user_meta($user->ID, 'billing_first_name', true);
+            if (empty($send['firstname'])) {
                 unset($send['firstname']);
             }
         }
@@ -163,9 +160,8 @@ class Observer
         if (!empty($user->last_name)) {
             $send['lastname'] = $user->last_name;
         } else {
-            $send['lastname'] = get_user_meta($user->ID,'billing_last_name', true);
-            if (empty($send['lastname']))
-            {
+            $send['lastname'] = get_user_meta($user->ID, 'billing_last_name', true);
+            if (empty($send['lastname'])) {
                 unset($send['lastname']);
             }
         }
@@ -196,10 +192,9 @@ class Observer
     {
         $add = WC()->session->get(self::$eventName);
 
-        if ($key === null)
-        {
+        if ($key === null) {
             $n = '';
-            
+
             for ($i = 0, $indexMax = 9; $i < 5; ++$i) {
                 $n .= random_int(0, 9);
             }

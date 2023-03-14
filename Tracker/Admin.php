@@ -11,18 +11,20 @@ class Admin
 
     private static $notice = array();
 
-    public static function init() {
+    public static function init()
+    {
         if (self::$init == null) {
             self::$init = new self();
         }
         return self::$init;
     }
 
-    public static function loadAdmin() {
+    public static function loadAdmin()
+    {
         Form::initProcess();
 
         if (Config::getStatus() === 1 && (Config::getCronFeed() === 1 || Config::getCronReview() === 1)) {
-            if (!wp_next_scheduled( 'MKTR_CRON' )) {
+            if (!wp_next_scheduled('MKTR_CRON')) {
                 wp_schedule_event(time(), 'hourly', 'MKTR_CRON');
             }
         }
@@ -32,7 +34,7 @@ class Admin
         add_action('admin_menu', array(self::init(), 'menu'));
         add_action('admin_notices', array(self::init(), 'notice'));
 
-        add_action('woocommerce_order_edit_status', array(Observer::init(), 'orderUp'), 10, 2 );
+        add_action('woocommerce_order_edit_status', array(Observer::init(), 'orderUp'), 10, 2);
     }
 
     public static function addNotice($notice)
@@ -41,7 +43,8 @@ class Admin
         return self::init();
     }
 
-    public static function notice() {
+    public static function notice()
+    {
         if (!empty(self::$notice)) {
             $out = array();
 
@@ -50,35 +53,36 @@ class Admin
                 $out[] = '<div class="updated notice notice-success is-dismissible"><p>theMarketer is almost ready. <a href="'.admin_url('admin.php?page=mktr_tracker').'">Click Here</a></p></div>';
             }*/
             /* notice-error | notice-success | notice-fail | notice-info*/
-            foreach (self::$notice as $value)
-            {
+            foreach (self::$notice as $value) {
                 $out[] = '<div class="notice notice-'.
                     (isset($value['type']) ? $value['type'] : 'success').
-                    ' is-dismissible"><p>'.$value['message'].'</p></div>';
+                    ' is-dismissible"><p>'.esc_html($value['message']).'</p></div>';
             }
 
-            echo implode(PHP_EOL,$out);
+            echo implode(PHP_EOL, $out);
         }
     }
 
     public static function action_links($links)
     {
         return array_merge(
-            array (
+            array(
                 'settings' => '<a href="'. admin_url('admin.php?page=mktr_tracker') . '" target="_blank"> Settings</a>'
-            ), $links);
+            ),
+            $links
+        );
     }
 
-    public static function extra_links( $links, $file ) {
-        if (Config::getPluginBase() !== $file ) {
+    public static function extra_links($links, $file)
+    {
+        if (Config::getPluginBase() !== $file) {
             return $links;
         }
 
         // $links['settings'] = '<a href="'. admin_url('admin.php?page=mktr_tracker') . '"> Settings</a>';
 
-        foreach ($links as $k=>$v)
-        {
-            $links[$k] = str_replace('">','" target="_blank">',$v);
+        foreach ($links as $k=>$v) {
+            $links[$k] = str_replace('">', '" target="_blank">', $v);
         }
 
         return $links;
@@ -86,7 +90,8 @@ class Admin
 
     public static function menu()
     {
-        add_menu_page('TheMarketer',
+        add_menu_page(
+            'TheMarketer',
             'TheMarketer',
             null,
             'mktr',
@@ -101,17 +106,18 @@ class Admin
             'Tracker',
             'manage_options',
             'mktr_tracker',
-            array(self::init(), 'tracker'));
+            array(self::init(), 'tracker')
+        );
 
-        if(Config::Google)
-        {
+        if (Config::Google) {
             add_submenu_page(
                 'mktr',
                 'Google',
                 'Google',
                 'manage_options',
                 'mktr_google',
-                array(self::init(), 'google'));
+                array(self::init(), 'google')
+            );
         }
     }
 

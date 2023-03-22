@@ -113,7 +113,7 @@ class Front
 
         if (self::$Page === false) {
             $p = array();
-            $path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
+            $path = parse_url(sanitize_text_field($_SERVER['REQUEST_URI']), PHP_URL_PATH);
             preg_match("/([^\/]+)\/([^\/]+)\/([^\/]+)/i", $path, $p);
 
             $ch = array(

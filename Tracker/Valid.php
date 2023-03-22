@@ -36,8 +36,7 @@ class Valid
             
             return self::$params[$name];
         } else if(isset($_GET[$name])) {
-
-            self::$params[$name] = is_array($_GET[$name]) ? $_GET[$name] : wp_kses_post($_GET[$name]);
+            self::$params[$name] = sanitize_text_field($_GET[$name]);
             return self::$params[$name];
         }
 

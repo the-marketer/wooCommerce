@@ -46,10 +46,9 @@ class Form
     public static function initProcess()
     {
         $data = Config::POST(Config::$name);
-
-        if ($data !== null) {
+        if (!empty($data)) {
             $fail = false;
-            foreach ($data as $key=>$value) {
+            foreach ($data[Config::$name] as $key=>$value) {
                 if (in_array($key, array('tracking_key', 'rest_key', 'customer_id', 'google_tagCode')) && empty($value)) {
                     $fail = $key;
                 }

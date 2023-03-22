@@ -113,6 +113,9 @@ class Config
         'getUpdateReview' => array('update_review', 'int'),
     );
 
+    public static $checkList = ['key', 'start_date', 'page', 'customerId','expiration_date',
+        'value','type', 'mime-type', 'read','file'];
+
     const FireBase = 'const firebaseConfig = {
     apiKey: "AIzaSyA3c9lHIzPIvUciUjp1U2sxoTuaahnXuHw",
     projectId: "themarketer-e5579",
@@ -158,24 +161,23 @@ importScripts("https://t.themarketer.com/firebase.js");';
     }
 
     public static function GET($key) {
-        if (!isset($_GET[$key])) {
-            return null; 
-        }
-        return is_array($_GET[$key]) ? $_GET[$key] : wp_kses_post($_GET[$key]);
+        return in_array($key, self::$checkList) ? sanitize_text_field($_GET[$key]) : false;
     }
 
     public static function POST($key) {
-        if (!isset($_POST[$key])) {
-            return null; 
-        }
-        return is_array($_POST[$key]) ? $_POST[$key] : wp_kses_post($_POST[$key]);
+        if (Config::$name === $key && isset($_POST[$key]) && is_array($_POST[$key])) {
+            $list = [];
+            foreach ($_POST[$key] as $k=>$v) {
+                $list[$key][$k] = sanitize_text_field($v);
+            }
+            return $list;
+        } else {
+            return sanitize_text_field($_POST[$key]);
+        }   
     }
 
     public static function REQUEST($key) {
-        if (!isset($_REQUEST[$key])) {
-            return null; 
-        }
-        return is_array($_REQUEST[$key]) ? $_REQUEST[$key] : wp_kses_post($_REQUEST[$key]);
+        return sanitize_text_field($_REQUEST[$key]);
     }
     
     private static function callNow($name)

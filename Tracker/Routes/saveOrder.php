@@ -1,7 +1,12 @@
 <?php
 /**
- * @copyright   © EAX LEX SRL. All rights reserved.
- **/
+ * @copyright   Copyright (c) 2023 TheMarketer.com
+ * @project     TheMarketer.com
+ * @website     https://themarketer.com/
+ * @author      Alexandru Buzica (EAX LEX S.R.L.) <b.alex@eax.ro>
+ * @license     http://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
+ * @docs        https://themarketer.com/resources/api
+ */
 
 namespace Mktr\Tracker\Routes;
 
@@ -22,10 +27,18 @@ class saveOrder
     }
     public static function execute()
     {
+        if (!function_exists( 'is_plugin_active' ) ) {
+            require_once ABSPATH . 'wp-admin/includes/plugin.php';
+        }
         Valid::setParam('mime-type', 'js');
 
         $Order = WC()->session->get('saveOrder');
         $allGood = true;
+        //$installed_plugins = get_plugins();
+        $plug = 'mailpoet/mailpoet.php';
+
+        // $installed = array_key_exists($plug , $installed_plugins ) || in_array($plug, $installed_plugins, true );
+        $active    = is_plugin_active($plug);
 
         if (!empty($Order)) {
             foreach ($Order as $sOrder)
@@ -36,7 +49,7 @@ class saveOrder
                     $allGood = false;
                 }
 
-                if (!empty($sOrder['email_address']))
+                if ($active && !empty($sOrder['email_address']))
                 {
                     $val = Observer::getEmail($sOrder['email_address']);
 

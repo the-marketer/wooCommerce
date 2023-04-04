@@ -1,7 +1,12 @@
 <?php
 /**
- * @copyright   © EAX LEX SRL. All rights reserved.
- **/
+ * @copyright   Copyright (c) 2023 TheMarketer.com
+ * @project     TheMarketer.com
+ * @website     https://themarketer.com/
+ * @author      Alexandru Buzica (EAX LEX S.R.L.) <b.alex@eax.ro>
+ * @license     http://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
+ * @docs        https://themarketer.com/resources/api
+ */
 
 namespace Mktr\Tracker;
 
@@ -116,7 +121,7 @@ class Observer
         Api::send("update_order_status", $send, false);
     }
 
-    public static function saveOrder($orderId)
+    public static function saveOrder($orderId = null)
     {
         Order::getById($orderId);
         // ['email_address']

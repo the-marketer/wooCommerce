@@ -1,7 +1,12 @@
 <?php
 /**
- * @copyright   © EAX LEX SRL. All rights reserved.
- **/
+ * @copyright   Copyright (c) 2023 TheMarketer.com
+ * @project     TheMarketer.com
+ * @website     https://themarketer.com/
+ * @author      Alexandru Buzica (EAX LEX S.R.L.) <b.alex@eax.ro>
+ * @license     http://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
+ * @docs        https://themarketer.com/resources/api
+ */
 
 namespace Mktr\Tracker;
 
@@ -10,6 +15,9 @@ class Front
     private static $init = null;
 
     public static $Page = false;
+
+    public static $RemoveCartEvent = true;
+    public static $saveOrderEvent = true;
 
     public static function init()
     {
@@ -40,7 +48,10 @@ class Front
 
     public function saveOrder($orderId)
     {
-        Observer::saveOrder($orderId);
+        if (self::$saveOrderEvent) {
+            self::$saveOrderEvent = false;
+            Observer::saveOrder($orderId);
+        }
     }
 
     public function loadModule()
@@ -51,6 +62,9 @@ class Front
         }
 
         add_action('woocommerce_before_thankyou', array(self::init(), 'saveOrder'));
+        add_action('woocommerce_thankyou', array(self::init(), 'saveOrder'));
+        // add_filter('woocommerce_create_order', array(self::init(), 'saveOrder1'), 10, 2 );
+        add_action('woocommerce_new_order', array(self::init(), 'saveOrder'), 10, 2);
 
         // AddToCart events
         add_action('woocommerce_add_to_cart', array(self::init(), 'AddCartEvent'), 40, 4);
@@ -80,8 +94,6 @@ class Front
             $variation_id === null ? 0 : $variation_id
         );
     }
-
-    public static $RemoveCartEvent = true;
 
     public static function RemoveCartEvent($item, $cart = null)
     {

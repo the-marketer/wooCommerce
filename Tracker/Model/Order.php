@@ -172,7 +172,8 @@ class Order
                 "category" => Product::getCat(),
                 "brand" => Product::getBrand(),
                 "price" => Product::getRegularPrice(),
-                "sale_price" => round($o['total'] + (isset($o['subtotal_tax']) ? $o['subtotal_tax'] : 0)),
+                "sale_price" => (($o['subtotal'] + (isset($o['subtotal_tax']) ? $o['subtotal_tax'] : 0)) / $o['quantity']),
+                /* // "sale_price" => round($o['total'] + (isset($o['subtotal_tax']) ? $o['subtotal_tax'] : 0)), */
                 "quantity" => $o['quantity'],
                 "variation_id" => Product::getId(),
                 "variation_sku" => Product::getSku()
@@ -187,10 +188,13 @@ class Order
         foreach (self::$asset->get_items() AS $itemId => $itemData)
         {
             $o = $itemData->get_data();
+			
             Product::getById($o['product_id']);
             $products[] = array(
                 "product_id" => $o['product_id'],
-                "price" => round($o['total'] + (isset($o['subtotal_tax']) ? $o['subtotal_tax'] : 0)),
+                "price" => (($o['subtotal'] + (isset($o['subtotal_tax']) ? $o['subtotal_tax'] : 0)) / $o['quantity']),
+                /* // round($o['total'] + (isset($o['subtotal_tax']) ? $o['subtotal_tax'] : 0)),
+				// ($o['subtotal'] / $o['quantity']) */
                 "quantity" => $o['quantity'],
                 "variation_sku" => Product::getSku()
             );

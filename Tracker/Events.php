@@ -174,7 +174,10 @@ class Events
     public static function loader()
     {
         $lines = array();
-        $lines[] = vsprintf(Config::loader, Config::getKey());
+
+        $key = Config::getKey();
+
+        $lines[] = vsprintf(Config::loader, array( $key ));
 
         $lines[] = 'window.MktrDebug = function () { if (typeof dataLayer != undefined) { for (let i of dataLayer) { console.log("Mktr","Google",i); } } };';
         $lines[] = '';

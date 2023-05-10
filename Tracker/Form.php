@@ -16,7 +16,7 @@ class Form
     private static $form_fields = array();
     private static $init = null;
 
-    public const defFields = array(
+    const defFields = array(
         'title' => '',
         'type' => 'text',
         'default' => '',

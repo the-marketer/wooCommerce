@@ -21,7 +21,7 @@ class Events
 
     private static $assets = array();
 
-    public const actions = [
+    const actions = [
         "is_home" => "__sm__view_homepage",
         "is_product_category" => "__sm__view_category",
         "is_product" => "__sm__view_product",
@@ -29,7 +29,7 @@ class Events
         "is_search" => "__sm__search"
     ];
 
-    public const observerGetEvents = [
+    const observerGetEvents = [
         "addToCart"=> [false, "__sm__add_to_cart"],
         "removeFromCart"=> [false, "__sm__remove_from_cart"],
         "addToWishlist"=> [false, "__sm__add_to_wishlist"],
@@ -39,7 +39,7 @@ class Events
         "setPhone"=> [false, "__sm__set_phone"]
     ];
 
-    public const eventsName = [
+    const eventsName = [
         "__sm__view_homepage" =>"HomePage",
         "__sm__view_category" => "Category",
         "__sm__view_brand" => "Brand",
@@ -55,7 +55,7 @@ class Events
         "__sm__set_phone" => "setPhone"
     ];
 
-    public const eventsSchema = [
+    const eventsSchema = [
         "HomePage" => null,
         "Checkout" => null,
         "Cart" => null,

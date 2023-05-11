@@ -170,15 +170,19 @@ importScripts("https://t.themarketer.com/firebase.js");';
     }
 
     public static function POST($key) {
-        if (Config::$name === $key && isset($_POST[$key]) && is_array($_POST[$key])) {
-            $list = [];
-            foreach ($_POST[$key] as $k=>$v) {
-                $list[$key][$k] = sanitize_text_field($v);
+
+        if (Config::$name === $key && isset($_POST[$key])) {
+            if (is_array($_POST[$key])) {
+                $list = [];
+                foreach ($_POST[$key] as $k=>$v) {
+                    $list[$key][$k] = sanitize_text_field($v);
+                }
+                return $list;
+            } else {
+                return sanitize_text_field($_POST[$key]);
             }
-            return $list;
-        } else {
-            return sanitize_text_field($_POST[$key]);
-        }   
+        }
+        return null;
     }
 
     public static function REQUEST($key) {

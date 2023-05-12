@@ -155,26 +155,31 @@ class Front
 
     public static function google_head()
     {
-        $key = Config::getValue('google_tagCode');
-
-        if (!empty($key)) {
-            echo  "<!-- Google Tag Manager -->
-<script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
-            new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
-        j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
-            'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
-    })(window,document,'script','dataLayer','".esc_js($key)."');</script>
-<!-- End Google Tag Manager -->";
+        $status = Config::getValue('google_status');
+        if ($status) {
+            $key = Config::getValue('google_tagCode');
+            if (!empty($key)) {
+                echo  "<!-- Google Tag Manager -->
+    <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
+                new Date().getTime(),event:'gtm.js'});var f=d.getElementsByTagName(s)[0],
+            j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
+                'https://www.googletagmanager.com/gtm.js?id='+i+dl;f.parentNode.insertBefore(j,f);
+        })(window,document,'script','dataLayer','".esc_js($key)."');</script>
+    <!-- End Google Tag Manager -->";
+            }
         }
     }
 
     public static function google_body()
     {
-        $key = Config::getValue('google_tagCode');
-        if (!empty($key)) {
-            echo '<!-- Google Tag Manager (noscript) -->
-        <noscript><iframe src="https://www.googletagmanager.com/ns.html?id='.esc_js($key).'" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
-        <!-- End Google Tag Manager (noscript) -->';
+        $status = Config::getValue('google_status');
+        if ($status) {
+            $key = Config::getValue('google_tagCode');
+            if (!empty($key)) {
+                echo '<!-- Google Tag Manager (noscript) -->
+                <noscript><iframe src="https://www.googletagmanager.com/ns.html?id='.esc_js($key).'" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+                <!-- End Google Tag Manager (noscript) -->';
+            }
         }
     }
 
@@ -198,6 +203,9 @@ class Front
             
             $(document.body).on("added_to_cart", LoadEventsMktr);
             $(document.body).on("removed_from_cart", LoadEventsMktr);
+            $(document.body).on("added_to_wishlist", LoadEventsMktr);
+            $(document.body).on("removed_from_wishlist", LoadEventsMktr);
+
             $(document.body).on("click", "'.ent2ncr(Config::getSelectors()).'", LoadEventsMktr);
         })(jQuery); </script>';
     }

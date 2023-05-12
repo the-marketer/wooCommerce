@@ -179,13 +179,13 @@ class Events
 
         $lines[] = vsprintf(Config::loader, array( $key ));
 
-        $lines[] = 'window.MktrDebug = function () { if (typeof dataLayer != undefined) { for (let i of dataLayer) { console.log("Mktr","Google",i); } } };';
+        $lines[] = 'window.mktr = window.mktr || {}; window.mktr.Debug = function () { if (typeof dataLayer != "undefined") { for (let i of dataLayer) { console.log("Mktr","Google",i); } } };';
         $lines[] = '';
         $wh =  array(Config::space, implode(Config::space, $lines));
         $rep = array("%space%","%implode%");
         /** @noinspection BadExpressionStatementJS */
         /** @noinspection JSUnresolvedVariable */
-        echo ent2ncr(str_replace($rep, $wh, '<!-- Mktr Script Start -->%space%<script type="text/javascript">%space%%implode%%space%</script>%space%<!-- Mktr Script END -->'));
+        echo str_replace("&#124;&#124;", "||", ent2ncr(str_replace($rep, $wh, '<!-- Mktr Script Start -->%space%<script type="text/javascript">%space%%implode%%space%</script>%space%<!-- Mktr Script END -->')));
     }
 
 
@@ -193,7 +193,7 @@ class Events
     public function loadEvents()
     {
         $loadJS = $lines = array();
-
+        $lines[] = "window.mktr.try = 0; window.mktr.LoadEvents = function () { if (window.mktr.try <= 5 && typeof dataLayer != 'undefined') { ";
         foreach (self::actions as $key=>$value) {
             if ($key() || $key === 'is_home' && is_front_page()) {
                 $lines[] = "dataLayer.push(".self::getEvent($value)->toJson().");";
@@ -239,7 +239,8 @@ class Events
             $lines[] = '(function(){ let add = document.createElement("script"); add.async = true; add.src = "'.esc_js($baseURL).'mktr/api/clearEvents/"; let s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(add,s); })();';
         }
 
-        $lines[] = 'setTimeout(window.MktrDebug, 1000);';
+        $lines[] = 'setTimeout(window.mktr.Debug, 1000);';
+        $lines[] = " } else if(window.mktr.try <= 5) { window.mktr.try++; setTimeout(window.mktr.LoadEvents, 1000); } }; window.mktr.LoadEvents();";
 
         $wh =  array(Config::space, implode(Config::space, $lines));
         $rep = array("%space%","%implode%");

@@ -44,9 +44,52 @@ class Run
         add_action('wp_ajax_nopriv_woodmart_remove_from_wishlist', array($this, 'remove_from_wishlist'));
         add_action('wp_ajax_woodmart_remove_from_wishlist', array($this, 'remove_from_wishlist'));
 
+        add_action('wp_ajax_nopriv_add_to_wishlist', array($this, 'add_to_wishlist_yith'));
+        add_action('wp_ajax_add_to_wishlist', array($this, 'add_to_wishlist_yith'));
+
+        add_action('wp_ajax_nopriv_delete_item', array($this, 'remove_from_wishlist_item'));
+        add_action('wp_ajax_delete_item', array($this, 'remove_from_wishlist_item'));
+
+        add_action('wp_ajax_nopriv_remove_from_wishlist', array($this, 'remove_from_wishlist_yith'));
+        add_action('wp_ajax_remove_from_wishlist', array($this, 'remove_from_wishlist_yith'));
+
         # add_action('wp_ajax_woodmart_ajax_add_to_cart', array(self::init(), 'test'));
         // add_action('woocommerce_loaded', function (){  });
         add_action('MKTR_CRON', array($this, "cronAction"));
+    }
+
+    public function add_to_wishlist_yith()
+    {
+        $product_id = Config::REQUEST('add_to_wishlist');
+        if ($product_id !== null) {
+            Observer::addToWishlist($product_id, 0);
+        }
+    }
+
+    public function remove_from_wishlist_yith()
+    {
+        $product_id = Config::REQUEST('remove_from_wishlist');
+        if ($product_id !== null) {
+            Observer::removeFromWishlist($product_id, 0);
+        }
+    }
+
+    public function remove_from_wishlist_item()
+    {
+        $product_id = null;
+        $fragments = isset( $_REQUEST['fragments'] ) ? wc_clean( $_REQUEST['fragments'] ) : [];
+        
+        foreach($fragments as $v)
+        {
+            if(isset($v['product_id'])) {
+                $product_id = $v['product_id'];
+                break;
+            }
+        }
+       
+        if ($product_id !== null) {
+            Observer::removeFromWishlist($product_id, 0);
+        }
     }
 
     public function remove_from_wishlist()

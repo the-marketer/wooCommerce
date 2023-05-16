@@ -18,6 +18,7 @@ class Front
 
     public static $RemoveCartEvent = true;
     public static $saveOrderEvent = true;
+    public static $addCartEvent = true;
 
     public static function init()
     {
@@ -88,11 +89,14 @@ class Front
     /** @noinspection PhpUnusedParameterInspection */
     public static function AddCartEvent($frg = null, $product_id = null, $quantity = null, $variation_id = null)
     {
-        Observer::addToCart(
-            $product_id === null ? Config::POST('product_id') : $product_id,
-            $quantity === null ? Config::POST('quantity') : $quantity,
-            $variation_id === null ? 0 : $variation_id
-        );
+        if (self::$addCartEvent) {
+            self::$addCartEvent = false;
+            Observer::addToCart(
+                $product_id === null ? Config::POST('product_id') : $product_id,
+                $quantity === null ? Config::POST('quantity') : $quantity,
+                $variation_id === null ? 0 : $variation_id
+            );
+        }
     }
 
     public static function RemoveCartEvent($item, $cart = null)

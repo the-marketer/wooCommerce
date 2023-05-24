@@ -75,12 +75,15 @@ class Valid
         return $date !== null ? date($format, strtotime($date)) : $date;
     }
 
-    /** @noinspection PhpUnused
+    /**
+     * @noinspection PhpUnused
      * @noinspection PhpRedundantOptionalArgumentInspection
      */
-    public static function digit2($num)
+    public static function digit2($number)
     {
-        return number_format((float) $num, 2, '.', ',');
+        $number = str_replace(',', '.', $number);
+        $number = preg_replace('/\.(?=.*\.)/', '', $number);
+        return number_format((float) $number, 2, '.', '');
     }
 
     public static function check($checkParam = null)

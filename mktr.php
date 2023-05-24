@@ -3,7 +3,7 @@
  * Plugin Name:             TheMarketer
  * Plugin URI:              https://themarketer.com/integrations/woocommerce
  * Description:             TheMarketer - WooCommerce Version
- * Version:                 1.1.4
+ * Version:                 1.1.5
  * Author:                  themarketer.com
  * Author URI:              https://themarketer.com
  * Text Domain:             mktr

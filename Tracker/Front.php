@@ -191,7 +191,9 @@ class Front
     {
         echo '<script type="text/javascript">
         (function($) {
-            let MktrLoadEvents = true;
+            window.mktr = window.mktr || {};
+
+            window.mktr.LoadEventsBool = true;
             
 			let AddMktrEvents = function () {
                 (function(){ 
@@ -200,17 +202,17 @@ class Front
                     add.src = "' .esc_js(Config::getBaseURL()). 'mktr/api/loadEvents/?mktr_time="+(new Date()).getTime();
                 let s = document.getElementsByTagName("script")[0];
                     s.parentNode.insertBefore(add,s);
-                })(); MktrLoadEvents = true;
+                })(); window.mktr.LoadEventsBool = true;
 			};
-			
-			let LoadEventsMktr = function() { if (MktrLoadEvents) { MktrLoadEvents = false; setTimeout(AddMktrEvents, 1000); } };            
-            
-            $(document.body).on("added_to_cart", LoadEventsMktr);
-            $(document.body).on("removed_from_cart", LoadEventsMktr);
-            $(document.body).on("added_to_wishlist", LoadEventsMktr);
-            $(document.body).on("removed_from_wishlist", LoadEventsMktr);
 
-            $(document.body).on("click", "'.ent2ncr(Config::getSelectors()).'", LoadEventsMktr);
+			window.mktr.LoadEventsFunc = function() { if (window.mktr.LoadEventsBool) { window.mktr.LoadEventsBool = false; setTimeout(AddMktrEvents, 1000); } };            
+            
+            $(document.body).on("added_to_cart", window.mktr.LoadEventsFunc);
+            $(document.body).on("removed_from_cart", window.mktr.LoadEventsFunc);
+            $(document.body).on("added_to_wishlist", window.mktr.LoadEventsFunc);
+            $(document.body).on("removed_from_wishlist", window.mktr.LoadEventsFunc);
+
+            $(document.body).on("click", "'.ent2ncr(Config::getSelectors()).'", window.mktr.LoadEventsFunc);
         })(jQuery); </script>';
     }
 }

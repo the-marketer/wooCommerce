@@ -179,7 +179,7 @@ class Events
 
         $lines[] = vsprintf(Config::loader, array( $key ));
 
-        $lines[] = 'window.mktr = window.mktr || {}; window.mktr.Debug = function () { if (typeof dataLayer != "undefined") { for (let i of dataLayer) { console.log("Mktr","Google",i); } } };';
+        $lines[] = 'window.mktr = window.mktr || {}; window.mktr.debug = function () { if (typeof dataLayer != "undefined") { for (let i of dataLayer) { console.log("Mktr","Google",i); } } };';
         $lines[] = '';
         $wh =  array(Config::space, implode(Config::space, $lines));
         $rep = array("%space%","%implode%");
@@ -239,7 +239,7 @@ class Events
             $lines[] = '(function(){ let add = document.createElement("script"); add.async = true; add.src = "'.esc_js($baseURL).'mktr/api/clearEvents/?mktr_time="+(new Date()).getTime(); let s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(add,s); })();';
         }
 
-        $lines[] = 'setTimeout(window.mktr.Debug, 1000);';
+        $lines[] = 'setTimeout(window.mktr.debug, 1000);';
         $lines[] = " } else if(window.mktr.try <= 5) { window.mktr.try++; setTimeout(window.mktr.LoadEvents, 1000); } }; window.mktr.LoadEvents();";
 
         $wh =  array(Config::space, implode(Config::space, $lines));

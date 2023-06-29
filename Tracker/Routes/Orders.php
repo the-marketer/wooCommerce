@@ -42,7 +42,7 @@ class Orders
         $start_date = Config::GET('start_date');
         $page = Config::GET('page');
         $args = array(
-            'date_created' => '>' . $start_date,
+            'date_created' => '>=' . strtotime($start_date),
             'order' => 'DESC',
             'orderby' => 'date',
             'paginate' => true,
@@ -52,7 +52,7 @@ class Orders
 
         $stop = false;
 
-        if ($page !== null) {
+        if (!empty($page)) {
             $stop = true;
             $args['paged'] = $page;
         }
@@ -65,7 +65,7 @@ class Orders
             if ($stop) {
                 $pages = 0;
             } else {
-                $pages = $orders->total;
+                $pages = (int) $orders->max_num_pages;
             }
 
             foreach ($orders->orders as $val) {

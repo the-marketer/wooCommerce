@@ -10,6 +10,7 @@
 
 namespace Mktr\Tracker;
 
+use Mktr\Tracker\Model\Order;
 use Mktr\Tracker\Model\Category;
 use Mktr\Tracker\Model\Product;
 
@@ -295,6 +296,10 @@ class Events
                 break;
             case "Product":
                 self::$assets['product_id'] = Product::getId();
+                break;
+            case "saveOrder":
+                Order::getById($eventData);
+                self::$assets = Order::toArray();
                 break;
             case "Search":
                 self::$assets['search_term'] = get_search_query(true);

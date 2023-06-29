@@ -10,7 +10,6 @@
 
 namespace Mktr\Tracker;
 
-use Mktr\Tracker\Model\Order;
 use Mktr\Tracker\Model\Product;
 
 class Observer
@@ -123,12 +122,12 @@ class Observer
 
     public static function saveOrder($orderId = null)
     {
-        Order::getById($orderId);
+        // Order::getById($orderId);
         // ['email_address']
         // ['phone']
 
         self::$eventName = 'saveOrder';
-        self::$eventData = Order::toArray();
+        self::$eventData = $orderId;
 
         self::SessionSet($orderId);
     }

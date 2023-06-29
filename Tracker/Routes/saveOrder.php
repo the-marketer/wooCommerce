@@ -13,6 +13,7 @@ namespace Mktr\Tracker\Routes;
 use Mktr\Tracker\Api;
 use Mktr\Tracker\Observer;
 use Mktr\Tracker\Valid;
+use Mktr\Tracker\Model\Order;
 
 class saveOrder
 {
@@ -41,8 +42,12 @@ class saveOrder
         $active    = is_plugin_active($plug);
 
         if (!empty($Order)) {
-            foreach ($Order as $sOrder)
+            foreach ($Order as $sOrder1)
             {
+                Order::getById($sOrder1);
+
+                $sOrder = Order::toArray();
+
                 Api::send("save_order", $sOrder);
 
                 if (Api::getStatus() != 200) {

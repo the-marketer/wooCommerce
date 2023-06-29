@@ -230,13 +230,13 @@ class Events
         $baseURL = Config::getBaseURL();
 
         foreach ($loadJS as $k=>$v) {
-            $lines[] = '(function(){ let add = document.createElement("script"); add.async = true; add.src = "'.esc_js($baseURL).'mktr/api/'.esc_js($k).'/"; let s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(add,s); })();';
+            $lines[] = '(function(){ let add = document.createElement("script"); add.async = true; add.src = "'.esc_js($baseURL).'mktr/api/'.esc_js($k).'/?mktr_time="+(new Date()).getTime(); let s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(add,s); })();';
         }
 
         if (!empty($clear)) {
             WC()->session->set("ClearMktr", $clear);
 
-            $lines[] = '(function(){ let add = document.createElement("script"); add.async = true; add.src = "'.esc_js($baseURL).'mktr/api/clearEvents/"; let s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(add,s); })();';
+            $lines[] = '(function(){ let add = document.createElement("script"); add.async = true; add.src = "'.esc_js($baseURL).'mktr/api/clearEvents/?mktr_time="+(new Date()).getTime(); let s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(add,s); })();';
         }
 
         $lines[] = 'setTimeout(window.mktr.Debug, 1000);';

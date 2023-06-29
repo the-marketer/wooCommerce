@@ -197,7 +197,7 @@ class Front
                 (function(){ 
 				let add = document.createElement("script");
                     add.async = true;
-                    add.src = "' .esc_js(Config::getBaseURL()). 'mktr/api/loadEvents/";
+                    add.src = "' .esc_js(Config::getBaseURL()). 'mktr/api/loadEvents/?mktr_time="+(new Date()).getTime();
                 let s = document.getElementsByTagName("script")[0];
                     s.parentNode.insertBefore(add,s);
                 })(); MktrLoadEvents = true;

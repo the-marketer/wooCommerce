@@ -143,17 +143,23 @@ class Order
 
     public static function getDiscountCode()
     {
-        if (self::$asset->get_used_coupons())
-        {
+        if (version_compare(WC()->version, '3.7', '<')) {
+            $couponss = self::$asset->get_used_coupons();
+        } else {
+            $couponss = self::$asset->get_coupon_codes();
+        }
+
+        if ($couponss) {
             $coupons = [];
 
-            foreach (self::$asset->get_used_coupons() as $coupon)
+            foreach ($couponss as $coupon)
             {
                 $coupons[] = $coupon;
             }
 
             return implode(', ', $coupons);
         }
+
         return '';
     }
 

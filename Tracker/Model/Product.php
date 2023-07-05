@@ -344,7 +344,7 @@ class Product
                         }
                     }
 
-                    $MasterQty = $val['stock_quantity'] === null ? 0 : $val['stock_quantity'];
+                    $MasterQty = isset($val['stock_quantity']) && $val['stock_quantity'] !== null ? $val['stock_quantity'] : 0;
 
                     if ($MasterQty < 0) {
                         $stock = Config::getDefaultStock();

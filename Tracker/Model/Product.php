@@ -235,11 +235,12 @@ class Product
             }
         } else {
             $p = self::getSalePrice();
+
+            if (self::checkTax()) {
+                $p = wc_get_price_including_tax(self::$asset, array('price' => $p));
+            }
         }
 
-        if (self::checkTax()) {
-            $p = wc_get_price_including_tax(self::$asset, array('price' => $p));
-        }
 
         return $check === true || $p >= '0' ? $p : self::getRegularPrice(true);
     }
@@ -257,11 +258,12 @@ class Product
             }
         } else {
             $p = self::getSaleRegularPrice();
+
+            if (self::checkTax()) {
+                $p = wc_get_price_including_tax(self::$asset, array('price' => $p));
+            }
         }
 
-        if (self::checkTax()) {
-            $p = wc_get_price_including_tax(self::$asset, array('price' => $p));
-        }
         return $check === true || $p >= '0'  ? $p : self::getPrice(true);
     }
 

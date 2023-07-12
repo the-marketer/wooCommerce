@@ -118,6 +118,9 @@ class Route
             return false;
         }
 
+        global $wp_query;
+        $wp_query->is_feed = true;
+        
         $run = self::$name();
 
         if (isset(self::$isStatic[$name]))

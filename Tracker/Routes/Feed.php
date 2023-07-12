@@ -81,14 +81,14 @@ class Feed
                     ),
                     'created_at' => Valid::correctDate(Product::getCreatedAt()),
                 );
+                
+                if (empty($oo['media_gallery']['image'])) {
+                    $oo['media_gallery']['image'][] = $oo['main_image'];
+                }
 
                 foreach ($oo as $key =>$val1) {
                     if ($key == 'variations') {
                         if (empty($val1['variation'])) {
-                            unset($oo[$key]);
-                        }
-                    } elseif ($key == 'media_gallery') {
-                        if (empty($val1['image'])) {
                             unset($oo[$key]);
                         }
                     } else {

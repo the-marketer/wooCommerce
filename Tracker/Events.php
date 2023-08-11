@@ -333,12 +333,13 @@ class Events
     public static function buildMultiCategory($List)
     {
         self::$bMultiCat = [];
-
-        foreach ($List as $value) {
-            Category::getById($value->term_id);
-            self::buildSingleCategory();
+        
+        if(is_array($List)){
+            foreach ($List as $value) {
+                Category::getById($value->term_id);
+                self::buildSingleCategory();
+            }
         }
-
         if (empty(self::$bMultiCat)) {
             self::$bMultiCat[] = "Default Category";
         }

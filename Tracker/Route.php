@@ -121,6 +121,10 @@ class Route
         global $wp_query;
         $wp_query->is_feed = true;
         
+        if (in_array($name,['Orders', 'Feed', 'Brands', 'Category'])) {
+            ini_set('memory_limit', '2G');
+        }
+        
         $run = self::$name();
 
         if (isset(self::$isStatic[$name]))

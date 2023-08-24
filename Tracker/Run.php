@@ -14,6 +14,7 @@ use Mktr\Tracker\Model\Cron;
 
 class Run
 {
+    private static $add = null;
     private static $init = null;
 
     public static function init()
@@ -35,6 +36,14 @@ class Run
             Front::loadFront();
         }
 
+        add_filter('woocommerce_add_to_cart_product_id', array($this, 'filter_add_to_cart'));
+
+        add_action('wp_ajax_woocommerce_add_to_cart', array( $this, 'add_to_cart' ));
+        add_action('wp_ajax_nopriv_woocommerce_add_to_cart', array( $this, 'add_to_cart' ));
+
+        add_action('wp_ajax_basel_ajax_add_to_cart', array($this, 'add_to_cart'), 1);
+        add_action('wp_ajax_nopriv_basel_ajax_add_to_cart', array($this, 'add_to_cart'), 1);
+
         add_action('wp_ajax_nopriv_woodmart_ajax_add_to_cart', array($this, 'add_to_cart'));
         add_action('wp_ajax_woodmart_ajax_add_to_cart', array($this, 'add_to_cart'));
 
@@ -53,7 +62,7 @@ class Run
         add_action('wp_ajax_nopriv_remove_from_wishlist', array($this, 'remove_from_wishlist_yith'));
         add_action('wp_ajax_remove_from_wishlist', array($this, 'remove_from_wishlist_yith'));
 
-        # add_action('wp_ajax_woodmart_ajax_add_to_cart', array(self::init(), 'test'));
+        // add_action('wp_ajax_woodmart_ajax_add_to_cart', array(self::init(), 'test'));
         // add_action('woocommerce_loaded', function (){  });
         add_action('MKTR_CRON', array($this, "cronAction"));
     }
@@ -110,20 +119,40 @@ class Run
 
     public function add_to_cart()
     {
-        $addToCart = Config::REQUEST('add-to-cart');
-        if ($addToCart !== null) {
-            $quantity = Config::REQUEST('quantity');
-            if (is_array($quantity)) {
-                foreach ($quantity as $var=>$val) {
-                    if (!empty($val)) {
-                        Observer::addToCart(
-                            $addToCart,
-                            $val,
-                            $var
-                        );
+        if (self::$add === null) {
+            self::$add = true;
+            $addToCart = Config::REQUEST('add-to-cart');
+            if ($addToCart !== null) {
+                $quantity = Config::REQUEST('quantity');
+                if (is_array($quantity)) {
+                    foreach ($quantity as $var=>$val) {
+                        if (!empty($val)) {
+                            Observer::addToCart(
+                                $addToCart,
+                                $val,
+                                $var
+                            );
+                        }
                     }
+                } else {
+                    $variation_id = Config::REQUEST('variation_id');
+                    Observer::addToCart(
+                        $addToCart,
+                        $quantity,
+                        $variation_id !== null ? $variation_id : 0
+                    );
                 }
-            } else {
+            }
+        }
+    }
+
+    public function filter_add_to_cart($product_id)
+    {
+        if (self::$add === null && in_array(Config::REQUEST('action'), ['basel_ajax_add_to_cart'])) {
+            self::$add = true;
+            $addToCart = Config::REQUEST('add-to-cart');
+            if ($addToCart !== null) {
+                $quantity = Config::REQUEST('quantity');
                 $variation_id = Config::REQUEST('variation_id');
                 Observer::addToCart(
                     $addToCart,
@@ -132,6 +161,7 @@ class Run
                 );
             }
         }
+        return $product_id;
     }
 
     public function cronAction()

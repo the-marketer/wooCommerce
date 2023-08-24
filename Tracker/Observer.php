@@ -28,20 +28,21 @@ class Observer
 
     public static function addToCart($product_id, $quantity, $variation_id)
     {
-        Product::getById($variation_id ?: $product_id);
+        $v = Product::getById($variation_id ?: $product_id);
+        if ($v !== false) {
+            self::$eventName = 'addToCart';
 
-        self::$eventName = 'addToCart';
+            self::$eventData = array(
+                'product_id' => Product::getParentId() == 0 ? Product::getId() : Product::getParentId(),
+                'quantity' => (int) $quantity,
+                'variation' => array(
+                    'id' => Product::getId(),
+                    'sku' => Product::getSku()
+                )
+            );
 
-        self::$eventData = array(
-            'product_id' => Product::getParentId() == 0 ? Product::getId() : Product::getParentId(),
-            'quantity'=> (int) $quantity,
-            'variation' => array(
-                'id' => Product::getId(),
-                'sku' => Product::getSku()
-            )
-        );
-
-        self::SessionSet();
+            self::SessionSet();
+        }
     }
 
     public static function removeFromCart($product_id, $quantity, $variation_id)

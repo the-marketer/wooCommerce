@@ -186,7 +186,7 @@ importScripts("https://t.themarketer.com/firebase.js");';
     }
 
     public static function REQUEST($key) {
-        return sanitize_text_field($_REQUEST[$key]);
+        return array_key_exists($key, $_REQUEST) ? sanitize_text_field($_REQUEST[$key]) : null;
     }
     
     private static function callNow($name)

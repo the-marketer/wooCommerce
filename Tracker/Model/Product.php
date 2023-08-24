@@ -39,10 +39,11 @@ class Product
     private static $asset = null;
     private static $data = array();
     private static $tax = null;
+    private static $nameConvert = null;
 
     private static $valueNames = array(
         'getId' => 'get_id',
-        'getName' => 'get_name',
+        // 'getName' => 'get_name',
         'getParentId' => 'get_parent_id',
         'getSku' => 'get_sku',
         'getAvailableVariations' => 'get_available_variations',
@@ -54,7 +55,7 @@ class Product
         'getGalleryImageIds' => 'get_gallery_image_ids',
         'getSalePrice'=>'get_sale_price',
         'getSaleRegularPrice' => 'get_regular_price',
-        'getDescription' => 'get_description',
+        // 'getDescription' => 'get_description',
         'getSpecialFromDate' =>'get_date_on_sale_from',
         'getSpecialToDate' => 'get_date_on_sale_to',
         'getCreatedAt' =>'get_date_created',
@@ -103,17 +104,19 @@ class Product
 
     public static function getValue($name)
     {
-        if (self::$asset == null){
+		if (is_bool(self::$asset)) {
+            return null;
+        }
+
+        if (self::$asset == null) {
             self::getById();
         }
 
-        if (isset(self::$data[$name]))
-        {
+        if (isset(self::$data[$name])) {
             return self::$data[$name];
         }
 
-        if (isset(self::$valueNames[$name]))
-        {
+        if (isset(self::$valueNames[$name])) {
             $v = self::$valueNames[$name];
             self::$data[$name] = self::$asset->{$v}();
             
@@ -150,12 +153,10 @@ class Product
 
     public static function getById($id = null)
     {
-        if ($id == null)
-        {
-            $id = get_the_ID();
-        }
+        if ($id == null) { $id = get_the_ID(); }
         self::$data = array();
         self::$asset = wc_get_product($id);
+		if (is_bool(self::$asset)) { return false; } 
         return self::init();
     }
 
@@ -201,6 +202,30 @@ class Product
     public static function getCat()
     {
         return Events::buildMultiCategory(get_the_terms(self::getId(), 'product_cat'));
+    }
+
+    public static function qTranslate($string) {
+        $split_regex = "#(<!--:[a-z]{2}-->|<!--:-->|\[:[a-z]{2}\]|\[:\]|\{:[a-z]{2}\}|\{:\})#ism";
+        $matches = preg_split($split_regex, $string, -1, PREG_SPLIT_NO_EMPTY|PREG_SPLIT_DELIM_CAPTURE);
+
+        if (isset($matches[1])) {
+            return $matches[1];
+        }
+
+        return $string;
+    }
+
+    private static function nameConvert() {
+        if (self::$nameConvert === null) { self::$nameConvert = function_exists( 'qtranxf_split' ); }
+        return self::$nameConvert;
+    }
+
+    public static function getName() {
+        return self::nameConvert() ? self::qTranslate(self::$asset->get_name()) : self::$asset->get_name();
+    }
+    
+    public static function getDescription() {
+        return self::nameConvert() ? self::qTranslate(self::$asset->get_description()) : self::$asset->get_description();
     }
 
     public static function getBrand()

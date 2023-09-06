@@ -120,9 +120,9 @@ class Run
     public function add_to_cart()
     {
         if (self::$add === null) {
-            self::$add = true;
             $addToCart = Config::REQUEST('add-to-cart');
             if ($addToCart !== null) {
+                self::$add = true;
                 $quantity = Config::REQUEST('quantity');
                 if (is_array($quantity)) {
                     foreach ($quantity as $var=>$val) {
@@ -148,10 +148,10 @@ class Run
 
     public function filter_add_to_cart($product_id)
     {
-        if (self::$add === null && in_array(Config::REQUEST('action'), ['basel_ajax_add_to_cart'])) {
-            self::$add = true;
+        if (self::$add === null) {
             $addToCart = Config::REQUEST('add-to-cart');
             if ($addToCart !== null) {
+                self::$add = true;
                 $quantity = Config::REQUEST('quantity');
                 $variation_id = Config::REQUEST('variation_id');
                 Observer::addToCart(

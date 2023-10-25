@@ -36,11 +36,11 @@ class Front
             add_action('user_register', array(self::init(), 'registerOrLogIn'), 10, 2);
             // add_action('woocommerce_loaded', array(self::init(), 'LoadSession'));
             add_action('woocommerce_loaded', array(self::init(), 'loadModule'));
+            add_action('woocommerce_update_order', array(Observer::init(), 'orderUpApi'), 10, 2);
         }
 
         //add_action('shutdown', array($this, 'sd'), 0);
     }
-
 
     public function registerOrLogIn($user_login, $user = null)
     {

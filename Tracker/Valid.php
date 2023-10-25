@@ -197,7 +197,7 @@ class Valid
                 self::$getOut = $data;
         }
 
-        echo self::$getOut;
+        return self::$getOut;
     }
 
     public static function getOutPut()

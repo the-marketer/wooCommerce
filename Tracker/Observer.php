@@ -18,6 +18,8 @@ class Observer
     private static $eventName = null;
     private static $eventData = [];
 
+    private static $OrderUP = false;
+
     public static function init()
     {
         if (self::$init == null) {
@@ -113,12 +115,29 @@ class Observer
 
     public static function orderUp($oID, $status)
     {
-        $send = array(
-            'order_number' => $oID,
-            'order_status' => $status
-        );
+        if (self::$OrderUP === false) {
+            self::$OrderUP = true;
+            $send = array(
+                'order_number' => $oID,
+                'order_status' => $status
+            );
+    
+            Api::send("update_order_status", $send, false);
+        }
+    }
 
-        Api::send("update_order_status", $send, false);
+    public static function orderUpApi($oID, $order)
+    {
+        if (self::$OrderUP === false) {
+            // FileSystem::setWorkDirectory('base');
+            // FileSystem::writeFile("baseTest.js",'baseLinkUpdate');
+            self::$OrderUP = true;
+            $send = array(
+                'order_number' => $oID,
+                'order_status' => $order->get_status()
+            );
+            Api::send("update_order_status", $send, false);
+        }
     }
 
     public static function saveOrder($orderId = null)

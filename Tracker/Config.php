@@ -118,7 +118,7 @@ class Config
         'getUpdateReview' => array('update_review', 'int'),
     );
 
-    public static $checkList = ['key', 'start_date', 'page', 'customerId','expiration_date',
+    public static $checkList = ['key', 'start_date', 'end_date', 'page', 'customerId','expiration_date',
         'value','type', 'mime-type', 'read','file'];
 
     const FireBase = 'const firebaseConfig = {
@@ -165,8 +165,8 @@ importScripts("https://t.themarketer.com/firebase.js");';
         return self::callNow($name);
     }
 
-    public static function GET($key) {
-        return in_array($key, self::$checkList) ? sanitize_text_field($_GET[$key]) : false;
+    public static function GET($key, $default = false) {
+        return in_array($key, self::$checkList) && array_key_exists($key, $_GET) ? sanitize_text_field($_GET[$key]) : $default;
     }
 
     public static function POST($key) {

@@ -40,16 +40,22 @@ class Orders
     public static function execute()
     {
         $start_date = Config::GET('start_date');
+        $end_date = Config::GET('end_date', null);
+        
         $page = Config::GET('page');
         $args = array(
-            'date_created' => '>=' . strtotime($start_date),
             'order' => 'DESC',
             'orderby' => 'date',
             'paginate' => true,
             'return' => 'ids',
             'paged' => 1,
         );
-
+        if ($end_date !== null) {
+            $args['date_created'] = strtotime($start_date) .'...'. strtotime($end_date);
+        } else {
+            $args['date_created'] = '>=' . strtotime($start_date);
+        }
+        
         $stop = false;
 
         if (!empty($page)) {

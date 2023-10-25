@@ -18,6 +18,11 @@ class Observer
     private static $eventName = null;
     private static $eventData = [];
 
+    private static $OrderUP = false;
+    private static $addToCart = false;
+    private static $removeFromCart = false;
+
+
     public static function init()
     {
         if (self::$init == null) {
@@ -28,13 +33,38 @@ class Observer
 
     public static function addToCart($product_id, $quantity, $variation_id)
     {
-        $v = Product::getById($variation_id ?: $product_id);
-        if ($v !== false) {
-            self::$eventName = 'addToCart';
+        if (self::$addToCart === false) {
+            self::$addToCart = true;
+            $v = Product::getById($variation_id ?: $product_id);
+            if ($v !== false) {
+                self::$eventName = 'addToCart';
+
+                self::$eventData = array(
+                    'product_id' => Product::getParentId() == 0 ? Product::getId() : Product::getParentId(),
+                    'quantity' => (int) $quantity,
+                    'variation' => array(
+                        'id' => Product::getId(),
+                        'sku' => Product::getSku()
+                    )
+                );
+
+                self::SessionSet();
+            }
+        }
+    }
+
+    public static function removeFromCart($product_id, $quantity, $variation_id)
+    {
+
+        if (self::$removeFromCart === false) {
+            self::$removeFromCart = true;
+            Product::getById($variation_id ?: $product_id);
+
+            self::$eventName = 'removeFromCart';
 
             self::$eventData = array(
                 'product_id' => Product::getParentId() == 0 ? Product::getId() : Product::getParentId(),
-                'quantity' => (int) $quantity,
+                'quantity'=> (int) $quantity,
                 'variation' => array(
                     'id' => Product::getId(),
                     'sku' => Product::getSku()
@@ -43,24 +73,6 @@ class Observer
 
             self::SessionSet();
         }
-    }
-
-    public static function removeFromCart($product_id, $quantity, $variation_id)
-    {
-        Product::getById($variation_id ?: $product_id);
-
-        self::$eventName = 'removeFromCart';
-
-        self::$eventData = array(
-            'product_id' => Product::getParentId() == 0 ? Product::getId() : Product::getParentId(),
-            'quantity'=> (int) $quantity,
-            'variation' => array(
-                'id' => Product::getId(),
-                'sku' => Product::getSku()
-            )
-        );
-
-        self::SessionSet();
     }
     public static function addToWishlist($product_id, $variation_id)
     {
@@ -113,12 +125,29 @@ class Observer
 
     public static function orderUp($oID, $status)
     {
-        $send = array(
-            'order_number' => $oID,
-            'order_status' => $status
-        );
+        if (self::$OrderUP === false) {
+            self::$OrderUP = true;
+            $send = array(
+                'order_number' => $oID,
+                'order_status' => $status
+            );
+    
+            Api::send("update_order_status", $send, false);
+        }
+    }
 
-        Api::send("update_order_status", $send, false);
+    public static function orderUpApi($oID, $order)
+    {
+        if (self::$OrderUP === false) {
+            // FileSystem::setWorkDirectory('base');
+            // FileSystem::writeFile("baseTest.js",'baseLinkUpdate');
+            self::$OrderUP = true;
+            $send = array(
+                'order_number' => $oID,
+                'order_status' => $order->get_status()
+            );
+            Api::send("update_order_status", $send, false);
+        }
     }
 
     public static function saveOrder($orderId = null)

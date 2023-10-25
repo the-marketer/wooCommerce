@@ -29,6 +29,7 @@ class Route
         'Orders' => array(
             'key' => 'Required|Key|allow_export',
             'start_date' => 'Required|DateCheck|StartDate',
+            'end_date' => null,
             'page' => null,
             'customerId' => null
         ),
@@ -99,7 +100,7 @@ class Route
             self::check($page);
 
             if (!Valid::status()) {
-                Valid::Output('status', Valid::error());
+                echo Valid::Output('status', Valid::error());
             }
             exit();
         }
@@ -151,16 +152,16 @@ class Route
             FileSystem::setWorkDirectory();
 
             if ($read !== null && FileSystem::fileExists($fileName)) {
-                Valid::Output(FileSystem::readFile($fileName));
+                echo Valid::Output(FileSystem::readFile($fileName));
             } else {
-                Valid::Output($run->get('fileName'), array( $run->get('secondName') => $run->execute()));
+                echo Valid::Output($run->get('fileName'), array( $run->get('secondName') => $run->execute()));
                 FileSystem::writeFile($fileName, Valid::getOutPut());
             }
         } else {
-            Valid::Output($run->execute());
+           echo Valid::Output($run->execute());
         }
-
-        return true;
+        exit();
+        // return true;
     }
 
     /* Pages */

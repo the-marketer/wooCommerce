@@ -341,6 +341,7 @@ class Product
             foreach ($v as $val)
             {
                 if ($val['variation_is_visible']) {
+                    if ($val['display_regular_price'] == 0 && $val['display_price'] == 0) { continue; }
                     $attribute = [
                         'color' => null,
                         'size' => null

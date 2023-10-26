@@ -58,7 +58,7 @@ class Feed
             foreach ($products->products as $val)
             {
                 Product::getById($val);
-
+                if (Product::getRegularPrice() == 0 && Product::getPrice() == 0) { continue; }
                 $oo = array(
                     'id' => Product::getId(),
                     'sku' => Product::getSku(),

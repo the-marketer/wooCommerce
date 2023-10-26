@@ -68,12 +68,12 @@ class Category
     public static function buildCategory($categoryRegistry = null)
     {
         $build = array($categoryRegistry->name);
-
-        while ($categoryRegistry->category_parent > 0) {
-            $categoryRegistry = \Mktr\Tracker\Model\Category::getById($categoryRegistry->category_parent);
-            $build[] = $categoryRegistry->getName();
+        if (property_exists($categoryRegistry, 'category_parent')) {
+            while ($categoryRegistry->category_parent > 0) {
+                $categoryRegistry = \Mktr\Tracker\Model\Category::getById($categoryRegistry->category_parent);
+                $build[] = $categoryRegistry->getName();
+            }
         }
-
         return implode("|", array_reverse($build));
     }
     public static function build($category){

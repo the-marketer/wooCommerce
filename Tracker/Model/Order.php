@@ -169,7 +169,15 @@ class Order
         foreach (self::$asset->get_items() AS $itemId => $itemData)
         {
             $o = $itemData->get_data();
-            Product::getById($o['product_id']);
+            
+            if (isset($o['variation_id']) && !empty($o['variation_id'])) {
+                $id = $o['variation_id'];
+            } else {
+                $id = $o['product_id'];
+            }
+
+            Product::getById($id);
+
             $products[] = array(
                 "product_id" => $o['product_id'],
                 "name" => Product::getName(),
@@ -191,11 +199,19 @@ class Order
     public static function getProducts()
     {
         $products = array();
+        
         foreach (self::$asset->get_items() AS $itemId => $itemData)
         {
             $o = $itemData->get_data();
 			
-            Product::getById($o['product_id']);
+            if (isset($o['variation_id']) && !empty($o['variation_id'])) {
+                $id = $o['variation_id'];
+            } else {
+                $id = $o['product_id'];
+            }
+
+            Product::getById($id);
+
             $products[] = array(
                 "product_id" => $o['product_id'],
                 "price" => (($o['subtotal'] + (isset($o['subtotal_tax']) ? $o['subtotal_tax'] : 0)) / $o['quantity']),

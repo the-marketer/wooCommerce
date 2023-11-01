@@ -44,21 +44,32 @@ class Feed
             'order'   => 'ASC',
             'orderby' => 'ID',
             'return' => 'ids',
-            'limit'   => 200,
+            'limit'   => Valid::getParam('limit', 200),
             'paginate' => true,
             'paged' => 1,
         );
 
+        $stop = false;
+        $page = Valid::getParam('page', null);
+
+        if ($page !== null) {
+            $stop = true;
+        }
+
+        $args['paged'] = $page === null ? 1 : $page;
+
         $get = array();
         $toSkip = array();
+
         do {
             $products = wc_get_products($args);
-            $pages = $products->max_num_pages;
+            $pages = $stop ? 0 : $products->max_num_pages;
 
             foreach ($products->products as $val)
             {
                 Product::getById($val);
-                if (Product::getRegularPrice() == 0 && Product::getPrice() == 0) { continue; }
+                
+                if (Product::getRegularPrice() == 0 && Product::getPrice() == 0 || Product::getImage() == false) { continue; }
                 $oo = array(
                     'id' => Product::getId(),
                     'sku' => Product::getSku(),

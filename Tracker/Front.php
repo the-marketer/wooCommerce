@@ -121,7 +121,7 @@ class Front
     {
         if (isset($_COOKIE['mktr'])) {
             Observer::emailAndPhone($_COOKIE['mktr']);
-            setcookie("mktr", null, 0);
+            setcookie("mktr", '', 0);
             unset($_COOKIE['mktr']);
         }
 
@@ -205,7 +205,7 @@ class Front
                 })(); window.mktr.LoadEventsBool = true;
 			};
 
-			window.mktr.LoadEventsFunc = function() { if (window.mktr.LoadEventsBool) { window.mktr.LoadEventsBool = false; setTimeout(AddMktrEvents, 1000); } };            
+			window.mktr.LoadEventsFunc = function() { if (window.mktr.LoadEventsBool) { window.mktr.LoadEventsBool = false; setTimeout(AddMktrEvents, 1500); } };            
             
             $(document.body).on("added_to_cart", window.mktr.LoadEventsFunc);
             $(document.body).on("removed_from_cart", window.mktr.LoadEventsFunc);

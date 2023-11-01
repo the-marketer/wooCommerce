@@ -240,8 +240,8 @@ class Events
             $lines[] = '(function(){ let add = document.createElement("script"); add.async = true; add.src = "'.esc_js($baseURL).'mktr/api/clearEvents/?mktr_time="+(new Date()).getTime(); let s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(add,s); })();';
         }
 
-        $lines[] = 'setTimeout(window.mktr.debug, 1000);';
-        $lines[] = " } else if(window.mktr.try <= 5) { window.mktr.try++; setTimeout(window.mktr.LoadEvents, 1000); } }; window.mktr.LoadEvents();";
+        $lines[] = 'setTimeout(window.mktr.debug, 1500);';
+        $lines[] = " } else if(window.mktr.try <= 5) { window.mktr.try++; setTimeout(window.mktr.LoadEvents, 1500); } }; setTimeout(window.mktr.LoadEvents, 1500);";
 
         $wh =  array(Config::space, implode(Config::space, $lines));
         $rep = array("%space%","%implode%");

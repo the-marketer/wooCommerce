@@ -70,8 +70,8 @@ class Category
         $build = array($categoryRegistry->name);
         if (property_exists($categoryRegistry, 'category_parent')) {
             while ($categoryRegistry->category_parent > 0) {
-                $categoryRegistry = \Mktr\Tracker\Model\Category::getById($categoryRegistry->category_parent);
-                $build[] = $categoryRegistry->getName();
+                $categoryRegistry = get_term_by('id', $categoryRegistry->category_parent, 'product_cat');
+                $build[] = $categoryRegistry->name;
             }
         }
         return implode("|", array_reverse($build));
@@ -86,8 +86,7 @@ class Category
             "image_url" => $category->getImageUrl()
         );
 
-        if (empty($newList["image_url"]))
-        {
+        if (empty($newList["image_url"])) {
             unset($newList["image_url"]);
         }
 

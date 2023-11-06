@@ -202,30 +202,33 @@ class Events
             }
         }
 
-        $clear = WC()->session->get("ClearMktr");
+        if (WC()->session !== null) {
+            $clear = WC()->session->get("ClearMktr");
+            if ($clear === null) {
+                $clear = array();
+            }
 
-        if ($clear === null) {
-            $clear = array();
-        }
+            foreach (self::observerGetEvents as $event=>$Name) {
+                $eventData = WC()->session->get($event);
+                if (!empty($eventData)) {
+                    foreach ($eventData as $key=>$value) {
+                        $lines[] = "dataLayer.push(".self::getEvent($Name[1], $value)->toJson().");";
+                        if (!$Name[0]) {
+                            $clear[$event][$key] = $key;
+                        }
+                    }
 
-        foreach (self::observerGetEvents as $event=>$Name) {
-            $eventData = WC()->session->get($event);
-            if (!empty($eventData)) {
-                foreach ($eventData as $key=>$value) {
-                    $lines[] = "dataLayer.push(".self::getEvent($Name[1], $value)->toJson().");";
-                    if (!$Name[0]) {
-                        $clear[$event][$key] = $key;
+                    if ($Name[0]) {
+                        //WC()->session->set($event, array());
+                        $loadJS[$event] = true;
+                    } /** @noinspection PhpStatementHasEmptyBodyInspection */ else {
+                        // $clear[$event][$key] = "clear";
+                        // WC()->session->set($event, array());
                     }
                 }
-
-                if ($Name[0]) {
-                    //WC()->session->set($event, array());
-                    $loadJS[$event] = true;
-                } /** @noinspection PhpStatementHasEmptyBodyInspection */ else {
-                    // $clear[$event][$key] = "clear";
-                    // WC()->session->set($event, array());
-                }
             }
+        } else {
+            $clear = array();
         }
 
         $baseURL = Config::getBaseURL();

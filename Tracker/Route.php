@@ -127,7 +127,7 @@ class Route
         }
         
         $run = self::$name();
-
+        ob_start();
         if (isset(self::$isStatic[$name]))
         {
             $read = Valid::getParam('read');
@@ -160,6 +160,7 @@ class Route
         } else {
            echo Valid::Output($run->execute());
         }
+        ob_end_flush();
         exit();
         // return true;
     }

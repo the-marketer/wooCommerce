@@ -202,33 +202,30 @@ class Events
             }
         }
 
-        if (WC()->session !== null) {
-            $clear = WC()->session->get("ClearMktr");
-            if ($clear === null) {
-                $clear = array();
-            }
+        $clear = Config::session()->get("ClearMktr");
 
-            foreach (self::observerGetEvents as $event=>$Name) {
-                $eventData = WC()->session->get($event);
-                if (!empty($eventData)) {
-                    foreach ($eventData as $key=>$value) {
-                        $lines[] = "dataLayer.push(".self::getEvent($Name[1], $value)->toJson().");";
-                        if (!$Name[0]) {
-                            $clear[$event][$key] = $key;
-                        }
-                    }
+        if ($clear === null) {
+            $clear = array();
+        }
 
-                    if ($Name[0]) {
-                        //WC()->session->set($event, array());
-                        $loadJS[$event] = true;
-                    } /** @noinspection PhpStatementHasEmptyBodyInspection */ else {
-                        // $clear[$event][$key] = "clear";
-                        // WC()->session->set($event, array());
+        foreach (self::observerGetEvents as $event=>$Name) {
+            $eventData = Config::session()->get($event);
+            if (!empty($eventData)) {
+                foreach ($eventData as $key=>$value) {
+                    $lines[] = "dataLayer.push(".self::getEvent($Name[1], $value)->toJson().");";
+                    if (!$Name[0]) {
+                        $clear[$event][$key] = $key;
                     }
                 }
+
+                if ($Name[0]) {
+                    //Config::session()->set($event, array());
+                    $loadJS[$event] = true;
+                } /** @noinspection PhpStatementHasEmptyBodyInspection */ else {
+                    // $clear[$event][$key] = "clear";
+                    // Config::session()->set($event, array());
+                }
             }
-        } else {
-            $clear = array();
         }
 
         $baseURL = Config::getBaseURL();
@@ -238,7 +235,7 @@ class Events
         }
 
         if (!empty($clear)) {
-            WC()->session->set("ClearMktr", $clear);
+            Config::session()->set("ClearMktr", $clear);
 
             $lines[] = '(function(){ let add = document.createElement("script"); add.async = true; add.src = "'.esc_js($baseURL).'mktr/api/clearEvents/?mktr_time="+(new Date()).getTime(); let s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(add,s); })();';
         }

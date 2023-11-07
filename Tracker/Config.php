@@ -165,6 +165,14 @@ importScripts("https://t.themarketer.com/firebase.js");';
         return self::callNow($name);
     }
 
+    public static function session() {
+        if (WC()->session === null) {
+            WC()->session = new WC_Session_Handler();
+            WC()->session->init();
+        }
+        return WC()->session;
+    }
+
     public static function GET($key, $default = false) {
         return in_array($key, self::$checkList) && array_key_exists($key, $_GET) ? sanitize_text_field($_GET[$key]) : $default;
     }

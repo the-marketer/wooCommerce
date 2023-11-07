@@ -12,6 +12,7 @@ namespace Mktr\Tracker\Routes;
 
 use Mktr\Tracker\Events;
 use Mktr\Tracker\Valid;
+use Mktr\Tracker\Config;
 
 class loadEvents
 {
@@ -30,13 +31,13 @@ class loadEvents
         Valid::setParam('mime-type', 'js');
 
         $lines = [];
-		// var_dump(WC()->session);
+		// var_dump(Config::session());
         // $eventData1 = array();
         foreach (Events::observerGetEvents as $event=>$Name)
         {
             if (!$Name[0]) {
-				// $eventData1[$event] = WC()->session->get($event);
-                $eventData = WC()->session->get($event);
+				// $eventData1[$event] = Config::session()->get($event);
+                $eventData = Config::session()->get($event);
                 if (!empty($eventData))
                 {
                     foreach ($eventData as $value)
@@ -44,7 +45,7 @@ class loadEvents
                         $lines[] = "dataLayer.push(".Events::getEvent($Name[1], $value)->toJson().");";
                     }
                 }
-                WC()->session->set($event, array());
+                Config::session()->set($event, array());
             }
         }
 

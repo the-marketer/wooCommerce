@@ -224,7 +224,7 @@ class Observer
 
     private static function SessionSet($key = null)
     {
-        $add = WC()->session->get(self::$eventName);
+        $add = Config::session()->get(self::$eventName);
 
         if ($key === null) {
             $n = '';
@@ -238,6 +238,6 @@ class Observer
             $add[$key] = self::$eventData;
         }
 
-        WC()->session->set(self::$eventName, $add);
+        Config::session()->set(self::$eventName, $add);
     }
 }

@@ -11,6 +11,7 @@
 namespace Mktr\Tracker\Routes;
 
 use Mktr\Tracker\Valid;
+use Mktr\Tracker\Config;
 
 class clearEvents
 {
@@ -29,23 +30,23 @@ class clearEvents
 		
         Valid::setParam('mime-type', 'js');
 
-		// var_dump(WC()->session);
+		// var_dump(Config::session());
 
-        $eventData = WC()->session->get("ClearMktr");
+        $eventData = Config::session()->get("ClearMktr");
 
         if (!empty($eventData)) {
             
             foreach ($eventData as $key => $value) {
-                $eventData1 = WC()->session->get($key);
+                $eventData1 = Config::session()->get($key);
 
                 foreach ($value as $value1) {
                     unset($eventData1[$value1]);
                 }
 
-                WC()->session->set($key, $eventData1);
+                Config::session()->set($key, $eventData1);
             }
 
-            WC()->session->set("ClearMktr", array());
+            Config::session()->set("ClearMktr", array());
         }
 
 		$r = "console.log(2);";

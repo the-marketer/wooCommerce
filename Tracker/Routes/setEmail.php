@@ -12,6 +12,7 @@ namespace Mktr\Tracker\Routes;
 
 use Mktr\Tracker\Api;
 use Mktr\Tracker\Valid;
+use Mktr\Tracker\Config;
 
 class setEmail
 {
@@ -31,7 +32,7 @@ class setEmail
         }
         Valid::setParam('mime-type', 'js');
 
-        $em = WC()->session->get('setEmail');
+        $em = Config::session()->get('setEmail');
 
         $allGood = true;
         //$installed_plugins = get_plugins();
@@ -90,8 +91,8 @@ class setEmail
 
         if ($allGood)
         {
-            WC()->session->set('setPhone', array());
-            WC()->session->set('setEmail', array());
+            Config::session()->set('setPhone', array());
+            Config::session()->set('setEmail', array());
         }
 
         return 'console.log('.(int)$allGood.');';

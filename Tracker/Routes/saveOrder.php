@@ -13,6 +13,7 @@ namespace Mktr\Tracker\Routes;
 use Mktr\Tracker\Api;
 use Mktr\Tracker\Observer;
 use Mktr\Tracker\Valid;
+use Mktr\Tracker\Config;
 use Mktr\Tracker\Model\Order;
 
 class saveOrder
@@ -33,7 +34,7 @@ class saveOrder
         }
         Valid::setParam('mime-type', 'js');
 
-        $Order = WC()->session->get('saveOrder');
+        $Order = Config::session()->get('saveOrder');
         $allGood = true;
         //$installed_plugins = get_plugins();
         $plug = 'mailpoet/mailpoet.php';
@@ -102,7 +103,7 @@ class saveOrder
 
             if ($allGood)
             {
-                WC()->session->set('saveOrder', array());
+                Config::session()->set('saveOrder', array());
             }
         }
         return 'console.log('.(int) $allGood.','.json_encode(Api::getInfo(), true).');';

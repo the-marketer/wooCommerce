@@ -177,7 +177,6 @@ class Order
             }
 
             Product::getById($id);
-
             $products[] = array(
                 "product_id" => $o['product_id'],
                 "name" => Product::getName(),
@@ -186,7 +185,7 @@ class Order
                 "category" => Product::getCat(),
                 "brand" => Product::getBrand(),
                 "price" => Product::getRegularPrice(),
-                "sale_price" => (($o['subtotal'] + (isset($o['subtotal_tax']) ? $o['subtotal_tax'] : 0)) / $o['quantity']),
+                "sale_price" => (($o['subtotal'] + (!empty($o['tax_class']) && isset($o['subtotal_tax']) ? $o['subtotal_tax'] : 0)) / $o['quantity']),
                 /* // "sale_price" => round($o['total'] + (isset($o['subtotal_tax']) ? $o['subtotal_tax'] : 0)), */
                 "quantity" => $o['quantity'],
                 "variation_id" => Product::getId(),
@@ -214,7 +213,7 @@ class Order
 
             $products[] = array(
                 "product_id" => $o['product_id'],
-                "price" => (($o['subtotal'] + (isset($o['subtotal_tax']) ? $o['subtotal_tax'] : 0)) / $o['quantity']),
+                "price" => (($o['subtotal'] + (!empty($o['tax_class']) && isset($o['subtotal_tax']) ? $o['subtotal_tax'] : 0)) / $o['quantity']),
                 /* // round($o['total'] + (isset($o['subtotal_tax']) ? $o['subtotal_tax'] : 0)),
 				// ($o['subtotal'] / $o['quantity']) */
                 "quantity" => $o['quantity'],

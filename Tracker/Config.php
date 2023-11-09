@@ -166,10 +166,9 @@ importScripts("https://t.themarketer.com/firebase.js");';
     }
 
     public static function session() {
-        if (WC()->session === null) {
-            WC()->session = new \WC_Session_Handler();
-            WC()->session->init();
-        }
+        if ( ! WC()->session ) {
+			WC()->initialize_session();
+		}
         return WC()->session;
     }
 

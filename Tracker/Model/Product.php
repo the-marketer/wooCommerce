@@ -313,22 +313,35 @@ class Product
     public static function getStock()
     {
         $MasterQty = self::getStockQuantity();
-
-        if ($MasterQty < 0) {
+        
+        if ($MasterQty < 0 || $MasterQty === null) {
             $stock = Config::getDefaultStock();
-        } else if (self::getIsInStock() && $MasterQty == 0) {
-            $stock = 2;
-        } else if (self::getIsInStock()){
-            $stock = 1;
         } else {
-            $stock = 0;
+            $stock = $MasterQty;
         }
+
         return $stock;
     }
 
     public static function getAvailability()
     {
-        return (int) self::getIsInStock();
+        return self::checkAvailability(self::getStockQuantity(), self::getIsInStock());
+    }
+
+    public static function checkAvailability($stock = null, $status = null)
+    {
+        $is = 0;
+        if ($stock < 0) {
+            $is = Config::getDefaultStock();
+        } else if ($status && ($stock === null || $stock == 0)) {
+            $is = 2;
+        } else if ($status || $stock > 0){
+            $is = 1;
+        } else {
+            $is = 0;
+        }
+
+        return $is;
     }
 
     public static function getVariation()
@@ -337,8 +350,8 @@ class Product
 
         if (self::$asset->is_type('variable'))
         {
-            $v = self::getAvailableVariations();
-            foreach ($v as $val)
+            $variable = self::getAvailableVariations();
+            foreach ($variable as $val)
             {
                 if ($val['variation_is_visible']) {
                     if ($val['display_regular_price'] == 0 && $val['display_price'] == 0) { continue; }
@@ -372,16 +385,16 @@ class Product
                         }
                     }
 
-                    $MasterQty = isset($val['stock_quantity']) && $val['stock_quantity'] !== null ? $val['stock_quantity'] : 0;
+                    $MasterQty = array_key_exists('stock_quantity', $val) ? $val['stock_quantity'] : null;
 
-                    if ($MasterQty < 0) {
+                    if ($MasterQty === null){
+                        $MasterQty = array_key_exists('max_qty', $val) && $val['max_qty'] !== '' ? $val['max_qty'] : null;
+                    }
+
+                    if ($MasterQty < 0 || $MasterQty === null) {
                         $stock = Config::getDefaultStock();
-                    } else if ($val['is_in_stock'] && $MasterQty == 0) {
-                        $stock = 2;
-                    } else if ($val['is_in_stock']){
-                        $stock = 1;
                     } else {
-                        $stock = 0;
+                        $stock = $MasterQty;
                     }
 
                     $v = array(
@@ -390,7 +403,7 @@ class Product
                         'acquisition_price' => self::getAcquisitionPrice(),
                         'price' => $val['display_regular_price'],
                         'sale_price' => $val['display_price'],
-                        'availability' => (int) $val['is_in_stock'],
+                        'availability' => self::checkAvailability($stock, $val['is_in_stock']),
                         'stock' => $stock,
                         'size' => $attribute['size'],
                         'color' => $attribute['color']

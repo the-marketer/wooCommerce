@@ -123,9 +123,9 @@ class Observer
         }
     }
 
-    public static function orderUp($oID, $status)
+    public static function orderUp($oID = null, $status = null)
     {
-        if (self::$OrderUP === false) {
+        if ($oID !== null && $status !== null && self::$OrderUP === false) {
             self::$OrderUP = true;
             $send = array(
                 'order_number' => $oID,
@@ -136,9 +136,9 @@ class Observer
         }
     }
 
-    public static function orderUpApi($oID, $order)
+    public static function orderUpApi($oID = null, $order = null)
     {
-        if (self::$OrderUP === false) {
+        if ($oID !== null && $order !== null && self::$OrderUP === false) {
             // FileSystem::setWorkDirectory('base');
             // FileSystem::writeFile("baseTest.js",'baseLinkUpdate');
             self::$OrderUP = true;

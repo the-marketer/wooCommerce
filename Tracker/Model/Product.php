@@ -359,6 +359,7 @@ class Product
                         'color' => null,
                         'size' => null
                     ];
+
                     foreach (Config::getColorAttribute() as $v)
                     {
                         if (isset($val['attributes']['attribute_'.$v]))
@@ -396,6 +397,19 @@ class Product
                     } else {
                         $stock = $MasterQty;
                     }
+
+					if (empty($val['sku'])) {
+						$val['sku'] = $val['variation_id'];
+                        /*
+                        $val['sku'] = [ $val['variation_id'] ];
+						if ($attribute['size'] !== null) {
+							$val['sku'][] = $attribute['size'];
+						}
+						if ($attribute['color'] !== null) {
+							$val['sku'][] = $attribute['color'];
+						}
+						$val['sku'] = implode('-', $val['sku']);*/
+					}
 
                     $v = array(
                         'id' => $val['variation_id'],

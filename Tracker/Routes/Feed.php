@@ -70,6 +70,14 @@ class Feed
                 Product::getById($val);
                 
                 if (Product::getRegularPrice() == 0 && Product::getPrice() == 0 || Product::getImage() == false) { continue; }
+                $created_at = Product::getCreatedAt();
+
+                if ($created_at === null) {
+                    $created_at = '2000-01-01 13:00';
+                } else {
+                    $created_at = Valid::correctDate($created_at);
+                }
+
                 $oo = array(
                     'id' => Product::getId(),
                     'sku' => Product::getSku(),
@@ -90,7 +98,7 @@ class Feed
                     'variations' => array(
                         'variation' => Product::getVariation()
                     ),
-                    'created_at' => Valid::correctDate(Product::getCreatedAt()),
+                    'created_at' => $created_at,
                 );
                 
                 if (empty($oo['media_gallery']['image'])) {

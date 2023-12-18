@@ -65,36 +65,24 @@ class FileSystem
     {
         self::$lastPath = self::getPath() . $fName;
 
-        if(self::fileExists($fName))
+        if(self::fileExists($fName) && filesize(self::$lastPath) > 0)
         {
             $file = fopen(self::$lastPath, $mode);
 
             $contents = fread($file, filesize(self::$lastPath));
 
             fclose($file);
-        } else {
-            $contents = '';
-        }
 
-        return $contents;
+            return $contents;
+        } else {
+            return '';
+        }
     }
 
     /** @noinspection PhpUnused */
     public static function readFile($fName, $mode = "rb")
     {
-        $contents = '';
-        self::$lastPath = self::getPath() . $fName;
-
-        if(self::fileExists($fName))
-        {
-            $file = fopen(self::$lastPath, $mode);
-
-            $contents = fread($file, filesize(self::$lastPath));
-
-            fclose($file);
-        }
-
-        return $contents;
+        return self::rFile($fName, $mode);
     }
 
     /** @noinspection PhpUnused */

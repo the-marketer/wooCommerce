@@ -12,6 +12,7 @@ namespace Mktr\Tracker;
 
 use Mktr\Tracker\Routes\Brands;
 use Mktr\Tracker\Routes\Category;
+use Mktr\Tracker\Routes\Cron;
 use Mktr\Tracker\Routes\clearEvents;
 use Mktr\Tracker\Routes\CodeGenerator;
 use Mktr\Tracker\Routes\Feed;
@@ -51,6 +52,9 @@ class Route
         ),
         'Category' => array(
             'key' => 'Required|Key'
+        ),
+        'Cron' => array(
+            'key' => 'Required|Key'
         )
     );
     private static $defMime = array(
@@ -63,7 +67,8 @@ class Route
         'loadEvents' => 'js',
         'clearEvents' => 'js',
         'setEmail' => 'js',
-        'saveOrder' => 'js'
+        'saveOrder' => 'js',
+        'Cron' => 'json'
     );
 
     private static $isStatic = array(
@@ -130,22 +135,28 @@ class Route
         ob_start();
         if (isset(self::$isStatic[$name]))
         {
+            $script = '';
             $read = Valid::getParam('read');
             $file = Valid::getParam('file');
+            $lang = Valid::getParam('lg');
 
             $start_date = Valid::getParam('start_date');
 
-            if ($start_date !== null)
-            {
+            if ($start_date !== null) {
                 $script = '.'. base64_encode($start_date);
-            } else {
-                $script = '';
+            }
+
+            if ($lang !== null) {
+                $script = $script . '.' . $lang;
+                global $sitepress;
+                if ($sitepress !== null) 
+                    $sitepress->switch_lang($lang);{
+                }
             }
 
             $fileName = $run->get('fileName').$script.".".Valid::getParam('mime-type',Config::defMime);
 
-            if ($file !== null)
-            {
+            if ($file !== null) {
                 header('Content-Disposition: attachment; filename=' . $fileName);
             }
 
@@ -183,9 +194,15 @@ class Route
     {
         return Orders::init();
     }
+
     public static function Category()
     {
         return Category::init();
+    }
+
+    public static function Cron()
+    {
+        return Cron::init();
     }
 
     public static function Brands()

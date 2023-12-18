@@ -49,7 +49,7 @@ class Front
 
     public function saveOrder($orderId)
     {
-        if (self::$saveOrderEvent) {
+        if (self::$saveOrderEvent && is_order_received_page()) {
             self::$saveOrderEvent = false;
             Observer::saveOrder($orderId);
         }
@@ -78,12 +78,15 @@ class Front
         add_action('wp_head', array(Events::init(), 'loader'));
         add_action('wp_footer', array(Events::init(), 'loadEvents'));
         add_action('wp_footer', array(self::init(), 'addToCart'));
+        
+        /*
         add_filter('woocommerce_email_enabled_customer_new_account', function ($status) {
             if (Config::getOptIn() == 0) {
                 return $status;
             }
             return false;
         });
+        */
     }
 
     /** @noinspection PhpUnusedParameterInspection */
@@ -190,29 +193,25 @@ class Front
     public static function addToCart()
     {
         echo '<script type="text/javascript">
+        window.mktr = window.mktr || {};
+        window.mktr.LoadEventsBool = true;
+        
+        window.mktr.events = function () { (function(){
+            let add = document.createElement("script"); add.async = true; add.src = "' .Config::getBaseURL(). '?mktr=loadEvents&mktr_time="+(new Date()).getTime();
+            let s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(add,s); })(); window.mktr.LoadEventsBool = true;
+        };
+
+        window.mktr.LoadEventsFunc = function(){ if (window.mktr.LoadEventsBool) { window.mktr.LoadEventsBool = false; setTimeout(window.mktr.events, 2000); }};
+        
         (function($) {
-            window.mktr = window.mktr || {};
-
-            window.mktr.LoadEventsBool = true;
-            
-			let AddMktrEvents = function () {
-                (function(){ 
-				let add = document.createElement("script");
-                    add.async = true;
-                    add.src = "' .esc_js(Config::getBaseURL()). 'mktr/api/loadEvents/?mktr_time="+(new Date()).getTime();
-                let s = document.getElementsByTagName("script")[0];
-                    s.parentNode.insertBefore(add,s);
-                })(); window.mktr.LoadEventsBool = true;
-			};
-
-			window.mktr.LoadEventsFunc = function() { if (window.mktr.LoadEventsBool) { window.mktr.LoadEventsBool = false; setTimeout(AddMktrEvents, 1500); } };            
-            
             $(document.body).on("added_to_cart", window.mktr.LoadEventsFunc);
             $(document.body).on("removed_from_cart", window.mktr.LoadEventsFunc);
             $(document.body).on("added_to_wishlist", window.mktr.LoadEventsFunc);
             $(document.body).on("removed_from_wishlist", window.mktr.LoadEventsFunc);
+        })(jQuery);
 
-            $(document.body).on("click", "'.ent2ncr(Config::getSelectors()).'", window.mktr.LoadEventsFunc);
-        })(jQuery); </script>';
+        window.addEventListener("click", function(event){ if (event.target.matches("'.Config::getSelectors().'") || event.target.closest("'.Config::getSelectors().'")) {
+        window.mktr.LoadEventsFunc(); } });
+        </script>';
     }
 }

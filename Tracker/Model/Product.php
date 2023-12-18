@@ -39,6 +39,7 @@ class Product
     private static $asset = null;
     private static $data = array();
     private static $tax = null;
+    private static $stock = 0;
     private static $nameConvert = null;
 
     private static $valueNames = array(
@@ -46,7 +47,7 @@ class Product
         // 'getName' => 'get_name',
         'getParentId' => 'get_parent_id',
         'getSku' => 'get_sku',
-        'getAvailableVariations' => 'get_available_variations',
+        // 'getAvailableVariations' => 'get_available_variations',
         'getUrl' => 'get_permalink',
         'getImg' => 'get_image',
         'getStockQuantity' => 'get_stock_quantity',
@@ -108,15 +109,15 @@ class Product
             return null;
         }
 
-        if (self::$asset == null) {
+        if (self::$asset == null || self::$asset === false) {
             self::getById();
         }
 
         if (isset(self::$data[$name])) {
             return self::$data[$name];
         }
-
-        if (isset(self::$valueNames[$name])) {
+        
+        if ((self::$asset !== null && self::$asset !== false ) && isset(self::$valueNames[$name])) {
             $v = self::$valueNames[$name];
             self::$data[$name] = self::$asset->{$v}();
             
@@ -156,13 +157,14 @@ class Product
         if ($id == null) { $id = get_the_ID(); }
         self::$data = array();
         self::$asset = wc_get_product($id);
+        self::$stock = 0;
 		if (is_bool(self::$asset)) { return false; } 
         return self::init();
     }
 
     public static function getCreate()
     {
-        self::getCreatedAt() === null ? self::getModifiedAt() : self::getCreatedAt();
+        return self::getCreatedAt() === null ? self::getModifiedAt() : self::getCreatedAt();
     }
 
     public static function getAcquisitionPrice()
@@ -320,12 +322,14 @@ class Product
             $stock = $MasterQty;
         }
 
+        $stock = $stock + self::$stock;
+        
         return $stock;
     }
 
     public static function getAvailability()
     {
-        return self::checkAvailability(self::getStockQuantity(), self::getIsInStock());
+        return self::checkAvailability(self::getStock(), self::getIsInStock());
     }
 
     public static function checkAvailability($stock = null, $status = null)
@@ -344,6 +348,37 @@ class Product
         return $is;
     }
 
+
+    public static function getAvailableVariations()
+    {
+/* 
+        return self::$asset->get_available_variations();
+        self::$asset->get_available_variations();
+        $var = [
+            'variation_id' => $variation->get_id(),
+            'sku' => $variation->get_sku(),
+            'variation_is_visible' => $variation->variation_is_visible(),
+            'attributes' => $variation->get_variation_attributes(),
+            'display_price'         => wc_get_price_to_display( $variation ),
+            'display_regular_price' => wc_get_price_to_display( $variation, array( 'price' => $variation->get_regular_price() ) ),
+        ];
+*/
+        $variation_ids        = self::$asset->get_children();
+		$available_variations = array();
+        
+		foreach ( $variation_ids as $variation_id ) {
+            $variation = wc_get_product( $variation_id );
+
+			if (! $variation || ! $variation->exists() || ! $variation->variation_is_visible()) {
+                // || ! $variation->is_in_stock()
+				continue;
+			}
+
+            $available_variations[] = self::$asset->get_available_variation( $variation );
+        }
+        return $available_variations;
+    }
+    
     public static function getVariation()
     {
         $lis = array();
@@ -398,17 +433,16 @@ class Product
                         $stock = $MasterQty;
                     }
 
+                    self::$stock = self::$stock + $stock;
+
 					if (empty($val['sku'])) {
 						$val['sku'] = $val['variation_id'];
                         /*
                         $val['sku'] = [ $val['variation_id'] ];
-						if ($attribute['size'] !== null) {
-							$val['sku'][] = $attribute['size'];
-						}
-						if ($attribute['color'] !== null) {
-							$val['sku'][] = $attribute['color'];
-						}
-						$val['sku'] = implode('-', $val['sku']);*/
+						if ($attribute['size'] !== null) { $val['sku'][] = $attribute['size']; }
+						if ($attribute['color'] !== null) { $val['sku'][] = $attribute['color']; }
+						$val['sku'] = implode('-', $val['sku']);
+                        */
 					}
 
                     $v = array(

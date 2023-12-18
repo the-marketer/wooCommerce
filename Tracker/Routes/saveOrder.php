@@ -49,11 +49,16 @@ class saveOrder
 
                 $sOrder = Order::toArray();
 
-                Api::send("save_order", $sOrder);
-
-                if (Api::getStatus() != 200) {
-                    $allGood = false;
-                }
+                if (!empty($sOrder['products'])) {
+					Api::send("save_order", $sOrder);
+                    \Mktr\Tracker\Logs::debug($sOrder, 'save_order');
+                
+					if (Api::getStatus() != 200) {
+						$allGood = false;
+					}
+				} else {
+					$allGood = false;
+				}
 
                 if ($active && !empty($sOrder['email_address']))
                 {
@@ -63,7 +68,9 @@ class saveOrder
                         "email" => $val['email_address']
                     );
 
-                    $status = \MailPoet\Models\Subscriber::getWooCommerceSegmentSubscriber($val['email_address'])->status;
+                    // $status = \MailPoet\Models\Subscriber::getWooCommerceSegmentSubscriber($val['email_address'])->status;
+                    // $status = \MailPoet\Models\Subscriber::findOne($val['email_address'])->status;
+                    $status = Config::getSubscriber($val['email_address'])->status;
 
                     if ($status === \MailPoet\Models\Subscriber::STATUS_SUBSCRIBED)
                     {
@@ -93,6 +100,7 @@ class saveOrder
                         }
 
                         Api::send("add_subscriber", $info);
+                        \Mktr\Tracker\Logs::debug($info, 'save_order_add_subscriber');
                     }
 
                     if (Api::getStatus() != 200) {
@@ -100,12 +108,11 @@ class saveOrder
                     }
                 }
             }
-
             if ($allGood)
             {
                 Config::session()->set('saveOrder', array());
             }
         }
-        return 'console.log('.(int) $allGood.','.json_encode(Api::getInfo(), true).');';
+        return '/* TheMaketer */ console.log('.(int) $allGood.','.json_encode(Api::getInfo(), true).');';
     }
 }

@@ -78,6 +78,8 @@ class Feed
                     $created_at = Valid::correctDate($created_at);
                 }
 
+                $variation = Product::getVariation();
+
                 $oo = array(
                     'id' => Product::getId(),
                     'sku' => Product::getSku(),
@@ -96,7 +98,7 @@ class Feed
                     'stock' => Product::getStock(),
                     'media_gallery' => Product::getImages(),
                     'variations' => array(
-                        'variation' => Product::getVariation()
+                        'variation' => $variation
                     ),
                     'created_at' => $created_at,
                 );

@@ -2,11 +2,11 @@
 Contributors: themarketer2023
 Tags: WooCommerce, theMarketer, Email marketing, Loyalty Program
 Requires at least: 4.6
-Tested up to: 6.1
+Tested up to: 6.4.2
 Requires PHP: 5.6
-Stable tag: 1.2.7
+Stable tag: 1.2.8
 Requires WooCommerce at least: 4.0.0
-Tested WooCommerce up to: 7.4.1
+Tested WooCommerce up to: 8.4.0
 License: GPLv2
 
 theMarketer is an email marketing platform, which also provides a powerful Loyalty Program.

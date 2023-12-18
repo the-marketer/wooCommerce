@@ -29,24 +29,43 @@ class Cron
     }
 
     public static function cronAction() {
+        global $sitepress;
 
+        set_time_limit(3600);
+        ini_set('memory_limit', '2G');
+
+        //  $sitepress->switch_lang()
         $data = Data::init();
         $upFeed = $data->update_feed;
         $upReview = $data->update_review;
-
+        $data->cron_start = time();
+        $data->save();
+        
         if (Config::getStatus() != 0) {
 
             if (Config::getCronFeed() != 0 && $upFeed < time()) {
 
-                $run = Feed::init();
+                if ($sitepress !== null) {
+                    $langs = $sitepress->get_active_languages();
+                } else {
+                    $langs = ['noLang' => 'lang'];
+                }
+                
+                foreach ($langs as $key => $value) {
+                    if ($key !== 'noLang') { $sitepress->switch_lang($key); }
+                    Valid::setParam('mime-type','xml');
+                    $run = Feed::init();
+                    
+                    Valid::Output($run->get('fileName'), array( $run->get('secondName') => $run->execute()));
+    
+                    $fileName = $run->get('fileName') . "." . ( $key !== 'noLang' ? $key . '.' : '' ) . Valid::getParam('mime-type','xml');
+                    
+                    FileSystem::writeFile($fileName, Valid::getOutPut());
+                }
 
-                $fileName = $run->get('fileName').".".Valid::getParam('mime-type',Config::defMime);
-
-                Valid::Output($run->get('fileName'), array( $run->get('secondName') => $run->execute()));
-
-                FileSystem::writeFile($fileName, Valid::getOutPut());
-
-                $data->update_feed = strtotime("+".Config::getUpdateFeed()." hour");
+                $data->update_feed = strtotime("+" . Config::getUpdateFeed() . " hour");
+                $data->cron_end_feed = time();
+                $data->save();
             }
 
             if (Config::getCronReview() != 0 && $upReview < time()) {
@@ -54,9 +73,11 @@ class Cron
                 Reviews::execute();
 
                 $data->update_review = strtotime("+".Config::getUpdateReview()." hour");
+                $data->cron_end_review = time();
+                $data->save();
             }
         }
 
-        $data->save();
+        return $data->getData();
     }
 }

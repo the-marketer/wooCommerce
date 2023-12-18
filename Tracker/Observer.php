@@ -19,6 +19,8 @@ class Observer
     private static $eventData = [];
 
     private static $OrderUP = false;
+    private static $mStatusChange = false;
+
     private static $addToCart = false;
     private static $removeFromCart = false;
 
@@ -53,7 +55,7 @@ class Observer
         }
     }
 
-    public static function removeFromCart($product_id, $quantity, $variation_id)
+    public static function removeFromCart($product_id, $quantity, $variation_id = null)
     {
 
         if (self::$removeFromCart === false) {
@@ -74,7 +76,7 @@ class Observer
             self::SessionSet();
         }
     }
-    public static function addToWishlist($product_id, $variation_id)
+    public static function addToWishlist($product_id, $variation_id = null)
     {
         Product::getById($variation_id ?: $product_id);
 
@@ -89,10 +91,10 @@ class Observer
             )
         );
 
-        self::SessionSet();
+        self::SessionSet(self::$eventName.self::$eventData['product_id'].self::$eventData['variation']['sku']);
     }
 
-    public static function removeFromWishlist($product_id, $variation_id)
+    public static function removeFromWishlist($product_id, $variation_id = null)
     {
         Product::getById($variation_id ?: $product_id);
 
@@ -107,7 +109,7 @@ class Observer
             )
         );
 
-        self::SessionSet();
+        self::SessionSet(self::$eventName.self::$eventData['product_id'].self::$eventData['variation']['sku']);
     }
 
     public static function pushStatus()
@@ -133,25 +135,67 @@ class Observer
             );
     
             Api::send("update_order_status", $send, false);
+            Logs::debug($send, 'update_order_status');
+        }
+    }
+    public static function mailpoet_status_changed( $i = null ) {
+        if ($i !== null && self::$mStatusChange === false) {
+            self::$mStatusChange = true;
+            $s = \MailPoet\Models\Subscriber::findOne((int) $i);
+
+            $info = array( "email" => $s->email );
+            
+            $status = Config::getSubscriber( $s->email )->status;
+
+            if ($status === \MailPoet\Models\Subscriber::STATUS_SUBSCRIBED)
+            {
+                $name = array();
+
+                if (!empty($s->first_name)) {
+                    $name[] = $s->first_name;
+                }
+
+                if (!empty($s->last_name)) {
+                    $name[] = $s->last_name;
+                }
+
+                if (empty($name)) {
+                    $info["name"] = explode("@", $info['email'])[0];
+                } else {
+                    $info["name"] = implode(" ", $name);
+                }
+
+                $user = get_user_by('email', $info['email']);
+                $phone = get_user_meta($user->ID, 'billing_phone', true);
+
+                if (!empty($phone)) {
+                    $info["phone"] = $phone;
+                }
+
+                Api::send("add_subscriber", $info);
+                Logs::debug($info, 'add_subscriber');
+            } else {
+                Api::send("remove_subscriber", $info);
+                Logs::debug($info, 'remove_subscriber');
+            }
         }
     }
 
     public static function orderUpApi($oID = null, $order = null)
     {
-        if ($oID !== null && $order !== null && self::$OrderUP === false) {
+        if (self::$OrderUP === false && $oID !== null && $order !== null && $order->get_status() !== 'checkout-draft') {
             // FileSystem::setWorkDirectory('base');
             // FileSystem::writeFile("baseTest.js",'baseLinkUpdate');
             self::$OrderUP = true;
-            $send = array(
-                'order_number' => $oID,
-                'order_status' => $order->get_status()
-            );
+
+            $send = array( 'order_number' => $oID, 'order_status' => $order->get_status() );
+
             Api::send("update_order_status", $send, false);
+            Logs::debug($send, 'update_order_status');
         }
     }
 
-    public static function saveOrder($orderId = null)
-    {
+    public static function saveOrder($orderId = null) {
         // Order::getById($orderId);
         // ['email_address']
         // ['phone']
@@ -162,18 +206,13 @@ class Observer
         self::SessionSet($orderId);
     }
 
-    public static function registerOrLogIn($user_login, $user = null)
-    {
+    public static function registerOrLogIn($user_login, $user = null) {
         if (!is_null($user)) {
-            setcookie("mktr", sanitize_email((
-                is_array($user) ?
-                    $user["user_email"] : $user->user_email
-            )), strtotime('+30 days'));
+            setcookie("mktr", sanitize_email(( is_array($user) ? $user["user_email"] : $user->user_email )), strtotime('+30 days'));
         }
     }
 
-    public static function getEmail($email = null, $user = null)
-    {
+    public static function getEmail($email = null, $user = null) {
         if ($user === null) {
             $user = get_user_by('email', $email);
         }
@@ -210,11 +249,11 @@ class Observer
 
         self::$eventName = "setPhone";
 
-        self::$eventData = array(
-            'phone' => get_user_meta($user->ID, 'billing_phone', true)
-        );
-
-        self::SessionSet();
+        self::$eventData = array( 'phone' => get_user_meta($user->ID, 'billing_phone', true) );
+        
+        if (!empty(self::$eventData['phone'])) {
+            self::SessionSet();
+        }
 
         self::$eventName = 'setEmail';
         self::$eventData = $send;
@@ -222,17 +261,22 @@ class Observer
         self::SessionSet();
     }
 
+    public static function setEmail($email)
+    {
+        // Config::getSubscriber('test4_sub@eax.ro')->status
+        self::$eventName = 'setEmail';
+        self::$eventData = array( 'email_address' => $email );
+        self::SessionSet();
+    }
+
+
     private static function SessionSet($key = null)
     {
         $add = Config::session()->get(self::$eventName);
 
         if ($key === null) {
             $n = '';
-
-            for ($i = 0, $indexMax = 9; $i < 5; ++$i) {
-                $n .= random_int(0, 9);
-            }
-
+            for ($i = 0, $indexMax = 9; $i < 5; ++$i) { $n .= random_int(0, 9); }
             $add[time().$n] = self::$eventData;
         } else {
             $add[$key] = self::$eventData;

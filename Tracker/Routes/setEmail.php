@@ -44,32 +44,28 @@ class setEmail
 
         if ($active) {
             foreach ($em as $val) {
-                $info = array(
-                    "email" => $val['email_address']
-                );
-
-                $status = \MailPoet\Models\Subscriber::findOne($val['email_address'])->status;
+                $info = array( "email" => $val['email_address'] );
+                // $status = \MailPoet\Models\Subscriber::findOne($val['email_address'])->status;
+                $status = Config::getSubscriber($val['email_address'])->status;
 
                 if ($status === \MailPoet\Models\Subscriber::STATUS_SUBSCRIBED)
                 {
                     $name = array();
 
-                    if (!empty($val['firstname']))
-                    {
+                    if (!empty($val['firstname'])) {
                         $name[] = $val['firstname'];
                     }
 
-                    if (!empty($val['lastname']))
-                    {
+                    if (!empty($val['lastname'])) {
                         $name[] = $val['lastname'];
                     }
 
-                    if (empty($name))
-                    {
+                    if (empty($name)) {
                         $info["name"] = explode("@", $val['email_address'])[0];
                     } else {
                         $info["name"] = implode(" ", $name);
                     }
+
                     $user = get_user_by('email', $val['email_address']);
                     $phone = get_user_meta($user->ID, 'billing_phone', true);
 
@@ -78,8 +74,10 @@ class setEmail
                     }
 
                     Api::send("add_subscriber", $info);
+                    \Mktr\Tracker\Logs::debug($info, 'set_email_add_subscriber');
                 } else {
                     Api::send("remove_subscriber", $info);
+                    \Mktr\Tracker\Logs::debug($info, 'set_email_remove_subscriber');
                 }
 
                 if (Api::getStatus() != 200) {

@@ -54,30 +54,100 @@ class Form
         if (!empty($data)) {
             $fail = false;
             foreach ($data[Config::$name] as $key=>$value) {
-                if (in_array($key, array('tracking_key', 'rest_key', 'customer_id', 'google_tagCode')) && empty($value)) {
-                    $fail = $key;
-                }
+                if (in_array($key, array('tracking_key', 'rest_key', 'customer_id', 'google_tagCode')) && empty($value)) { $fail = $key; }
 
                 Config::setValue($key, $value);
 
-                if ($key == 'push_status') {
-                    Observer::pushStatus();
+                if ($key == 'push_status') { Observer::pushStatus(); }
+                if ($key == 'opt_in') {
+                    $plug = 'mailpoet/mailpoet.php';
+                    // $installed = array_key_exists($plug , $installed_plugins ) || in_array($plug, $installed_plugins, true );
+                    $active    = is_plugin_active($plug);
+                    if ($active) {
+                        if (Config::getValue('opt_in_oldmail') === null) {
+                            Config::setValue('opt_in_oldmail', \MailPoet\Settings\SettingsController::getInstance()->get('signup_confirmation.enabled'));
+                        }
+                        if ($value == 1) {
+                            \MailPoet\Settings\SettingsController::getInstance()->set('signup_confirmation.enabled', 0);
+                        } else {
+                            \MailPoet\Settings\SettingsController::getInstance()->set('signup_confirmation.enabled', Config::getValue('opt_in_oldmail'));
+                        }
+                        $id = Config::getMailPoetId(false);
+                        
+                        if ( $id !== null ) {
+                            $optin_on_checkout = \MailPoet\Settings\SettingsController::getInstance()->get('woocommerce.optin_on_checkout');
+                            if ($optin_on_checkout !== null) {
+                                if (!array_key_exists('segments', $optin_on_checkout)) {
+                                    $optin_on_checkout['segments'] = [ $id ];
+                                } else if (!in_array($id, $optin_on_checkout['segments'])) {
+                                    $optin_on_checkout['segments'][] = $id;
+                                }
+                                if ($value == 1) { $optin_on_checkout['enabled'] = 1; }
+                            } else if ($value == 1) {
+                                $optin_on_checkout = [
+                                    'message' => 'I would like to receive exclusive emails with discounts and product information',
+                                    'segments' => [ $id ],
+                                    'enabled' => 1
+                                ];
+                            }
+                            if ($optin_on_checkout !== null) {
+                                \MailPoet\Settings\SettingsController::getInstance()->set('woocommerce.optin_on_checkout', $optin_on_checkout);
+                            }
+
+                            $subscribe = \MailPoet\Settings\SettingsController::getInstance()->get('subscribe');
+                            $list = ['on_register', 'on_comment'];
+                            if ($subscribe !== null) {
+                                foreach($list as $k) {
+                                    if (array_key_exists($k, $subscribe)) {
+                                        if (!array_key_exists('segments', $subscribe[$k])) {
+                                            $subscribe[$k]['segments'] = [ $id ];
+                                        } else if (!in_array($id, $subscribe[$k]['segments'])) {
+                                            $subscribe[$k]['segments'][] = $id;
+                                        }
+                                        if ($value == 1) { $subscribe[$k]['enabled'] = 1; }
+                                    } else if ($value == 1) {
+                                        $subscribe[$k] = [
+                                            'segments' => [ $id ],
+                                            'label' => 'I would like to receive exclusive emails with discounts and product information',
+                                            'enabled' => 1
+                                        ];
+                                    }
+                                }
+                            } else if ($value == 1) {
+                                foreach($list as $k) {
+                                    $subscribe[$k] = [
+                                        'segments' => [ $id ],
+                                        'label' => 'I would like to receive exclusive emails with discounts and product information',
+                                        'enabled' => 1
+                                    ];
+                                }
+                            }
+
+                            if ($subscribe !== null) {
+                                \MailPoet\Settings\SettingsController::getInstance()->set('subscribe', $subscribe);
+                            }
+
+                            $f = \MailPoet\DI\ContainerWrapper::getInstance()->get(\MailPoet\Form\FormsRepository::class);
+                            foreach ($f->findAll() as $ff) {
+                                $settings = $ff->getSettings();
+                                if (!in_array($id, $settings['segments'])) {
+                                    $settings['segments'][] = (string) $id; $ff->setSettings($settings);
+                                    try {
+                                        $f->persist($ff); $f->flush();
+                                    } catch (\Exception $e) {
+                                        //var_dump($e); die();
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
             if ($fail) {
-                Admin::addNotice(
-                    array(
-                        'type' => 'error',
-                        'message'=> 'Please fill are Require(*) fields'
-                    )
-                );
+                Admin::addNotice( array( 'type' => 'error', 'message'=> 'Please fill are Require(*) fields' ) );
             } else {
-                Admin::addNotice(
-                    array(
-                        'message'=>'Your settings have been saved.'
-                    )
-                );
+                Admin::addNotice( array( 'message'=>'Your settings have been saved.' ) );
             }
         }
     }

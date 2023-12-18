@@ -20,6 +20,8 @@ class Events
     private static $shName = null;
     private static $data = array();
 
+    public static $isWoodMart = false;
+
     private static $assets = array();
 
     const actions = [
@@ -180,23 +182,22 @@ class Events
 
         $lines[] = vsprintf(Config::loader, array( $key ));
 
-        $lines[] = 'window.mktr = window.mktr || {}; window.mktr.debug = function () { if (typeof dataLayer != "undefined") { for (let i of dataLayer) { console.log("Mktr","Google",i); } } };';
+        $lines[] = 'window.mktr = window.mktr || {};
+window.mktr.debug = function () { if (typeof dataLayer != "undefined") { for (let i of dataLayer) { console.log("Mktr","Google",i); } } };';
         $lines[] = '';
         $wh =  array(Config::space, implode(Config::space, $lines));
         $rep = array("%space%","%implode%");
         /** @noinspection BadExpressionStatementJS */
         /** @noinspection JSUnresolvedVariable */
-        echo str_replace("&#124;&#124;", "||", ent2ncr(str_replace($rep, $wh, '<!-- Mktr Script Start -->%space%<script type="text/javascript">%space%%implode%%space%</script>%space%<!-- Mktr Script END -->')));
+        echo str_replace($rep, $wh, '<!-- Mktr Script Start -->%space%<script type="text/javascript">%space%%implode%%space%</script>%space%<!-- Mktr Script END -->');
     }
-
-
 
     public function loadEvents()
     {
         $loadJS = $lines = array();
         $lines[] = "window.mktr.try = 0; window.mktr.LoadEvents = function () { if (window.mktr.try <= 5 && typeof dataLayer != 'undefined') { ";
         foreach (self::actions as $key=>$value) {
-            if ($key() || $key === 'is_home' && is_front_page()) {
+            if ( $key === 'is_checkout' && $key() && !is_order_received_page() || $key !== 'is_checkout' && $key() || $key === 'is_home' && is_front_page() ) {
                 $lines[] = "dataLayer.push(".self::getEvent($value)->toJson().");";
                 break;
             }
@@ -231,23 +232,58 @@ class Events
         $baseURL = Config::getBaseURL();
 
         foreach ($loadJS as $k=>$v) {
-            $lines[] = '(function(){ let add = document.createElement("script"); add.async = true; add.src = "'.esc_js($baseURL).'mktr/api/'.esc_js($k).'/?mktr_time="+(new Date()).getTime(); let s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(add,s); })();';
+            $lines[] = '(function(){ let add = document.createElement("script"); add.async = true; add.src = "'.esc_js($baseURL).'?mktr='.esc_js($k).'&mktr_time="+(new Date()).getTime(); let s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(add,s); })();';
         }
 
         if (!empty($clear)) {
             Config::session()->set("ClearMktr", $clear);
 
-            $lines[] = '(function(){ let add = document.createElement("script"); add.async = true; add.src = "'.esc_js($baseURL).'mktr/api/clearEvents/?mktr_time="+(new Date()).getTime(); let s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(add,s); })();';
+            $lines[] = '(function(){ let add = document.createElement("script"); add.async = true; add.src = "'.esc_js($baseURL).'?mktr=clearEvents&mktr_time="+(new Date()).getTime(); let s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(add,s); })();';
         }
 
-        $lines[] = 'setTimeout(window.mktr.debug, 1500);';
+        // $lines[] = 'setTimeout(window.mktr.debug, 1500);';
         $lines[] = " } else if(window.mktr.try <= 5) { window.mktr.try++; setTimeout(window.mktr.LoadEvents, 1500); } }; setTimeout(window.mktr.LoadEvents, 1500);";
+        // console.log('eax','add', add); console.log('eax','remove',remove);
+        if (self::$isWoodMart) {
+        // if (isset( $_COOKIE['woodmart_wishlist_count'] )) {
+            $wishList = Config::session()->get("woodmart_wishlist_products");
+            if ($wishList === null) {
+                $wishList = (isset($_COOKIE['woodmart_wishlist_products']) ? $_COOKIE['woodmart_wishlist_products'] : '{}');
+                Config::session()->set("woodmart_wishlist_products", $wishList);
+                Config::session()->set("woodmart_wishlist_count", $_COOKIE['woodmart_wishlist_count']);
+            }
+
+        $lines[] = "mktr.checkAdded = function(n, o) { return Object.keys(n).filter(i => !o[i]); }
+mktr.jsonDecode = function(j = null) { try { return j !== null ? JSON.parse(j) : {}; } catch (error) { console.error('Error parsing JSON:', error); return {}; } }
+mktr.cookie = function(name, cookieName = '',  decodedCookie = '', cookieArray = [], i = 0, cookie = null) {
+    cookieName = name + '='; decodedCookie = decodeURIComponent(document.cookie); cookieArray = decodedCookie.split(';');
+    for (i = 0; i < cookieArray.length; i++) {
+        cookie = cookieArray[i]; while (cookie.charAt(0) == ' ') { cookie = cookie.substring(1); }
+        if (cookie.indexOf(cookieName) == 0) { return cookie.substring(cookieName.length, cookie.length); }
+    }
+    return null;
+}
+mktr.storage = {
+    _wishlist: ".stripslashes($wishList).",
+    get wishlist() { return this._wishlist; },
+    set wishlist(value) {
+        let add = mktr.checkAdded(value, this._wishlist); let remove = mktr.checkAdded(this._wishlist, value);
+        if (add.length !== 0 || remove.length !== 0) { window.mktr.LoadEventsFunc(); this._wishlist = value; }
+    }
+};
+
+setInterval(function (c = null) {
+    if (mktr.cookie('woodmart_wishlist_products') !== null) {
+        mktr.storage.wishlist = mktr.jsonDecode(mktr.cookie('woodmart_wishlist_products'));
+    }
+}, 5000);";
+        }
 
         $wh =  array(Config::space, implode(Config::space, $lines));
         $rep = array("%space%","%implode%");
         /** @noinspection BadExpressionStatementJS */
         /** @noinspection JSUnresolvedVariable */
-        echo ent2ncr(str_replace($rep, $wh, '<!-- Mktr Script Start -->%space%<script type="text/javascript">%space%%implode%%space%</script>%space%<!-- Mktr Script END -->'));
+        echo str_replace($rep, $wh, '<!-- Mktr Script Start -->%space%<script type="text/javascript">%space%%implode%%space%</script>%space%<!-- Mktr Script END -->');
     }
 
     public static function build()
@@ -295,7 +331,11 @@ class Events
                 self::$assets['category'] = self::buildCategory();
                 break;
             case "Product":
-                self::$assets['product_id'] = Product::getId();
+                if (Product::getId() !== null) {
+                    self::$assets['product_id'] = Product::getId();
+                } else {
+                    return false;
+                }
                 break;
             case "saveOrder":
                 Order::getById($eventData);

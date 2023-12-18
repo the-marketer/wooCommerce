@@ -204,6 +204,7 @@ class Admin
                 'opt_in' => array(
                     'title'     => 'Double opt-in setting',
                     'type'      => 'select',
+                    'description' => 'Works only with MailPoet Plugin',
                     'options' => array(
                         array('value' => 0, 'label' => 'WebSite'),
                         array('value' => 1, 'label' => 'The Marketer')

@@ -169,6 +169,10 @@ class Order
         foreach (self::$asset->get_items() AS $itemId => $itemData)
         {
             $o = $itemData->get_data();
+
+            if ($o['subtotal'] <= 0) {
+                continue;
+            }
             
             if (isset($o['variation_id']) && !empty($o['variation_id'])) {
                 $id = $o['variation_id'];
@@ -202,6 +206,10 @@ class Order
         foreach (self::$asset->get_items() AS $itemId => $itemData)
         {
             $o = $itemData->get_data();
+
+            if ($o['subtotal'] <= 0) {
+                continue;
+            }
 			
             if (isset($o['variation_id']) && !empty($o['variation_id'])) {
                 $id = $o['variation_id'];

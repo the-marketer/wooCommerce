@@ -144,8 +144,13 @@ class Observer
             $s = \MailPoet\Models\Subscriber::findOne((int) $i);
 
             $info = array( "email" => $s->email );
-            
-            $status = Config::getSubscriber( $s->email )->status;
+            $gSub = Config::getSubscriber($s->email);
+
+            if ($gSub !== false) {
+                $status = $gSub->status;
+            } else {
+                $status = "NotFound";
+            }
 
             if ($status === \MailPoet\Models\Subscriber::STATUS_SUBSCRIBED)
             {
@@ -217,8 +222,12 @@ class Observer
             $user = get_user_by('email', $email);
         }
 
+        if ( $user->user_email !== null ) {
+            $email = $user->user_email;
+        }
+
         $send = array(
-            'email_address' => $user->user_email
+            'email_address' => $email
         );
 
         if (!empty($user->first_name)) {

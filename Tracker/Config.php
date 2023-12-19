@@ -11,6 +11,8 @@
 
 namespace Mktr\Tracker;
 
+use Exception;
+
 /**
  * @method static getStatus()
  * @method static getKey()
@@ -193,7 +195,10 @@ importScripts("https://t.themarketer.com/firebase.js");';
                 // var_dump($e);die;
                 return null;
             }
-            $i = $sAdd->getId();
+            $i = [];
+            $i[] = (string) $sAdd->getId();
+            $i[] = \MailPoet\Models\Segment::getWooCommerceSegment()->id;
+            $i[] = \MailPoet\Models\Segment::getWPSegment()->id;
             Config::setValue('mailpoet_id_list', $i);
         }
         return $i;
@@ -201,31 +206,27 @@ importScripts("https://t.themarketer.com/firebase.js");';
 
     public static function getSubscriber($customerEmail) {
         if (\MailPoet\Settings\SettingsController::getInstance()->get('woocommerce.optin_on_checkout.enabled') == 1) {
-            $data = \MailPoet\Models\Subscriber::tableAlias('subscribers')
-                ->select('subscribers.*')
-                ->where('subscribers.email', $customerEmail)
-                ->join( MP_SUBSCRIBER_SEGMENT_TABLE, 'relation.subscriber_id = subscribers.id', 'relation' )
-                ->where('relation.segment_id', self::getMailPoetId())
-                ->findOne();
-            if ( $data === false ) {
-                $wcSegment = \MailPoet\Models\Segment::getWooCommerceSegment();
-                $data = \MailPoet\Models\Subscriber::tableAlias('subscribers')
-                ->select('subscribers.*')
-                ->where('subscribers.email', $customerEmail)
-                ->join( MP_SUBSCRIBER_SEGMENT_TABLE, 'relation.subscriber_id = subscribers.id', 'relation' )
-                ->where('relation.segment_id', $wcSegment)
-                ->findOne();
+            try {
+                $ids = self::getMailPoetId();
+                if (is_array ($ids)) {
+                    $data = \MailPoet\Models\Subscriber::tableAlias('subscribers')
+                    ->select('subscribers.*')
+                    ->where('subscribers.email', $customerEmail)
+                    ->join( MP_SUBSCRIBER_SEGMENT_TABLE, 'relation.subscriber_id = subscribers.id', 'relation' )
+                    ->whereIn('relation.segment_id', self::getMailPoetId())
+                    ->findOne();
+                } else {
+                    $data = \MailPoet\Models\Subscriber::tableAlias('subscribers')
+                    ->select('subscribers.*')
+                    ->where('subscribers.email', $customerEmail)
+                    ->join( MP_SUBSCRIBER_SEGMENT_TABLE, 'relation.subscriber_id = subscribers.id', 'relation' )
+                    ->where('relation.segment_id', self::getMailPoetId())
+                    ->findOne();
+                }
+            } catch (\Exception $e){
+                $data = false;
             }
-            if ( $data === false ) {
-                $wpSegment = \MailPoet\Models\Segment::getWPSegment();
-                $data = \MailPoet\Models\Subscriber::tableAlias('subscribers')
-                ->select('subscribers.*')
-                ->where('subscribers.email', $customerEmail)
-                ->join( MP_SUBSCRIBER_SEGMENT_TABLE, 'relation.subscriber_id = subscribers.id', 'relation' )
-                ->where('relation.segment_id', $wpSegment)
-                ->findOne();
 
-            }
             return $data;
             if ( $data !== false) {
                 return $data;

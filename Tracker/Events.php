@@ -213,9 +213,12 @@ window.mktr.debug = function () { if (typeof dataLayer != "undefined") { for (le
             $eventData = Config::session()->get($event);
             if (!empty($eventData)) {
                 foreach ($eventData as $key=>$value) {
-                    $lines[] = "dataLayer.push(".self::getEvent($Name[1], $value)->toJson().");";
-                    if (!$Name[0]) {
-                        $clear[$event][$key] = $key;
+                    $ev = self::getEvent($Name[1], $value);
+                    if ($ev !== false) {
+                        $lines[] = "dataLayer.push(".$ev->toJson().");";
+                        if (!$Name[0]) {
+                            $clear[$event][$key] = $key;
+                        }
                     }
                 }
 
@@ -340,6 +343,9 @@ setInterval(function (c = null) {
             case "saveOrder":
                 Order::getById($eventData);
                 self::$assets = Order::toArray();
+                if (empty(self::$assets['products']) || (empty(self::$assets['email_address']) && empty(self::$assets['phone']))) {
+                    return false;
+                }
                 break;
             case "Search":
                 self::$assets['search_term'] = get_search_query(true);

@@ -47,9 +47,18 @@ class Front
         Observer::registerOrLogIn($user_login, $user);
     }
 
-    public function saveOrder($orderId)
+    public function saveOrder($orderId = null)
     {
-        if (self::$saveOrderEvent && is_order_received_page()) {
+        if ($orderId !== null && self::$saveOrderEvent) {
+            self::$saveOrderEvent = false;
+            Observer::saveOrder($orderId);
+        }
+    }
+
+    public function saveOrder1($orderId = null, $checkout = null )
+    {
+        // Logs::debug($orderId, 'saveOrder1');
+        if ($orderId !== null && self::$saveOrderEvent) {
             self::$saveOrderEvent = false;
             Observer::saveOrder($orderId);
         }

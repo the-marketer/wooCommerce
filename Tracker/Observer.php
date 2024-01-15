@@ -143,6 +143,18 @@ class Observer
             self::$mStatusChange = true;
             $s = \MailPoet\Models\Subscriber::findOne((int) $i);
 
+            $check = Config::session()->get('emailSend');
+            $time = time();
+            
+            if ($check !== null && isset($check[$s->email])) {
+                if (($time - $check[$s->email]) <= 60) {
+                    Logs::debug($s->email, 'emailSendBlock'); 
+                    return true;
+                }
+            } else if ($check === null){
+                $check = [];
+            }
+
             $info = array( "email" => $s->email );
             $gSub = Config::getSubscriber($s->email);
 
@@ -183,6 +195,8 @@ class Observer
                 Api::send("remove_subscriber", $info);
                 Logs::debug($info, 'remove_subscriber');
             }
+            $check[$s->email] = $time;
+            Config::session()->set('emailSend', $check);
         }
     }
 

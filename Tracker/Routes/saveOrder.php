@@ -43,6 +43,11 @@ class saveOrder
         $active    = is_plugin_active($plug);
 
         if (!empty($Order)) {
+            $check = Config::session()->get('emailSend');
+            $time = time();
+
+            if ($check === null) { $check = []; }
+
             foreach ($Order as $sOrder1)
             {
                 Order::getById($sOrder1);
@@ -60,7 +65,7 @@ class saveOrder
 					$allGood = false;
 				}
 
-                if ($active && !empty($sOrder['email_address']))
+                if ( $allGood && $active && !empty($sOrder['email_address']) )
                 {
                     $val = Observer::getEmail($sOrder['email_address']);
 
@@ -77,6 +82,12 @@ class saveOrder
                         }
                         
                         if ($status === \MailPoet\Models\Subscriber::STATUS_SUBSCRIBED) {
+                            if ($check !== null && isset($check[$sOrder['email_address']])) {
+                                if (($time - $check[$sOrder['email_address']]) <= 60) {
+                                    \Mktr\Tracker\Logs::debug($sOrder['email_address'], 'emailSendBlockSetEmail'); 
+                                    continue;
+                                }
+                            }
                             $name = array();
 
                             if (!empty($val['firstname'])) { $name[] = $val['firstname']; }
@@ -96,6 +107,8 @@ class saveOrder
 
                             Api::send("add_subscriber", $info);
                             \Mktr\Tracker\Logs::debug($info, 'save_order_add_subscriber');
+
+                            $check[$s->email] = $time;
                         }
 
                         if (Api::getStatus() != 200) {
@@ -104,11 +117,15 @@ class saveOrder
                     }
                 }
             }
+
+            Config::session()->set('emailSend', $check);
+            
             if ($allGood)
             {
                 Config::session()->set('saveOrder', array());
             }
         }
-        return '/* TheMaketer */ console.log('.(int) $allGood.','.json_encode(Api::getInfo(), true).');';
+        // return '/* TheMaketer */ console.log('.(int) $allGood.','.json_encode(Api::getInfo(), true).');';
+        return '/* TheMaketer */ console.log('.(int) $allGood.','.json_encode([ Api::getInfo() ], true).');';
     }
 }

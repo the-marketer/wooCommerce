@@ -43,9 +43,22 @@ class setEmail
         // $installed &&
 
         if ($active) {
+            $check = Config::session()->get('emailSend');
+            $time = time();
+
+            if ($check === null) { $check = []; }
+
             foreach ($em as $val) {
+                
                 if ($val['email_address'] === null) {
                     continue;
+                }
+
+                if ($check !== null && isset($check[$val['email_address']])) {
+                    if (($time - $check[$val['email_address']]) <= 60) {
+                        \Mktr\Tracker\Logs::debug($val['email_address'], 'emailSendBlockSetEmail'); 
+                        continue;
+                    }
                 }
                 $info = array( "email" => $val['email_address'] );
                 // $status = \MailPoet\Models\Subscriber::findOne($val['email_address'])->status;
@@ -89,19 +102,23 @@ class setEmail
                     \Mktr\Tracker\Logs::debug($info, 'set_email_remove_subscriber');
                 }
 
+                $check[$s->email] = $time;
+
                 if (Api::getStatus() != 200) {
                     $allGood = false;
                 }
             }
         }
 
+        Config::session()->set('emailSend', $check);
 
         if ($allGood)
         {
             Config::session()->set('setPhone', array());
             Config::session()->set('setEmail', array());
         }
-
-        return 'console.log('.(int)$allGood.');';
+        
+        /* return 'console.log('.(int)$allGood . json_encode($em, true).');'; */
+		return 'console.log('.(int)$allGood .');';
     }
 }

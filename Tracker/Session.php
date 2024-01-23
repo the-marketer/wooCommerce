@@ -17,6 +17,7 @@ class Session
 
     private $data = [];
     private $org = [];
+    private $insert = true;
 
     private $isDirty = false;
 
@@ -60,7 +61,7 @@ class Session
         if (!empty($err) && strpos($err, $table_name) !== false && strpos($err, "doesn't exist") !== false ) {
             self::up();
         }
-
+        $this->insert = $data === null;
         $this->org = $data ? unserialize($data) : [];
         $this->data = $this->org;
     }
@@ -88,10 +89,11 @@ class Session
             $table_name = Config::tableName();
             if (!empty(self::init()->data)) {
                 $data = [ 'data' => serialize(self::init()->data), 'expire' => date('Y-m-d H:i:s', strtotime('+2 day')) ];
-                if (count(self::init()->org) > 0) {
-                    Config::db()->update($table_name, $data, array('uid' => $uid));
+                if (self::init()->insert) {
+                    $data['uid'] = $uid;
+                    Config::db()->insert($table_name, $data);
                 } else {
-                    $data['uid'] = $uid; Config::db()->insert($table_name, $data);
+                    Config::db()->update($table_name, $data, array('uid' => $uid));
                 }
                 self::init()->org = self::init()->data;
             } else {

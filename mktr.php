@@ -3,7 +3,7 @@
  * Plugin Name:             TheMarketer
  * Plugin URI:              https://themarketer.com/integrations/woocommerce
  * Description:             TheMarketer - WooCommerce Version
- * Version:                 1.2.8
+ * Version:                 1.2.9
  * Requires at least:       4.6
  * Requires PHP:            5.6
  * Author:                  themarketer.com

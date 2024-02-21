@@ -4,7 +4,7 @@
  * @project     TheMarketer.com
  * @website     https://themarketer.com/
  * @author      Alexandru Buzica (EAX LEX S.R.L.) <b.alex@eax.ro>
- * @license     http://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
+ * @license     https://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
  * @docs        https://themarketer.com/resources/api
  */
 
@@ -18,6 +18,7 @@ class Session
     private $data = [];
     private $org = [];
     private $insert = true;
+    public static $saveCookie = false;
 
     private $isDirty = false;
 
@@ -33,7 +34,7 @@ class Session
     }
 
     public function remove($key) {
-        if ($this->data[$key]) { unset($this->data[$key]); }
+        if (isset($this->data[$key])) { unset($this->data[$key]); }
         return $this;
     }
 
@@ -41,7 +42,11 @@ class Session
         if (self::$uid === null) {
             if (!isset($_COOKIE['__sm__uid'])) {
                 self::$uid = uniqid();
-                setcookie('__sm__uid', self::$uid, strtotime('+365 days'), COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true);
+                if (!headers_sent()) {
+                    setcookie('__sm__uid', self::$uid, strtotime('+365 days'), COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true);
+                } else {
+                    self::$saveCookie = true;
+                }
             } else {
                 self::$uid = sanitize_text_field($_COOKIE['__sm__uid']);
             }

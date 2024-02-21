@@ -4,7 +4,7 @@
  * @project     TheMarketer.com
  * @website     https://themarketer.com/
  * @author      Alexandru Buzica (EAX LEX S.R.L.) <b.alex@eax.ro>
- * @license     http://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
+ * @license     https://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
  * @docs        https://themarketer.com/resources/api
  */
 
@@ -41,7 +41,7 @@ class setEmail
         // $installed = array_key_exists($plug , $installed_plugins ) || in_array($plug, $installed_plugins, true );
         $active    = is_plugin_active($plug);
         // $installed &&
-
+        $check = array();
         if ($active) {
             $check = Config::session()->get('emailSend');
             $time = time();
@@ -119,6 +119,7 @@ class setEmail
         }
         
         /* return 'console.log('.(int)$allGood . json_encode($em, true).');'; */
-		return 'console.log('.(int)$allGood .');';
+		// return 'console.log('.(int)$allGood .');';
+        return json_encode([(int) $allGood, Api::getInfo(), $em ], true);
     }
 }

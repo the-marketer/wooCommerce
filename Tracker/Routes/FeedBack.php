@@ -10,7 +10,9 @@
 
 namespace Mktr\Tracker\Routes;
 
-class Cron
+use Mktr\Tracker\Valid;
+
+class FeedBack
 {
     private static $init = null;
 
@@ -21,9 +23,20 @@ class Cron
         }
         return self::$init;
     }
-    
+
     public static function execute()
     {
-        return \Mktr\Tracker\Model\Cron::cronAction();
+        Valid::setParam('mime-type', 'json');
+        if (isset($_POST['message'])) {
+            $d = \wp_remote_post('https://connector.themarketer.com/feedback/add',
+                array(
+                    'method'      => 'POST',
+                    'timeout'     => 5,
+                    'user-agent'  => 'mktr:' . \get_bloginfo( 'url' ),
+                    'body' => \Mktr\Tracker\Run::platform()
+                )
+            );
+        }
+        return array('status' => 'succes');
     }
 }

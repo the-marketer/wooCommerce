@@ -4,7 +4,7 @@
  * @project     TheMarketer.com
  * @website     https://themarketer.com/
  * @author      Alexandru Buzica (EAX LEX S.R.L.) <b.alex@eax.ro>
- * @license     http://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
+ * @license     https://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
  * @docs        https://themarketer.com/resources/api
  */
 
@@ -32,7 +32,7 @@ class saveOrder
         if (!function_exists( 'is_plugin_active' ) ) {
             require_once ABSPATH . 'wp-admin/includes/plugin.php';
         }
-        Valid::setParam('mime-type', 'js');
+        Valid::setParam('mime-type', 'json');
 
         $Order = Config::session()->get('saveOrder');
         $allGood = true;
@@ -126,6 +126,7 @@ class saveOrder
             }
         }
         // return '/* TheMaketer */ console.log('.(int) $allGood.','.json_encode(Api::getInfo(), true).');';
-        return '/* TheMaketer */ console.log('.(int) $allGood.','.json_encode([ Api::getInfo() ], true).');';
+        //return '/* TheMaketer */ console.log('.(int) $allGood.','.json_encode([ Api::getInfo() ], true).');';
+        return json_encode([(int) $allGood, Api::getInfo() ], true);
     }
 }

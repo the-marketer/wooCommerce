@@ -4,7 +4,7 @@
  * @project     TheMarketer.com
  * @website     https://themarketer.com/
  * @author      Alexandru Buzica (EAX LEX S.R.L.) <b.alex@eax.ro>
- * @license     http://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
+ * @license     https://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
  * @docs        https://themarketer.com/resources/api
  */
 
@@ -12,7 +12,6 @@ namespace Mktr\Tracker;
 
 class Form
 {
-    private static $save_button = 'Save changes';
     private static $form_fields = array();
     private static $init = null;
 
@@ -52,16 +51,22 @@ class Form
     {
         $data = Config::POST(Config::$name);
         if (!empty($data)) {
-            $fail = false;
+            $fail = array('tracking' => false, 'google' => false);
+            $onboarding = false;
             foreach ($data[Config::$name] as $key=>$value) {
-                if (in_array($key, array('tracking_key', 'rest_key', 'customer_id', 'google_tagCode')) && empty($value)) { $fail = $key; }
-
-                Config::setValue($key, $value);
-
+                if (in_array($key, array('tracking_key', 'rest_key', 'customer_id')) && empty($value)) { $fail['tracking'] = true; }
+                if (in_array($key, array('google_tagCode')) && empty($value) && isset($data[Config::$name]['google_status']) && $data[Config::$name]['google_status'] == 1) { $fail['google'] = true; }
+				if (in_array($key, array('update_feed', 'update_review')) && empty($value)) { $value = 4; }
+                if ($key !== 'onboarding') {
+                    Config::setValue($key, $value);
+                } else {
+                    $onboarding = array($key, $value);
+                }
+                
                 if ($key == 'push_status') { Observer::pushStatus(); }
                 if ($key == 'opt_in') {
                     $plug = 'mailpoet/mailpoet.php';
-                    // $installed = array_key_exists($plug , $installed_plugins ) || in_array($plug, $installed_plugins, true );
+
                     $active    = is_plugin_active($plug);
                     if ($active) {
                         if (Config::getValue('opt_in_oldmail') === null) {
@@ -128,6 +133,7 @@ class Form
                             }
 
                             $f = \MailPoet\DI\ContainerWrapper::getInstance()->get(\MailPoet\Form\FormsRepository::class);
+                            
                             foreach ($f->findAll() as $ff) {
                                 $settings = $ff->getSettings();
                                 if (!in_array($id, $settings['segments'])) {
@@ -144,82 +150,35 @@ class Form
                 }
             }
 
-            if ($fail) {
-                Admin::addNotice( array( 'type' => 'error', 'message'=> 'Please fill are Require(*) fields' ) );
+            if ($fail['tracking'] && ( Config::getValue('status') == 1 || $onboarding[1] != 2 )) {
+                Admin::addNotice( array( 'type' => 'error', 'message'=> 'To enable tracking you need to fill all required (*) fields' ) );
             } else {
-                Admin::addNotice( array( 'message'=>'Your settings have been saved.' ) );
-            }
-        }
-    }
-
-    public static function getForm($clean = false)
-    {
-        $out = array();
-
-        $out[] = '<form method="POST" action="" enctype="multipart/form-data">
-    <table class="form-table">';
-
-        foreach (self::$form_fields as $key=>$value) {
-            $out[] = '        <tr valign="top">
-            <th scope="row" class="titledesc">
-                <label ' . ($value['type'] != 'title' ? ' for="'.Config::$name.'_'.$key.'"' : '') . '>'.$value['title'].'</label>
-            </th>
-            <td class="forminp">
-                <fieldset>';
-
-            $value['default'] = ($value['default'] !== '' ? $value['default'] : Config::getValue($key));
-
-            switch ($value['type']) {
-                case 'title':
-
-                    break;
-                case 'select':
-
-                    $out[] = '<select style="width: 100%;max-width: 20rem;"
-                        name="'.Config::$name.'['.$key.']" id="'.Config::$name.'_'.$key.'">';
-                    foreach ($value['options'] as $o) {
-                        $out[] = '<option value="'.$o['value'].'" '.($value['default'] == $o['value'] ?
-                            'selected="selected" ' : '').'>'.$o['label'].'</option>';
+                if ($onboarding !== false && $onboarding[1] != 2) {
+                    if ($onboarding[1] == 0) {
+                        Config::setValue('status', 1);
+                        if (empty(Config::getValue('google_tagCode'))) {
+                            Config::setValue('google_status', 0);
+                        } else {
+                            Config::setValue('google_status', 1);
+                        }
+                    } else {
+                        if (empty(Config::getValue('google_tagCode'))) {
+                            Config::setValue('google_status', 0);
+                        }
                     }
-                    $out[] = '</select>';
-                    break;
-                default:
-                    if (is_array($value['default'])) {
-                        $value['default'] = implode('|', $value['default']);
+                    $onboarding[1]++;
+                    Config::setValue($onboarding[0], $onboarding[1]);
+                } else if ($fail['google']) {
+                    if (empty(Config::getValue('google_tagCode'))) {
+                        Config::setValue('google_status', 0);
                     }
-                    $out[] = '                    <input
-                        type="text"
-                        style="width: 100%;max-width: 20rem;"
-                        name="'.Config::$name.'['.$key.']"
-                        id="'.Config::$name.'_'.$key.'"
-                        value="'.$value['default'].'" '.(
-                        $value['holder'] !== '' ?
-                            'placeholder="'.$value['holder'].'" ' : ''
-                    ).'/>';
+                    Admin::addNotice( array( 'type' => 'error', 'message'=> 'To enable "Google Tag Manager" you need to add your ID' ) );
+                } else {
+                    Admin::addNotice( array( 'type' => 'succes', 'message'=>'Your settings have been saved.' ) );
+                }
             }
-
-
-            if ($value['description'] !== '') {
-                $out[] = '                    <p class="description">'.$value['description'].'</p>';
-            }
-
-            $out[] = '                </fieldset>
-            </td>
-        </tr>';
+            \Mktr\Tracker\Routes\refreshJS::execute(false);
         }
-
-        $out[] = '    </table>
-    <p class="submit">
-	    <input type="hidden" id="'.Config::$name.'" name="'.Config::$name.'[valid]" value="'.Config::$name.'_valid" />
-		<button class="button-primary" type="submit" value="'.self::$save_button.'">'.self::$save_button.'</button>
-    </p>
-</form>';
-
-        if ($clean) {
-            self::clean();
-        }
-
-        return ent2ncr(implode(PHP_EOL, $out));
     }
 
     public static function clean()

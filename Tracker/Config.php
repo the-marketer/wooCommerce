@@ -5,16 +5,15 @@
  * @project     TheMarketer.com
  * @website     https://themarketer.com/
  * @author      Alexandru Buzica (EAX LEX S.R.L.) <b.alex@eax.ro>
- * @license     http://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
+ * @license     https://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
  * @docs        https://themarketer.com/resources/api
  */
 
 namespace Mktr\Tracker;
 
-use Exception;
-
 /**
  * @method static getStatus()
+ * @method static getOnboarding()
  * @method static getKey()
  * @method static getRestKey()
  * @method static getCustomerId()
@@ -42,11 +41,6 @@ class Config
     const space = PHP_EOL . "        ";
     /* TODO Google Test */
     const Google = true;
-    const loader = '(function(d, s, i) {
-    var f = d.getElementsByTagName(s)[0], j = d.createElement(s);j.async = true;
-    j.src = "https://t.themarketer.com/t/j/" + i; f.parentNode.insertBefore(j, f);
-    })(document, "script", "%s")';
-
     const defMime = 'xml';
 
     /*
@@ -64,7 +58,10 @@ class Config
     ];
 
     const configNames = array(
+        'redirect' => 'mktr_tracker/tracker/redirect',
         'status' => 'mktr_tracker/tracker/status',
+        'onboarding' => 'mktr_tracker/tracker/onboarding',
+        'js_file' => 'mktr_tracker/tracker/js_file',
         'tracking_key' => 'mktr_tracker/tracker/tracking_key',
         'rest_key' => 'mktr_tracker/tracker/rest_key',
         'customer_id'=>'mktr_tracker/tracker/customer_id',
@@ -87,7 +84,10 @@ class Config
     );
 
     const configDefaults = array(
-        'status' => 0,
+        'redirect' => 0,
+        'status' => 1,
+        'onboarding' => 2,
+        'js_file' => null,
         'tracking_key' => '',
         'rest_key' => '',
         'customer_id'=>'',
@@ -101,16 +101,18 @@ class Config
         'push_status' => 0,
         'default_stock' => 0,
         'allow_export' => 0,
-        'selectors' => '.mailpoet_submit,.wc-block-cart-item__remove-link,.add_to_cart_button,.woocommerce-cart-form .product-remove > a',
+        'selectors' => '.mailpoet_submit,.wc-block-cart-item__remove-link,.add_to_cart_button,.woocommerce-cart-form .product-remove > a,a.remove,.wd-wishlist-btn',
         'brand' => 'brand',
         'color' => 'color',
         'size' => 'size',
-        'google_status' => 0,
+        'google_status' => 1,
         'google_tagCode' => '',
     );
 
     const funcNames = array(
         'getStatus' => array('status', 'int'),
+        'getOnboarding' => array('onboarding', 'int'),
+        'getJsFile' => array('js_file', false),
         'getKey' => array('tracking_key', false),
         'getRestKey' => array('rest_key', false),
         'getCustomerId' => array('customer_id', false),

@@ -4,7 +4,7 @@
  * @project     TheMarketer.com
  * @website     https://themarketer.com/
  * @author      Alexandru Buzica (EAX LEX S.R.L.) <b.alex@eax.ro>
- * @license     http://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
+ * @license     https://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
  * @docs        https://themarketer.com/resources/api
  */
 
@@ -24,17 +24,24 @@ class loadEvents
     }
 
     public static function checkAdded($n, $o) {
+        if ($n === null && $o === null) { return []; }
+        if ($n === null) { return $o; }
+        if ($o === null) { return $n; }
         return array_keys(array_diff_key($n, $o));
     }
     
     public static function execute() {
-        Valid::setParam('mime-type', 'js');
-        $lines = [ '/* TheMaketer */' ];
-        
-        if (isset( $_COOKIE['woodmart_wishlist_count'] )) {
-            $wishList = Config::session()->get("woodmart_wishlist_products"); $wishListC = Config::session()->get("woodmart_wishlist_count");
+        // Valid::setParam('mime-type', 'js');
+        //$lines = [ '/* TheMaketer */' ];
+        Valid::setParam('mime-type', 'json');
+        $wishListC = Config::session()->get("woodmart_wishlist_count");
+        if ($wishListC !== null || isset( $_COOKIE['woodmart_wishlist_count'] )) {
+            $wishList = Config::session()->get("woodmart_wishlist_products");
             if ($wishListC === null) {
                 $wishListC = 0;
+            }
+            if ($wishList === null) {
+                $wishList = '{}';
             }
             if ($wishList === null || $wishListC != $_COOKIE['woodmart_wishlist_count']) {
                 $wishList0 = (isset($_COOKIE['woodmart_wishlist_products']) ? $_COOKIE['woodmart_wishlist_products'] : '{}');
@@ -56,13 +63,17 @@ class loadEvents
                 $eventData = Config::session()->get($event);
                 if (!empty($eventData)) {
                     foreach ($eventData as $value) {
-                        $lines[] = "dataLayer.push(" . Events::getEvent($Name[1], $value)->toJson() . ");";
+                        //$lines[] = "dataLayer.push(" . Events::getEvent($Name[1], $value)->toJson() . ");";
+                        $ev = Events::getEvent($Name[1], $value);
+                        if ($ev !== false) {
+                            $lines[] = $ev->toArray();
+                        }
                     }
                 }
                 Config::session()->set($event, array());
             }
         }
-
-        return implode(PHP_EOL, $lines);
+        return $lines;
+        // return implode(PHP_EOL, $lines);
     }
 }

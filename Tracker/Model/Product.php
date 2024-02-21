@@ -4,7 +4,7 @@
  * @project     TheMarketer.com
  * @website     https://themarketer.com/
  * @author      Alexandru Buzica (EAX LEX S.R.L.) <b.alex@eax.ro>
- * @license     http://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
+ * @license     https://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
  * @docs        https://themarketer.com/resources/api
  */
 
@@ -223,11 +223,21 @@ class Product
     }
 
     public static function getName() {
-        return self::nameConvert() ? self::qTranslate(self::$asset->get_name()) : self::$asset->get_name();
+        return apply_filters( 'the_title', self::nameConvert() ? self::qTranslate(self::$asset->get_name()) : self::$asset->get_name(), self::$asset->get_id() );
     }
     
     public static function getDescription() {
-        return self::nameConvert() ? self::qTranslate(self::$asset->get_description()) : self::$asset->get_description();
+        if (defined('ICL_LANGUAGE_CODE')) {
+            if (ICL_LANGUAGE_CODE == 'en') {
+                //var_dump(ICL_LANGUAGE_CODE); die();
+                $en_content = get_post_meta(self::$asset->get_id(), 'product_english_description', true);
+                if (!empty($en_content)) {
+                    return $en_content;
+                }
+            }
+        }
+        
+        return apply_filters( 'the_content', self::nameConvert() ? self::qTranslate(self::$asset->get_description()) : self::$asset->get_description());
     }
 
     public static function getBrand()

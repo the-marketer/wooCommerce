@@ -4,7 +4,7 @@
  * @project     TheMarketer.com
  * @website     https://themarketer.com/
  * @author      Alexandru Buzica (EAX LEX S.R.L.) <b.alex@eax.ro>
- * @license     http://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
+ * @license     https://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
  * @docs        https://themarketer.com/resources/api
  */
 
@@ -174,119 +174,78 @@ class Events
         return self::$init;
     }
 
-    public static function loader()
-    {
-        $lines = array();
+    public function initEvents() {
+        $js_file = Config::getValue('js_file');
+        if ( $js_file !== null ) {
+            
+            wp_enqueue_script('mktr-loader', Run::plug_url('/assets/mktr.'.$js_file.'.js'));
 
-        $key = Config::getKey();
+            $mktr_data = array(
+                'uuid'=> null,
+                'clear' => 0,
+                'isWoodMart' => (int) self::$isWoodMart,
+                'push' => array(),
+                'js' => array()
+            );
 
-        $lines[] = vsprintf(Config::loader, array( $key ));
-
-        $lines[] = 'window.mktr = window.mktr || {};
-window.mktr.debug = function () { if (typeof dataLayer != "undefined") { for (let i of dataLayer) { console.log("Mktr","Google",i); } } };';
-        $lines[] = '';
-        $wh =  array(Config::space, implode(Config::space, $lines));
-        $rep = array("%space%","%implode%");
-        /** @noinspection BadExpressionStatementJS */
-        /** @noinspection JSUnresolvedVariable */
-        echo str_replace($rep, $wh, '<!-- Mktr Script Start -->%space%<script type="text/javascript">%space%%implode%%space%</script>%space%<!-- Mktr Script END -->');
-    }
-
-    public function loadEvents()
-    {
-        $loadJS = $lines = array();
-        $lines[] = "window.mktr.try = 0; window.mktr.LoadEvents = function () { if (window.mktr.try <= 5 && typeof dataLayer != 'undefined') { ";
-        foreach (self::actions as $key=>$value) {
-            if ( $key === 'is_checkout' && $key() && !is_order_received_page() || $key !== 'is_checkout' && $key() || $key === 'is_home' && is_front_page() ) {
-                $lines[] = "dataLayer.push(".self::getEvent($value)->toJson().");";
-                break;
+            if ($mktr_data['isWoodMart']) {
+                $wishList = Config::session()->get("woodmart_wishlist_products");
+                if ($wishList === null) {
+                    $wishList = (isset($_COOKIE['woodmart_wishlist_products']) ? $_COOKIE['woodmart_wishlist_products'] : '{}');
+                    Config::session()->set("woodmart_wishlist_products", $wishList);
+                    Config::session()->set("woodmart_wishlist_count", (isset($_COOKIE['woodmart_wishlist_count']) ? $_COOKIE['woodmart_wishlist_count'] : 0));
+                }
+                $mktr_data['wishList'] = $wishList;
             }
-        }
+            if (Session::$saveCookie) {
+                $mktr_data['uuid'] = Session::getUid();
+            }
+            
+            $clear = Config::session()->get("ClearMktr");
 
-        $clear = Config::session()->get("ClearMktr");
+            if ($clear === null) { $clear = array(); }
 
-        if ($clear === null) {
-            $clear = array();
-        }
+            $saveOrder = false;
 
-        foreach (self::observerGetEvents as $event=>$Name) {
-            $eventData = Config::session()->get($event);
-            if (!empty($eventData)) {
-                foreach ($eventData as $key=>$value) {
-                    $ev = self::getEvent($Name[1], $value);
-                    if ($ev !== false) {
-                        $lines[] = "dataLayer.push(".$ev->toJson().");";
-                        if (!$Name[0]) {
-                            $clear[$event][$key] = $key;
+            foreach (self::observerGetEvents as $event=>$Name) {
+                $eventData = Config::session()->get($event);
+                if (!empty($eventData)) {
+                    if ( in_array($event, ["saveOrder", "setEmail", "setPhone"]) ) {
+                        foreach ($eventData as $key=>$value) {
+                            $ev = self::getEvent($Name[1], $value);
+                            if ($event === "saveOrder") { $saveOrder = true; }
+                            if ($ev !== false) {
+                                $mktr_data['push'][] = $ev->toArray();
+                                if (!$Name[0]) { $clear[$event][$key] = $key; }
+                            }
                         }
                     }
-                }
 
-                if ($Name[0]) {
-                    //Config::session()->set($event, array());
-                    $loadJS[$event] = true;
-                } /** @noinspection PhpStatementHasEmptyBodyInspection */ else {
-                    // $clear[$event][$key] = "clear";
-                    // Config::session()->set($event, array());
+                    if ($Name[0]) {
+                        //Config::session()->set($event, array());
+                        $mktr_data['js'][$event] = true;
+                    } /** @noinspection PhpStatementHasEmptyBodyInspection */ else {
+                        // $clear[$event][$key] = "clear";
+                        // Config::session()->set($event, array());
+                    }
                 }
             }
-        }
 
-        $baseURL = Config::getBaseURL();
-
-        foreach ($loadJS as $k=>$v) {
-            $lines[] = '(function(){ let add = document.createElement("script"); add.async = true; add.src = "'.esc_js($baseURL).'?mktr='.esc_js($k).'&mktr_time="+(new Date()).getTime(); let s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(add,s); })();';
-        }
-
-        if (!empty($clear)) {
-            Config::session()->set("ClearMktr", $clear);
-
-            $lines[] = '(function(){ let add = document.createElement("script"); add.async = true; add.src = "'.esc_js($baseURL).'?mktr=clearEvents&mktr_time="+(new Date()).getTime(); let s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(add,s); })();';
-        }
-
-        // $lines[] = 'setTimeout(window.mktr.debug, 1500);';
-        $lines[] = " } else if(window.mktr.try <= 5) { window.mktr.try++; setTimeout(window.mktr.LoadEvents, 1500); } }; setTimeout(window.mktr.LoadEvents, 1500);";
-        // console.log('eax','add', add); console.log('eax','remove',remove);
-        if (self::$isWoodMart) {
-        // if (isset( $_COOKIE['woodmart_wishlist_count'] )) {
-            $wishList = Config::session()->get("woodmart_wishlist_products");
-            if ($wishList === null) {
-                $wishList = (isset($_COOKIE['woodmart_wishlist_products']) ? $_COOKIE['woodmart_wishlist_products'] : '{}');
-                Config::session()->set("woodmart_wishlist_products", $wishList);
-                Config::session()->set("woodmart_wishlist_count", $_COOKIE['woodmart_wishlist_count']);
+            foreach (self::actions as $key => $value) {
+                if ( $key === 'is_checkout'&& $saveOrder === false && $key() || $key !== 'is_checkout' && $key() || $key === 'is_home' && is_front_page() ) {
+                    $ev = self::getEvent($value);
+                    if ($ev !== false) {
+                        $mktr_data['push'][] = $ev->toArray();
+                    }
+                    break;
+                }
             }
-
-        $lines[] = "mktr.checkAdded = function(n, o) { return Object.keys(n).filter(i => !o[i]); }
-mktr.jsonDecode = function(j = null) { try { return j !== null ? JSON.parse(j) : {}; } catch (error) { console.error('Error parsing JSON:', error); return {}; } }
-mktr.cookie = function(name, cookieName = '',  decodedCookie = '', cookieArray = [], i = 0, cookie = null) {
-    cookieName = name + '='; decodedCookie = decodeURIComponent(document.cookie); cookieArray = decodedCookie.split(';');
-    for (i = 0; i < cookieArray.length; i++) {
-        cookie = cookieArray[i]; while (cookie.charAt(0) == ' ') { cookie = cookie.substring(1); }
-        if (cookie.indexOf(cookieName) == 0) { return cookie.substring(cookieName.length, cookie.length); }
-    }
-    return null;
-}
-mktr.storage = {
-    _wishlist: ".stripslashes($wishList).",
-    get wishlist() { return this._wishlist; },
-    set wishlist(value) {
-        let add = mktr.checkAdded(value, this._wishlist); let remove = mktr.checkAdded(this._wishlist, value);
-        if (add.length !== 0 || remove.length !== 0) { window.mktr.LoadEventsFunc(); this._wishlist = value; }
-    }
-};
-
-setInterval(function (c = null) {
-    if (mktr.cookie('woodmart_wishlist_products') !== null) {
-        mktr.storage.wishlist = mktr.jsonDecode(mktr.cookie('woodmart_wishlist_products'));
-    }
-}, 5000);";
+            if (!empty($clear)) {
+                Config::session()->set("ClearMktr", $clear);
+                $mktr_data['clear'] = 1;
+            }
+            wp_localize_script('mktr-loader', 'mktr_data', $mktr_data);
         }
-
-        $wh =  array(Config::space, implode(Config::space, $lines));
-        $rep = array("%space%","%implode%");
-        /** @noinspection BadExpressionStatementJS */
-        /** @noinspection JSUnresolvedVariable */
-        echo str_replace($rep, $wh, '<!-- Mktr Script Start -->%space%<script type="text/javascript">%space%%implode%%space%</script>%space%<!-- Mktr Script END -->');
     }
 
     public static function build()
@@ -401,6 +360,11 @@ setInterval(function (c = null) {
 
             self::$bMultiCat[] = Category::getName();
         }
+    }
+
+    public function toArray()
+    {
+        return self::$data;
     }
 
     public function toJson()

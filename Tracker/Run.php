@@ -17,7 +17,7 @@ class Run
     private static $init = null;
     private static $pPath = null;
     private static $platform = null;
-    public static $version = 'v1.3.0';
+    public static $version = 'v1.3.1';
 
     public static function init() {
         if (self::$init == null) { self::$init = new self(); }
@@ -46,10 +46,18 @@ class Run
                 'version' => \get_bloginfo( 'version' ),
                 'mktr_version' => self::$version
             );
-            if (defined('WC_VERSION')) {
+
+            if (function_exists('WC')) {
+                self::$platform['woocommerce'] = \WC()->version;
+            } else if (defined('WC_VERSION')) {
                 self::$platform['woocommerce'] = \WC_VERSION;
             } else {
-                self::$platform['woocommerce'] = 'unknown';
+                $v = Config::getValue('woocommerce_version');
+                if (empty($v)) {
+                    self::$platform['woocommerce'] = 'unknown';
+                } else {
+                    self::$platform['woocommerce'] = $v;
+                }
             }
         }
         return self::$platform;
@@ -85,7 +93,9 @@ class Run
         add_action('wp_ajax_woocommerce_ajax_add_to_cart', array( $this, 'add_to_cart_ajax' ));
         add_action('wp_ajax_nopriv_woocommerce_ajax_add_to_cart', array( $this, 'add_to_cart_ajax' ));
 
-        add_action('mailpoet_subscriber_updated', array( $this, 'mailpoet_subscription_status_changed' ));
+        // add_action('mailpoet_subscriber_updated', array( $this, 'mailpoet_subscription_status_changed' ));
+        add_action('mailpoet_subscriber_status_changed', array( $this, 'mailpoet_subscription_status_changed' ));
+        
         add_action('wp_ajax_mailpoet', array( $this, 'mailpoet_ajax' ));
         add_action('wp_ajax_nopriv_mailpoet', array( $this, 'mailpoet_ajax' ));
 

@@ -227,6 +227,10 @@ class Product
     }
     
     public static function getDescription() {
+        if (Config::getAddDescription() === 0) {
+            return self::getName();
+        }
+        
         if (defined('ICL_LANGUAGE_CODE')) {
             if (ICL_LANGUAGE_CODE == 'en') {
                 //var_dump(ICL_LANGUAGE_CODE); die();
@@ -237,7 +241,7 @@ class Product
             }
         }
         
-        return apply_filters( 'the_content', self::nameConvert() ? self::qTranslate(self::$asset->get_description()) : self::$asset->get_description());
+        return self::nameConvert() ? self::qTranslate(self::$asset->get_description()) : self::$asset->get_description();
     }
 
     public static function getBrand()

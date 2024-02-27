@@ -69,7 +69,7 @@ class Route
         'Feed' => 'xml',
         'Brands' => 'xml',
         'Category' =>'xml',
-        'loadEvents' => 'js',
+        'loadEvents' => 'json',
         'clearEvents' => 'js',
         'setEmail' => 'js',
         'saveOrder' => 'js',

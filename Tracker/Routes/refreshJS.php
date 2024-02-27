@@ -47,6 +47,8 @@ class refreshJS
             $js[] = 'window.mktr = window.mktr || {};';
             $js[] = 'window.mktr.LoadEventsBool = true;';
             $js[] = 'window.mktr.try = 0;';
+            $js[] = 'window.mktr.tryLoadEventsFunc = 0;';
+            $js[] = 'window.mktr.selectors = "'.Config::getSelectors().'";';
             $js[] = 'window.mktr.url = "'.Config::getBaseURL().'";';
             $js[] = 'window.mktr.version = "' . \Mktr\Tracker\Run::$version . '"';
             $js[] = 'window.mktr.debug = function () { if (typeof dataLayer != "undefined") { for (let i of dataLayer) { console.log("Mktr","Google",i); } } };';
@@ -74,14 +76,17 @@ window.mktr.events = function () {
     window.mktr.LoadEventsBool = true;
 };';
             $js[] = '';
+            $js[] = 'window.mktr.LoadOn = function () { if (window.mktr.tryLoadEventsFunc <= 5 && typeof jQuery != "undefined") {';
             $js[] = '(function($) {
     $(document.body).on("added_to_cart", window.mktr.LoadEventsFunc);
     $(document.body).on("removed_from_cart", window.mktr.LoadEventsFunc);
     $(document.body).on("added_to_wishlist", window.mktr.LoadEventsFunc);
     $(document.body).on("removed_from_wishlist", window.mktr.LoadEventsFunc);
 })(jQuery);';
+            $js[] = '} else if(window.mktr.tryLoadEventsFunc <= 5) { window.mktr.tryLoadEventsFunc++; setTimeout(window.mktr.LoadOn, 1500); } };';
+            $js[] = 'window.mktr.LoadOn();';
             $js[] = '';
-            $js[] = 'document.addEventListener("click", function(event){ if (event.target.matches("'.Config::getSelectors().'") || event.target.closest("'.Config::getSelectors().'")) { window.mktr.LoadEventsFunc(); } });';
+            $js[] = 'document.addEventListener("click", function(event){ if (event.target.matches(window.mktr.selectors) || event.target.closest(window.mktr.selectors)) { window.mktr.LoadEventsFunc(); } });';
             $js[] = 'window.mktr.LoadEventsFunc();';
             $js[] = '';
             $js[] = 'if (mktr_data.uuid !== null) { window.mktr.setSM("__sm__uid", mktr_data.uuid); }';

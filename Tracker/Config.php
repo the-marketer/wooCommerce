@@ -75,12 +75,14 @@ class Config
         'push_status' => 'mktr_tracker/tracker/push_status',
         'default_stock' => 'mktr_tracker/tracker/default_stock',
         'allow_export' => 'mktr_tracker/tracker/allow_export',
+        'add_description' => 'mktr_tracker/tracker/add_description',
         'selectors' => 'mktr_tracker/tracker/selectors',
         'brand' => 'mktr_tracker/attribute/brand',
         'color' => 'mktr_tracker/attribute/color',
         'size' => 'mktr_tracker/attribute/size',
         'google_status' => 'mktr_google/google/status',
-        'google_tagCode' => 'mktr_google/google/tagCode'
+        'google_tagCode' => 'mktr_google/google/tagCode',
+        'woocommerce_version' => 'woocommerce_version'
     );
 
     const configDefaults = array(
@@ -101,12 +103,14 @@ class Config
         'push_status' => 0,
         'default_stock' => 0,
         'allow_export' => 0,
-        'selectors' => '.mailpoet_submit,.wc-block-cart-item__remove-link,.add_to_cart_button,.woocommerce-cart-form .product-remove > a,a.remove,.wd-wishlist-btn',
+        'add_description' => 0,
+        'selectors' => '.single_add_to_cart_button,.remove_from_cart_button,.mailpoet_submit,.wc-block-cart-item__remove-link,.add_to_cart_button,.woocommerce-cart-form .product-remove > a,a.remove,.wd-wishlist-btn',
         'brand' => 'brand',
         'color' => 'color',
         'size' => 'size',
         'google_status' => 1,
         'google_tagCode' => '',
+        'woocommerce_version' => null
     );
 
     const funcNames = array(
@@ -121,6 +125,7 @@ class Config
         'getSelectors' => array('selectors', false),
         'getDefaultStock' => array('default_stock', 'int'),
         'getAllowExport' => array('allow_export', 'int'),
+        'getAddDescription' => array('add_description', 'int'),
         'getBrandAttribute' => array('brand', false),
         'getColorAttribute' => array('color', false),
         'getSizeAttribute' => array('size', false),

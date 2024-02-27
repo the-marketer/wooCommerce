@@ -32,7 +32,8 @@ class loadEvents
     
     public static function execute() {
         // Valid::setParam('mime-type', 'js');
-        //$lines = [ '/* TheMaketer */' ];
+        // $lines = [ '/* TheMaketer */' ];
+        $lines = array();
         Valid::setParam('mime-type', 'json');
         $wishListC = Config::session()->get("woodmart_wishlist_count");
         if ($wishListC !== null || isset( $_COOKIE['woodmart_wishlist_count'] )) {

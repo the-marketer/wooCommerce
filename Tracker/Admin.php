@@ -116,6 +116,13 @@ class Admin
             'name' => 'allow_export',
             'placeholder' => null
         ),
+        'add_description' => array(
+            'label' => 'Add Description',
+            'tag' => 'input',
+            'type' => 'checkbox',
+            'name' => 'add_description',
+            'placeholder' => null
+        ),
         'selectors' => array(
             'label' => 'Trigger Selectors',
             'tag' => 'input',
@@ -623,6 +630,7 @@ class Admin
             "title" => "Extra Settings",
             "content" => array(
                 self::$inputs['opt_in'],
+                self::$inputs['add_description'],
                 self::$inputs['push_status'],
                 self::$inputs['allow_export'],
                 self::$inputs['default_stock'],

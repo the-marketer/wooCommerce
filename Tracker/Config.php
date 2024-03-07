@@ -5,7 +5,7 @@
  * @project     TheMarketer.com
  * @website     https://themarketer.com/
  * @author      Alexandru Buzica (EAX LEX S.R.L.) <b.alex@eax.ro>
- * @license     http://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
+ * @license     https://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
  * @docs        https://themarketer.com/resources/api
  */
 
@@ -13,6 +13,7 @@ namespace Mktr\Tracker;
 
 /**
  * @method static getStatus()
+ * @method static getOnboarding()
  * @method static getKey()
  * @method static getRestKey()
  * @method static getCustomerId()
@@ -33,14 +34,13 @@ class Config
 {
     public static $name = 'mktr';
     public static $dateFormat = "Y-m-d H:i";
+    
+    public static $MKTR_TABLE = null;
+    public static $MKTR_DB = null;
+
     const space = PHP_EOL . "        ";
     /* TODO Google Test */
     const Google = true;
-    const loader = '(function(d, s, i) {
-    var f = d.getElementsByTagName(s)[0], j = d.createElement(s);j.async = true;
-    j.src = "https://t.themarketer.com/t/j/" + i; f.parentNode.insertBefore(j, f);
-    })(document, "script", "%s")';
-
     const defMime = 'xml';
 
     /*
@@ -58,7 +58,10 @@ class Config
     ];
 
     const configNames = array(
+        'redirect' => 'mktr_tracker/tracker/redirect',
         'status' => 'mktr_tracker/tracker/status',
+        'onboarding' => 'mktr_tracker/tracker/onboarding',
+        'js_file' => 'mktr_tracker/tracker/js_file',
         'tracking_key' => 'mktr_tracker/tracker/tracking_key',
         'rest_key' => 'mktr_tracker/tracker/rest_key',
         'customer_id'=>'mktr_tracker/tracker/customer_id',
@@ -67,19 +70,26 @@ class Config
         'cron_review' => 'mktr_tracker/tracker/cron_review',
         'update_review' => 'mktr_tracker/tracker/update_feed',
         'opt_in' => 'mktr_tracker/tracker/opt_in',
+        'opt_in_oldmail' => 'mktr_tracker/tracker/opt_in_oldmail',
+        'mailpoet_id_list' => 'mktr_tracker/tracker/mailpoet_id_list',
         'push_status' => 'mktr_tracker/tracker/push_status',
         'default_stock' => 'mktr_tracker/tracker/default_stock',
         'allow_export' => 'mktr_tracker/tracker/allow_export',
+        'add_description' => 'mktr_tracker/tracker/add_description',
         'selectors' => 'mktr_tracker/tracker/selectors',
         'brand' => 'mktr_tracker/attribute/brand',
         'color' => 'mktr_tracker/attribute/color',
         'size' => 'mktr_tracker/attribute/size',
         'google_status' => 'mktr_google/google/status',
-        'google_tagCode' => 'mktr_google/google/tagCode'
+        'google_tagCode' => 'mktr_google/google/tagCode',
+        'woocommerce_version' => 'woocommerce_version'
     );
 
     const configDefaults = array(
-        'status' => 0,
+        'redirect' => 0,
+        'status' => 1,
+        'onboarding' => 2,
+        'js_file' => null,
         'tracking_key' => '',
         'rest_key' => '',
         'customer_id'=>'',
@@ -88,19 +98,25 @@ class Config
         'cron_review' => 0,
         'update_review' => 4,
         'opt_in' => 0,
+        'opt_in_oldmail' => null,
+        'mailpoet_id_list' => null,
         'push_status' => 0,
         'default_stock' => 0,
         'allow_export' => 0,
-        'selectors' => '.woocommerce-cart-form .product-remove > a',
+        'add_description' => 0,
+        'selectors' => '.single_add_to_cart_button,.remove_from_cart_button,.mailpoet_submit,.wc-block-cart-item__remove-link,.add_to_cart_button,.woocommerce-cart-form .product-remove > a,a.remove,.wd-wishlist-btn',
         'brand' => 'brand',
         'color' => 'color',
         'size' => 'size',
-        'google_status' => 0,
-        'google_tagCode' => ''
+        'google_status' => 1,
+        'google_tagCode' => '',
+        'woocommerce_version' => null
     );
 
     const funcNames = array(
         'getStatus' => array('status', 'int'),
+        'getOnboarding' => array('onboarding', 'int'),
+        'getJsFile' => array('js_file', false),
         'getKey' => array('tracking_key', false),
         'getRestKey' => array('rest_key', false),
         'getCustomerId' => array('customer_id', false),
@@ -109,6 +125,7 @@ class Config
         'getSelectors' => array('selectors', false),
         'getDefaultStock' => array('default_stock', 'int'),
         'getAllowExport' => array('allow_export', 'int'),
+        'getAddDescription' => array('add_description', 'int'),
         'getBrandAttribute' => array('brand', false),
         'getColorAttribute' => array('color', false),
         'getSizeAttribute' => array('size', false),
@@ -118,8 +135,7 @@ class Config
         'getUpdateReview' => array('update_review', 'int'),
     );
 
-    public static $checkList = ['key', 'start_date', 'end_date', 'page', 'customerId','expiration_date',
-        'value','type', 'mime-type', 'read','file'];
+    public static $checkList = ['key', 'start_date', 'end_date', 'page', 'customerId','expiration_date', 'value','type', 'mime-type', 'read','file'];
 
     const FireBase = 'const firebaseConfig = {
     apiKey: "AIzaSyA3c9lHIzPIvUciUjp1U2sxoTuaahnXuHw",
@@ -166,10 +182,76 @@ importScripts("https://t.themarketer.com/firebase.js");';
     }
 
     public static function session() {
+        return Session::init();
+        /*
         if ( ! WC()->session ) {
 			WC()->initialize_session();
 		}
         return WC()->session;
+        */
+    }
+    public static function getMailPoetId( $id = null ) {
+        $i = Config::getValue('mailpoet_id_list');
+        if ($id === false || Config::getValue('mailpoet_id_list') === null) {
+            $repo = \MailPoet\DI\ContainerWrapper::getInstance()->get(\MailPoet\Segments\SegmentsRepository::class);
+            $i = null;
+            foreach($repo->findAll() as $v) { if ($v->getName() === 'TheMarketer') { $i = $v->getId(); } }
+            try {
+                $sAdd = $repo->createOrUpdate('TheMarketer', 'TheMarketer List', \MailPoet\Entities\SegmentEntity::TYPE_DEFAULT, [], $i, true);
+            } catch ( \Exception $e ) {
+                // var_dump($e);die;
+                return null;
+            }
+            $i = [];
+            $i[] = (string) $sAdd->getId();
+            $i[] = \MailPoet\Models\Segment::getWooCommerceSegment()->id;
+            $i[] = \MailPoet\Models\Segment::getWPSegment()->id;
+            Config::setValue('mailpoet_id_list', $i);
+        }
+        return $i;
+    }
+
+    public static function getSubscriber($customerEmail) {
+        if (\MailPoet\Settings\SettingsController::getInstance()->get('woocommerce.optin_on_checkout.enabled') == 1) {
+            try {
+                $ids = self::getMailPoetId();
+                if (is_array ($ids)) {
+                    $data = \MailPoet\Models\Subscriber::tableAlias('subscribers')
+                    ->select('subscribers.*')
+                    ->where('subscribers.email', $customerEmail)
+                    ->join( MP_SUBSCRIBER_SEGMENT_TABLE, 'relation.subscriber_id = subscribers.id', 'relation' )
+                    ->whereIn('relation.segment_id', self::getMailPoetId())
+                    ->findOne();
+                } else {
+                    $data = \MailPoet\Models\Subscriber::tableAlias('subscribers')
+                    ->select('subscribers.*')
+                    ->where('subscribers.email', $customerEmail)
+                    ->join( MP_SUBSCRIBER_SEGMENT_TABLE, 'relation.subscriber_id = subscribers.id', 'relation' )
+                    ->where('relation.segment_id', self::getMailPoetId())
+                    ->findOne();
+                }
+            } catch (\Exception $e){
+                $data = false;
+            }
+
+            return $data;
+            if ( $data !== false) {
+                return $data;
+            }
+        }
+        return \MailPoet\Models\Subscriber::findOne($customerEmail);
+    }
+
+    public static function tableName()
+    {
+        if (self::$MKTR_TABLE == null) { self::$MKTR_TABLE = self::db()->prefix . 'mktr_session'; }
+        return self::$MKTR_TABLE;
+    }
+
+    public static function db()
+    {
+        if (self::$MKTR_DB == null) { global $wpdb; self::$MKTR_DB = $wpdb; }
+        return self::$MKTR_DB;
     }
 
     public static function GET($key, $default = false) {
@@ -193,7 +275,18 @@ importScripts("https://t.themarketer.com/firebase.js");';
     }
 
     public static function REQUEST($key) {
-        return array_key_exists($key, $_REQUEST) ? sanitize_text_field($_REQUEST[$key]) : null;
+        if (isset($_REQUEST[$key])) {
+            if (is_array($_REQUEST[$key])) {
+                $list = [];
+                foreach ($_REQUEST[$key] as $k=>$v) {
+                    $list[$key][$k] = sanitize_text_field($v);
+                }
+                return $list[$key];
+            } else {
+                return sanitize_text_field($_REQUEST[$key]);
+            }
+        }
+        return null;
     }
     
     private static function callNow($name)

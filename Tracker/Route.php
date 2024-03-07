@@ -4,22 +4,25 @@
  * @project     TheMarketer.com
  * @website     https://themarketer.com/
  * @author      Alexandru Buzica (EAX LEX S.R.L.) <b.alex@eax.ro>
- * @license     http://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
+ * @license     https://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
  * @docs        https://themarketer.com/resources/api
  */
 
 namespace Mktr\Tracker;
 
-use Mktr\Tracker\Routes\Brands;
-use Mktr\Tracker\Routes\Category;
-use Mktr\Tracker\Routes\clearEvents;
-use Mktr\Tracker\Routes\CodeGenerator;
+use Mktr\Tracker\Routes\Cron;
 use Mktr\Tracker\Routes\Feed;
-use Mktr\Tracker\Routes\loadEvents;
+use Mktr\Tracker\Routes\Brands;
 use Mktr\Tracker\Routes\Orders;
 use Mktr\Tracker\Routes\Reviews;
-use Mktr\Tracker\Routes\saveOrder;
+use Mktr\Tracker\Routes\Category;
+use Mktr\Tracker\Routes\FeedBack;
 use Mktr\Tracker\Routes\setEmail;
+use Mktr\Tracker\Routes\refreshJS;
+use Mktr\Tracker\Routes\saveOrder;
+use Mktr\Tracker\Routes\loadEvents;
+use Mktr\Tracker\Routes\clearEvents;
+use Mktr\Tracker\Routes\CodeGenerator;
 
 class Route
 {
@@ -51,6 +54,12 @@ class Route
         ),
         'Category' => array(
             'key' => 'Required|Key'
+        ),
+        'Cron' => array(
+            'key' => 'Required|Key'
+        ),
+        'refreshJS' => array(
+            'key' => 'Required|Key'
         )
     );
     private static $defMime = array(
@@ -60,10 +69,13 @@ class Route
         'Feed' => 'xml',
         'Brands' => 'xml',
         'Category' =>'xml',
-        'loadEvents' => 'js',
+        'loadEvents' => 'json',
         'clearEvents' => 'js',
         'setEmail' => 'js',
-        'saveOrder' => 'js'
+        'saveOrder' => 'js',
+        'Cron' => 'json',
+        'FeedBack' => 'json',
+        'refreshJS' => 'json'
     );
 
     private static $isStatic = array(
@@ -100,7 +112,9 @@ class Route
             self::check($page);
 
             if (!Valid::status()) {
+                ob_start();
                 echo Valid::Output('status', Valid::error());
+                ob_end_flush();
             }
             exit();
         }
@@ -130,22 +144,33 @@ class Route
         ob_start();
         if (isset(self::$isStatic[$name]))
         {
+            $script = '';
             $read = Valid::getParam('read');
             $file = Valid::getParam('file');
+            $lang = Valid::getParam('lang');
 
             $start_date = Valid::getParam('start_date');
 
-            if ($start_date !== null)
-            {
+            if ($start_date !== null) {
                 $script = '.'. base64_encode($start_date);
-            } else {
-                $script = '';
+            }
+            
+            if ( defined( 'ICL_SITEPRESS_VERSION' ) ) { // wpml current  language.
+				global $sitepress;
+				$lang = $sitepress->get_current_language();
+			}
+
+            if ($lang !== null) {
+                $script = $script . '.' . $lang;
+                //global $sitepress;
+                //if ($sitepress !== null) {
+                //  $sitepress->switch_lang($lang);
+                //}
             }
 
             $fileName = $run->get('fileName').$script.".".Valid::getParam('mime-type',Config::defMime);
 
-            if ($file !== null)
-            {
+            if ($file !== null) {
                 header('Content-Disposition: attachment; filename=' . $fileName);
             }
 
@@ -183,9 +208,15 @@ class Route
     {
         return Orders::init();
     }
+
     public static function Category()
     {
         return Category::init();
+    }
+
+    public static function Cron()
+    {
+        return Cron::init();
     }
 
     public static function Brands()
@@ -217,5 +248,16 @@ class Route
     public static function saveOrder()
     {
         return saveOrder::init();
+    }
+    /** @noinspection PhpUnused */
+    public static function FeedBack()
+    {
+        return FeedBack::init();
+    }
+
+    /** @noinspection PhpUnused */
+    public static function refreshJS()
+    {
+        return refreshJS::init();
     }
 }

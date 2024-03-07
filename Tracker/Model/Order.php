@@ -4,7 +4,7 @@
  * @project     TheMarketer.com
  * @website     https://themarketer.com/
  * @author      Alexandru Buzica (EAX LEX S.R.L.) <b.alex@eax.ro>
- * @license     http://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
+ * @license     https://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
  * @docs        https://themarketer.com/resources/api
  */
 
@@ -169,6 +169,10 @@ class Order
         foreach (self::$asset->get_items() AS $itemId => $itemData)
         {
             $o = $itemData->get_data();
+
+            if ($o['subtotal'] <= 0) {
+                continue;
+            }
             
             if (isset($o['variation_id']) && !empty($o['variation_id'])) {
                 $id = $o['variation_id'];
@@ -202,6 +206,10 @@ class Order
         foreach (self::$asset->get_items() AS $itemId => $itemData)
         {
             $o = $itemData->get_data();
+
+            if ($o['subtotal'] <= 0) {
+                continue;
+            }
 			
             if (isset($o['variation_id']) && !empty($o['variation_id'])) {
                 $id = $o['variation_id'];

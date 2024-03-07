@@ -10,13 +10,11 @@
 
 namespace Mktr\Tracker\Routes;
 
-use Mktr\Tracker\Model\DiscountCode;
+use Mktr\Tracker\Valid;
 
-class CodeGenerator
+class FeedBack
 {
     private static $init = null;
-
-    private static $map = array();
 
     public static function init()
     {
@@ -26,16 +24,19 @@ class CodeGenerator
         return self::$init;
     }
 
-    public static function get($f = 'fileName'){
-        if (isset(self::$map[$f]))
-        {
-            return self::$map[$f];
-        }
-        return null;
-    }
-
     public static function execute()
     {
-        return array('code' => DiscountCode::getNewCode());
+        Valid::setParam('mime-type', 'json');
+        if (isset($_POST['message'])) {
+            $d = \wp_remote_post('https://connector.themarketer.com/feedback/add',
+                array(
+                    'method'      => 'POST',
+                    'timeout'     => 5,
+                    'user-agent'  => 'mktr:' . \get_bloginfo( 'url' ),
+                    'body' => \Mktr\Tracker\Run::platform()
+                )
+            );
+        }
+        return array('status' => 'succes');
     }
 }

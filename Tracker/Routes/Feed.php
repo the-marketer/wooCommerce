@@ -4,7 +4,7 @@
  * @project     TheMarketer.com
  * @website     https://themarketer.com/
  * @author      Alexandru Buzica (EAX LEX S.R.L.) <b.alex@eax.ro>
- * @license     http://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
+ * @license     https://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
  * @docs        https://themarketer.com/resources/api
  */
 
@@ -78,6 +78,8 @@ class Feed
                     $created_at = Valid::correctDate($created_at);
                 }
 
+                $variation = Product::getVariation();
+
                 $oo = array(
                     'id' => Product::getId(),
                     'sku' => Product::getSku(),
@@ -96,7 +98,7 @@ class Feed
                     'stock' => Product::getStock(),
                     'media_gallery' => Product::getImages(),
                     'variations' => array(
-                        'variation' => Product::getVariation()
+                        'variation' => $variation
                     ),
                     'created_at' => $created_at,
                 );

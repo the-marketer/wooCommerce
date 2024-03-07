@@ -10,13 +10,9 @@
 
 namespace Mktr\Tracker\Routes;
 
-use Mktr\Tracker\Model\DiscountCode;
-
-class CodeGenerator
+class Cron
 {
     private static $init = null;
-
-    private static $map = array();
 
     public static function init()
     {
@@ -25,17 +21,9 @@ class CodeGenerator
         }
         return self::$init;
     }
-
-    public static function get($f = 'fileName'){
-        if (isset(self::$map[$f]))
-        {
-            return self::$map[$f];
-        }
-        return null;
-    }
-
+    
     public static function execute()
     {
-        return array('code' => DiscountCode::getNewCode());
+        return \Mktr\Tracker\Model\Cron::cronAction();
     }
 }

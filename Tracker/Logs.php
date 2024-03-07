@@ -10,29 +10,29 @@
 
 namespace Mktr\Tracker;
 
-/**
- * @property int|mixed|null $reviewStore
- * @property int|mixed|null $update_feed
- * @property int|mixed|null $update_review
- */
-
-class Data
+class Logs
 {
     private static $init = null;
-
     private static $data;
-
-    public function __construct()
-    {
+    public function __construct() {
         FileSystem::setWorkDirectory();
-        $data = FileSystem::rFile("data.json");
-        if ($data !== '')
-        {
+
+        $data = FileSystem::rFile('logs.json');
+        if ($data !== '') {
             self::$data = json_decode($data, true);
         } else {
-            self::$data = array();
+            self::$data = [];
         }
     }
+
+    public static function debug($data, $name = 'log') {
+        if (MKTR_DEBUG) {
+            $d = self::init();
+            $d->addTo($name, [ $data, Api::getInfo(), time()]);
+            $d->save();
+        }
+    }
+
     public static function init() {
         if (self::$init == null) {
             self::$init = new self();
@@ -40,47 +40,35 @@ class Data
         return self::$init;
     }
 
-    public function __get($name)
-    {
-        if (!isset(self::$data[$name]))
-        {
-            if ($name == 'update_feed' || $name == 'update_review') {
-                self::$data[$name] = 0;
-            } else {
-                self::$data[$name] = null;
-            }
+    public function __get($name) {
+        if (!isset(self::$data[$name])) {
+            self::$data[$name] = null;
         }
 
         return self::$data[$name];
     }
 
-    public function __set($name, $value)
-    {
+    public function __set($name, $value) {
         self::$data[$name] = $value;
     }
 
-    public static function getData()
-    {
+    public static function getData() {
         return self::$data;
     }
 
-    public static function addTo($name, $value, $key = null)
-    {
-        if ($key === null)
-        {
+    public static function addTo($name, $value, $key = null) {
+        if ($key === null) {
             self::$data[$name][] = $value;
         } else {
             self::$data[$name][$key] = $value;
         }
     }
 
-    public static function del($name)
-    {
+    public static function del($name) {
         unset(self::$data[$name]);
     }
 
-    public static function save()
-    {
-        FileSystem::writeFile("data.json", Valid::toJson(self::$data));
+    public static function save() {
+        FileSystem::writeFile('logs.json', Valid::toJson(self::$data));
     }
 }

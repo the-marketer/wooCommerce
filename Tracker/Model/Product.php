@@ -268,10 +268,26 @@ class Product
         $p = 0;
         if (self::$asset->is_type('variable')) {
             $v = self::getAvailableVariations();
+            $def = self::$asset->get_variation_default_attributes();
+            
             foreach ($v as $val)
             {
-                if ($p > $val['display_price'] || $p == 0 && $val['display_price'] != 0) {
-                    $p = $val['display_price'];
+                if (empty($def)) {
+                    if ($p > $val['display_price'] || $p == 0 && $val['display_price'] != 0) {
+                        $p = $val['display_price'];
+                        break;
+                    }
+                } else {
+                    $is_def = true;
+                    foreach($def as $k => $v) {
+                        if($val['attributes']['attribute_'.$k]!=$v){
+                            $is_def=false;             
+                        }
+                    }
+                    if ($is_def) {
+                        $p = $val['display_price'];
+                        break;
+                    }
                 }
             }
         } else {
@@ -282,19 +298,35 @@ class Product
             }
         }
 
-
         return $check === true || $p >= '0' ? $p : self::getRegularPrice(true);
     }
 
     public static function getRegularPrice($check = false)
     {
         $p = 0;
+        
         if (self::$asset->is_type('variable')) {
             $v = self::getAvailableVariations();
+            $def = self::$asset->get_variation_default_attributes();
+
             foreach ($v as $val)
             {
-                if ($p < $val['display_regular_price']) {
-                    $p = $val['display_regular_price'];
+                if (empty($def)) {
+                    if ($p < $val['display_regular_price']) {
+                        $p = $val['display_regular_price'];
+                        break;
+                    }
+                } else {
+                    $is_def = true;
+                    foreach($def as $k => $v) {
+                        if($val['attributes']['attribute_'.$k]!=$v){
+                            $is_def=false;             
+                        }
+                    }
+                    if ($is_def) {
+                        $p = $val['display_regular_price'];
+                        break;
+                    }
                 }
             }
         } else {
@@ -303,6 +335,7 @@ class Product
             if (self::checkTax()) {
                 $p = wc_get_price_including_tax(self::$asset, array('price' => $p));
             }
+        
         }
 
         return $check === true || $p >= '0'  ? $p : self::getPrice(true);
@@ -382,8 +415,7 @@ class Product
         
 		foreach ( $variation_ids as $variation_id ) {
             $variation = wc_get_product( $variation_id );
-
-			if (! $variation || ! $variation->exists() || ! $variation->variation_is_visible()) {
+			if (! $variation && (! $variation->exists() || ! $variation->variation_is_visible())) {
                 // || ! $variation->is_in_stock()
 				continue;
 			}

@@ -30,11 +30,13 @@ class loadEvents
         return array_keys(array_diff_key($n, $o));
     }
     
-    public static function execute() {
+    public static function execute( $mime = true ) {
         // Valid::setParam('mime-type', 'js');
         // $lines = [ '/* TheMaketer */' ];
         $lines = array();
-        Valid::setParam('mime-type', 'json');
+        if ($mime) {
+            Valid::setParam('mime-type', 'json');
+        }
         $wishListC = Config::session()->get("woodmart_wishlist_count");
         if ($wishListC !== null || isset( $_COOKIE['woodmart_wishlist_count'] )) {
             $wishList = Config::session()->get("woodmart_wishlist_products");

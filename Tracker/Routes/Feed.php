@@ -41,6 +41,11 @@ class Feed
     public static function execute()
     {
         $args = array(
+            'status' => array(
+                /* 'pending', */
+                'publish'
+            ),
+            'type' => array( 'simple', 'grouped', 'external', 'variable' ),
             'order'   => 'ASC',
             'orderby' => 'ID',
             'return' => 'ids',

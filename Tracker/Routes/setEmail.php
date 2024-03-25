@@ -39,7 +39,7 @@ class setEmail
         $plug = 'mailpoet/mailpoet.php';
 
         // $installed = array_key_exists($plug , $installed_plugins ) || in_array($plug, $installed_plugins, true );
-        $active    = is_plugin_active($plug);
+        $active    = \is_plugin_active($plug);
         // $installed &&
         $check = array();
         if ($active) {

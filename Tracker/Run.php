@@ -17,7 +17,7 @@ class Run
     private static $init = null;
     private static $pPath = null;
     private static $platform = null;
-    public static $version = 'v1.3.1';
+    public static $version = 'v1.3.2';
 
     public static function init() {
         if (self::$init == null) { self::$init = new self(); }

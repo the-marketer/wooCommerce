@@ -493,7 +493,7 @@ class Admin
             "title" => "Let's get started",
             "content" => array(
                 "Please create an account or log in if you have one already.",
-                '<a class="mktr-button" href="https://app.themarketer.com/register/" target="_blank">Create account <span class="icon mktr-arrow-right"></span></a>'
+                '<a class="mktr-button" href="https://app.themarketer.com/register?utm_campaign=woo_plugin" target="_blank">Create account <span class="icon mktr-arrow-right"></span></a>'
             )
         );
         $forms[0][] = array(

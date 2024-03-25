@@ -34,14 +34,17 @@ class refreshJS
 
         if (Config::getOnboarding() === 2 && Config::getStatus() === 1 && !empty(Config::getKey())) {
             $js = array(
-'/**
+'
+"use strict";
+/**
  * @copyright   Copyright (c) 2023 TheMarketer.com
  * @project     TheMarketer.com
  * @website     https://themarketer.com/
  * @author      Alexandru Buzica (EAX LEX S.R.L.) <b.alex@eax.ro>
  * @license     https://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
  * @docs        https://themarketer.com/resources/api
- */',''
+ */
+',''
 );
             $js[] = '/* -- Mktr Script START -- */';
             $js[] = 'window.mktr = window.mktr || {};';
@@ -71,8 +74,32 @@ window.mktr.LoadEventsFunc = function() {
         setTimeout(window.mktr.events, 2000);
     }
 };
+
+window.mktr.xhrFetch = function(url, callback) {
+    var xhr = new XMLHttpRequest();
+    xhr.onreadystatechange = function() {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+            if (xhr.status === 200) {
+                var data = JSON.parse(xhr.responseText);
+                callback(data);
+            } else {
+                // Handle errors
+            }
+        }
+    };
+
+    xhr.open("GET", url, true);
+    xhr.send();
+}
+
 window.mktr.events = function () {
+    /*
+    window.mktr.xhrFetch(window.mktr.url + "?mktr=loadEvents&mktr_time=" + (new Date()).getTime(), function(data) {
+        window.mktr.addToDataLayer(data);
+    });
+    */
     fetch(window.mktr.url + "?mktr=loadEvents&mktr_time="+(new Date()).getTime(), { method: "GET" }).then(response => response.json()).then(data => { window.mktr.addToDataLayer(data); }).catch((error) => {  });
+
     window.mktr.LoadEventsBool = true;
 };';
             $js[] = '';
@@ -88,6 +115,7 @@ window.mktr.events = function () {
             $js[] = '';
             $js[] = 'document.addEventListener("click", function(event){ if (event.target.matches(window.mktr.selectors) || event.target.closest(window.mktr.selectors)) { window.mktr.LoadEventsFunc(); } });';
             $js[] = 'window.mktr.LoadEventsFunc();';
+            $js[] = '/* window.mktr.addToDataLayer(mktr_data.evData); */';
             $js[] = '';
             $js[] = 'if (mktr_data.uuid !== null) { window.mktr.setSM("__sm__uid", mktr_data.uuid); }';
             $js[] = '';

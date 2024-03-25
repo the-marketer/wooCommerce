@@ -82,10 +82,10 @@ class Front
         // AddToCart while AJAX is enabled
         // add_action('woocommerce_ajax_added_to_cart',  array($this, 'AddCartEvent'));
 
-        add_action('wp_enqueue_scripts', array(Events::init(), 'initEvents') );
+        add_action('wp_head', array(Events::init(), 'loader'));
 
-        //add_action('wp_head', array(Events::init(), 'loader'));
-        //add_action('wp_footer', array(Events::init(), 'loadEvents'));
+        add_action('wp_enqueue_scripts', array(Events::init(), 'initEvents') );
+        // add_action('wp_footer', array(Events::init(), 'loadEvents'));
         
         /*
         add_filter('woocommerce_email_enabled_customer_new_account', function ($status) {

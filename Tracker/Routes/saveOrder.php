@@ -29,9 +29,10 @@ class saveOrder
     }
     public static function execute()
     {
-        if (!function_exists( 'is_plugin_active' ) ) {
-            require_once ABSPATH . 'wp-admin/includes/plugin.php';
+        if ( ! function_exists( 'is_plugin_active' ) ) {
+            require_once( ABSPATH . '/wp-admin/includes/plugin.php' );
         }
+        
         Valid::setParam('mime-type', 'json');
 
         $Order = Config::session()->get('saveOrder');

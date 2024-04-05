@@ -71,7 +71,12 @@ window.mktr.setSM = function(name, value, daysToExpire = 365) {
 window.mktr.LoadEventsFunc = function() {
     if (window.mktr.LoadEventsBool) {
         window.mktr.LoadEventsBool = false;
-        setTimeout(window.mktr.events, 2000);
+        try {
+            // setTimeout(window.mktr.events, 2000);
+			window.mktr.events();
+        } catch (error) {
+            console.error("An error occurred while executing setTimeout:", error);
+        }
     }
 };
 
@@ -98,9 +103,7 @@ window.mktr.events = function () {
         window.mktr.addToDataLayer(data);
     });
     */
-    fetch(window.mktr.url + "?mktr=loadEvents&mktr_time="+(new Date()).getTime(), { method: "GET" }).then(response => response.json()).then(data => { window.mktr.addToDataLayer(data); }).catch((error) => {  });
-
-    window.mktr.LoadEventsBool = true;
+    fetch(window.mktr.url + "?mktr=loadEvents&mktr_time="+(new Date()).getTime(), { method: "GET" }).then(response => response.json()).then(data => { window.mktr.addToDataLayer(data); window.mktr.LoadEventsBool = true; }).catch((error) => {  });    
 };';
             $js[] = '';
             $js[] = 'window.mktr.LoadOn = function () { if (window.mktr.tryLoadEventsFunc <= 5 && typeof jQuery != "undefined") {';

@@ -223,29 +223,32 @@ class Product
     }
 
     public static function getName() {
-        return apply_filters( 'the_title', self::nameConvert() ? self::qTranslate(self::$asset->get_name()) : self::$asset->get_name(), self::$asset->get_id() );
+        return apply_filters( 'the_title', self::nameConvert() ? self::qTranslate(self::getValue('getName')) : self::getValue('getName'), self::getValue('getId') );
     }
     
     public static function getDescription() {
         if (Config::getAddDescription() === 0) {
-            return self::getName();
+            return self::getValue('getName');
         }
         
         if (defined('ICL_LANGUAGE_CODE')) {
             if (ICL_LANGUAGE_CODE == 'en') {
                 //var_dump(ICL_LANGUAGE_CODE); die();
-                $en_content = get_post_meta(self::$asset->get_id(), 'product_english_description', true);
+                $en_content = get_post_meta(self::getValue('getId'), 'product_english_description', true);
                 if (!empty($en_content)) {
                     return $en_content;
                 }
             }
         }
         
-        return self::nameConvert() ? self::qTranslate(self::$asset->get_description()) : self::$asset->get_description();
+        return self::nameConvert() ? self::qTranslate(self::getValue('getDescription')) : self::getValue('getDescription');
     }
 
     public static function getBrand()
     {
+        if (empty(self::$asset)) {
+            return "N/A";
+        }
         $b = '';
         foreach (Config::getBrandAttribute() as $v)
         {
@@ -263,12 +266,16 @@ class Product
         }
         return empty($b) ? "N/A" : $b;
     }
+    
     public static function getPrice($check = false)
     {
+        if (empty(self::$asset)) {
+            return 0;
+        }
         $p = 0;
         if (self::$asset->is_type('variable')) {
             $v = self::getAvailableVariations();
-            $def = self::$asset->get_variation_default_attributes();
+            $def = self::$asset->get_default_attributes('none');
             
             foreach ($v as $val)
             {
@@ -297,17 +304,18 @@ class Product
                 $p = wc_get_price_including_tax(self::$asset, array('price' => $p));
             }
         }
-
         return $check === true || $p >= '0' ? $p : self::getRegularPrice(true);
     }
 
     public static function getRegularPrice($check = false)
     {
+        if (empty(self::$asset)) {
+            return 0;
+        }
         $p = 0;
-        
         if (self::$asset->is_type('variable')) {
             $v = self::getAvailableVariations();
-            $def = self::$asset->get_variation_default_attributes();
+            $def = self::$asset->get_default_attributes('none');
 
             foreach ($v as $val)
             {
@@ -335,7 +343,6 @@ class Product
             if (self::checkTax()) {
                 $p = wc_get_price_including_tax(self::$asset, array('price' => $p));
             }
-        
         }
 
         return $check === true || $p >= '0'  ? $p : self::getPrice(true);

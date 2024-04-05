@@ -66,7 +66,9 @@ class Form
                 if ($key == 'push_status') { Observer::pushStatus(); }
                 if ($key == 'opt_in') {
                     $plug = 'mailpoet/mailpoet.php';
-
+                    if ( ! function_exists( 'is_plugin_active' ) ) {
+                        require_once( ABSPATH . '/wp-admin/includes/plugin.php' );
+                    }
                     $active    = \is_plugin_active($plug);
                     if ($active) {
                         if (Config::getValue('opt_in_oldmail') === null) {

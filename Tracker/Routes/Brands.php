@@ -60,13 +60,15 @@ class Brands
 
             foreach ($cat as $k=>$val)
             {
-                if (is_array($val) && !empty($val['name'])) {
-                    $get[] = array(
-                        "name" => $val['name'],
-                        'id'=> $val['term_id'],
-                        "url" => get_term_link($val['term_id'])
-                        // "image_url" => ''
-                    );
+                if (is_array($val)) {
+                    if (!empty($val['name'])) {
+                        $get[] = array(
+                            "name" => $val['name'],
+                            'id'=> $val['term_id'],
+                            "url" => get_term_link($val['term_id'])
+                            // "image_url" => ''
+                        );
+                    }
                 } else if ($val->name !== null) {
                     $get[] = array(
                         "name" => $val->name,

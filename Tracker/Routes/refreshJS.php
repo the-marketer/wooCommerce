@@ -49,6 +49,7 @@ class refreshJS
             $js[] = '/* -- Mktr Script START -- */';
             $js[] = 'window.mktr = window.mktr || {};';
             $js[] = 'window.mktr.LoadEventsBool = true;';
+            $js[] = 'window.mktr.Load = true;';
             $js[] = 'window.mktr.try = 0;';
             $js[] = 'window.mktr.tryLoadEventsFunc = 0;';
             $js[] = 'window.mktr.selectors = "'.Config::getSelectors().'";';
@@ -72,14 +73,22 @@ window.mktr.LoadEventsFunc = function() {
     if (window.mktr.LoadEventsBool) {
         window.mktr.LoadEventsBool = false;
         try {
-            // setTimeout(window.mktr.events, 2000);
-			window.mktr.events();
+            setTimeout(window.mktr.events, 2000);
+			// window.mktr.events();
         } catch (error) {
             console.error("An error occurred while executing setTimeout:", error);
         }
     }
 };
-
+window.addEventListener("beforeunload", function(event) {
+    if (event.currentTarget.performance.navigation.type === PerformanceNavigation.TYPE_RELOAD ||
+        event.currentTarget.performance.navigation.type === PerformanceNavigation.TYPE_REDIRECT ||
+        event.currentTarget.performance.navigation.type === PerformanceNavigation.TYPE_NAVIGATE) {
+        window.mktr.Load = false;
+    } else {
+        window.mktr.Load = true;
+    }
+});
 window.mktr.xhrFetch = function(url, callback) {
     var xhr = new XMLHttpRequest();
     xhr.onreadystatechange = function() {
@@ -103,7 +112,9 @@ window.mktr.events = function () {
         window.mktr.addToDataLayer(data);
     });
     */
-    fetch(window.mktr.url + "?mktr=loadEvents&mktr_time="+(new Date()).getTime(), { method: "GET" }).then(response => response.json()).then(data => { window.mktr.addToDataLayer(data); window.mktr.LoadEventsBool = true; }).catch((error) => {  });    
+    if ( window.mktr.Load === true) {
+        fetch(window.mktr.url + "?mktr=loadEvents&mktr_time="+(new Date()).getTime(), { method: "GET" }).then(response => response.json()).then(data => { window.mktr.addToDataLayer(data); window.mktr.LoadEventsBool = true; }).catch((error) => {  });    
+    }
 };';
             $js[] = '';
             $js[] = 'window.mktr.LoadOn = function () { if (window.mktr.tryLoadEventsFunc <= 5 && typeof jQuery != "undefined") {';

@@ -30,6 +30,24 @@ class loadEvents
         return array_keys(array_diff_key($n, $o));
     }
     
+    public static function checkDif($cart, $cartNew, &$remove = [], &$add = []) {
+        foreach ($cart as $k => $v) {
+            if (isset($cartNew[$k])) {
+                if($v["quantity"] != $cartNew[$k]["quantity"]){
+                    if ($v["quantity"] < $cartNew[$k]["quantity"]) {
+                        $add[$k] = $cartNew[$k];
+                        $add[$k]["quantity"] = $cartNew[$k]["quantity"] - $v["quantity"];
+                    } else if ($v["quantity"] > $cartNew[$k]["quantity"]) {
+                        $remove[$k] = $cartNew[$k];
+                        $remove[$k]["quantity"] = $v["quantity"] - $cartNew[$k]["quantity"];
+                    }
+                }
+            } else {
+                $remove[$k] = $v;
+            }
+        }
+    }
+
     public static function execute( $mime = true ) {
         // Valid::setParam('mime-type', 'js');
         // $lines = [ '/* TheMaketer */' ];
@@ -61,6 +79,37 @@ class loadEvents
             }
         }
 
+        $cartNew = [];
+        $cart = Config::session()->get("mktr_cart");
+        if ($cart === null) { $cart = []; }
+        if ( isset( WC()->cart ) && is_array( WC()->cart->cart_contents ) && ! empty( WC()->cart->cart_contents ) ) {
+			foreach ( WC()->cart->cart_contents as $cart_item ) {
+				$cartNew[$cart_item["product_id"].'.'.$cart_item["variation_id"]] = [
+                    "product_id" => $cart_item["product_id"],
+                    "quantity" => $cart_item["quantity"],
+                    "variation_id" => $cart_item["variation_id"]
+                ];
+			}
+		}
+
+        $add = [];
+        $remove = [];
+
+        self::checkDif($cart, $cartNew, $remove, $add);
+        self::checkDif($cartNew, $cart, $add, $remove);
+
+        if (!empty($add) || !empty($remove)) {
+            Config::session()->set("mktr_cart", $cartNew);
+        }
+        
+        foreach ($add as $i => $v) {
+            \Mktr\Tracker\Observer::addToCart($v["product_id"], $v["quantity"], $v["variation_id"]);
+        }
+
+        foreach ($remove as $i => $v) {
+            \Mktr\Tracker\Observer::removeFromCart($v["product_id"], $v["quantity"], $v["variation_id"]);
+        }
+
         foreach (Events::observerGetEvents as $event => $Name) {
             if (!$Name[0]) {
                 $eventData = Config::session()->get($event);
@@ -76,6 +125,7 @@ class loadEvents
                 Config::session()->set($event, array());
             }
         }
+        
         return $lines;
         // return implode(PHP_EOL, $lines);
     }

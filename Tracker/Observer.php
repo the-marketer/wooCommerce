@@ -50,7 +50,7 @@ class Observer
                     )
                 );
 
-                self::SessionSet();
+                self::SessionSet(self::$eventData['product_id'].'.'.self::$eventData['quantity'].'.'.(int) $variation_id);
             }
         }
     }
@@ -73,7 +73,7 @@ class Observer
                 )
             );
 
-            self::SessionSet();
+            self::SessionSet(self::$eventData['product_id'].'.'.self::$eventData['quantity'].'.'.(int) $variation_id);
         }
     }
     public static function addToWishlist($product_id, $variation_id = null)

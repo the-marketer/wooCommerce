@@ -34,7 +34,9 @@ class Front
             add_action('template_redirect', array(self::init(), 'routeCheck'));
             add_action('wp_login', array(self::init(), 'registerOrLogIn'), 10, 2);
             add_action('user_register', array(self::init(), 'registerOrLogIn'), 10, 2);
+
             // add_action('woocommerce_loaded', array(self::init(), 'LoadSession'));
+            
             add_action('woocommerce_loaded', array(self::init(), 'loadModule'));
             add_action('woocommerce_update_order', array(Observer::init(), 'orderUpApi'), 10, 2);
         } else {
@@ -52,6 +54,7 @@ class Front
     public function saveOrder($orderId = null)
     {
         if ($orderId !== null && self::$saveOrderEvent) {
+            Config::session()->set("mktr_cart", []);
             self::$saveOrderEvent = false;
             Observer::saveOrder($orderId);
         }
@@ -61,30 +64,30 @@ class Front
     {
         // Logs::debug($orderId, 'saveOrder1');
         if ($orderId !== null && self::$saveOrderEvent) {
+            Config::session()->set("mktr_cart", []);
             self::$saveOrderEvent = false;
             Observer::saveOrder($orderId);
         }
     }
 
-    public function loadModule()
-    {
+    public function loadModule() {
 
         add_action('woocommerce_before_thankyou', array(self::init(), 'saveOrder'));
         add_action('woocommerce_thankyou', array(self::init(), 'saveOrder'));
-        // add_filter('woocommerce_create_order', array(self::init(), 'saveOrder1'), 10, 2 );
         add_action('woocommerce_new_order', array(self::init(), 'saveOrder'), 10, 2);
 
+        add_action('wp_head', array(Events::init(), 'loader'));
+        add_action('wp_enqueue_scripts', array(Events::init(), 'initEvents') );
+
+        // add_filter('woocommerce_create_order', array(self::init(), 'saveOrder1'), 10, 2 );
+
         // AddToCart events
-        add_action('woocommerce_add_to_cart', array(self::init(), 'AddCartEvent'), 40, 4);
-        add_action('woocommerce_remove_cart_item', array(self::init(), 'RemoveCartEvent'), 10, 2);
-        add_filter('woocommerce_cart_item_removed_title', array(self::init(), 'RemoveCartEventFilter'), 10, 2);
+        // add_action('woocommerce_add_to_cart', array(self::init(), 'AddCartEvent'), 40, 4);
+        // add_action('woocommerce_remove_cart_item', array(self::init(), 'RemoveCartEvent'), 10, 2);
+        // add_filter('woocommerce_cart_item_removed_title', array(self::init(), 'RemoveCartEventFilter'), 10, 2);
 
         // AddToCart while AJAX is enabled
         // add_action('woocommerce_ajax_added_to_cart',  array($this, 'AddCartEvent'));
-
-        add_action('wp_head', array(Events::init(), 'loader'));
-
-        add_action('wp_enqueue_scripts', array(Events::init(), 'initEvents') );
         // add_action('wp_footer', array(Events::init(), 'loadEvents'));
         
         /*

@@ -18,6 +18,8 @@ class setEmail
 {
     private static $init = null;
 
+    private static $map = array();
+
     public static function init()
     {
         if (self::$init == null) {
@@ -25,6 +27,15 @@ class setEmail
         }
         return self::$init;
     }
+
+    public static function get($f = 'fileName'){
+        if (isset(self::$map[$f]))
+        {
+            return self::$map[$f];
+        }
+        return null;
+    }
+
     public static function execute()
     {
         if ( ! function_exists( 'is_plugin_active' ) ) {
@@ -42,19 +53,20 @@ class setEmail
         // $installed = array_key_exists($plug , $installed_plugins ) || in_array($plug, $installed_plugins, true );
         $active    = \is_plugin_active($plug);
         // $installed &&
-        $check = array();
+        $check = Config::session()->get('emailSend');
+        $time = time();
+        if ($check === null) { $check = array(); }
+
         if ($active) {
-            $check = Config::session()->get('emailSend');
-            $time = time();
-
-            if ($check === null) { $check = []; }
-
-            foreach ($em as $val) {
+            foreach ($em as $k => $val) {
                 
                 if ($val['email_address'] === null) {
                     continue;
                 }
-
+                if (!is_array($val['email_address'])) {
+                    unset($em[$k]);
+                    continue;
+                }
                 if ($check !== null && isset($check[$val['email_address']])) {
                     if (($time - $check[$val['email_address']]) <= 60) {
                         \Mktr\Tracker\Logs::debug($val['email_address'], 'emailSendBlockSetEmail'); 
@@ -109,6 +121,76 @@ class setEmail
                     $allGood = false;
                 }
             }
+        } else {
+            $plug = 'gravityforms/gravityforms.php';
+            $active = \is_plugin_active($plug);
+
+            if ($active && Config::getAllowExportGravity()) {
+                $cGform = true;
+                $gForm = Config::session()->get('gform');
+                if (Config::getAllowExportGravityAll()) {
+                    $cGform = false;
+                } else {
+                    $allow_export_gravity_data = Config::getValue('allow_export_gravity_data');
+                    $statusData = unserialize($allow_export_gravity_data);
+                }
+                foreach ($em as $k => $val) {
+                    $info = array( "email" => $val['email_address'] );
+
+                    if ($check !== null && isset($check[$val['email_address']])) {
+                        if (($time - $check[$val['email_address']]) <= 60) {
+                            unset($gForm[$k]);
+                            \Mktr\Tracker\Logs::debug($val['email_address'], 'emailSendBlockSetEmail'); 
+                            continue;
+                        }
+                    }
+
+                    $name = array();
+                    if (!empty($val['firstname'])) {
+                        $name[] = $val['firstname'];
+                    }
+
+                    if (!empty($val['lastname'])) {
+                        $name[] = $val['lastname'];
+                    }
+
+                    if (empty($name)) {
+                        $info["name"] = explode("@", $val['email_address'])[0];
+                    } else {
+                        $info["name"] = implode(" ", $name);
+                    }
+
+                    if ($cGform) {
+                        if (isset($statusData[$gForm[$k]]) && $statusData[$gForm[$k]]['status']) {
+                            $status = $statusData[$gForm[$k]]['subscribe'];
+                            if ($status) {
+                                $info["add_tags"] = $statusData[$gForm[$k]]['tag'];
+                            }
+                        } else {
+                            unset($gForm[$k]);
+                            continue;
+                        }
+                    } else {
+                        $status = Config::getAllowExportGravitySubscribe();
+                        if ($status) {
+                            $info["add_tags"] = Config::getAllowExportGravityTag();
+                        }
+                    }
+                    if ($status) {
+                        Api::send("add_subscriber", $info);
+                        \Mktr\Tracker\Logs::debug($info, 'set_email_add_subscriber_gravity');
+                    } else {
+                        Api::send("remove_subscriber", $info);
+                        \Mktr\Tracker\Logs::debug($info, 'set_email_remove_subscriber_gravity');
+                    }
+                    $check[$info['email']] = $time;
+                    if (Api::getStatus() != 200) {
+                        $allGood = false;
+                    }
+                    unset($gForm[$k]);
+                }
+                Config::session()->set('gform', $gForm);
+            }
         }
 
         Config::session()->set('emailSend', $check);
@@ -118,9 +200,7 @@ class setEmail
             Config::session()->set('setPhone', array());
             Config::session()->set('setEmail', array());
         }
-        
-        /* return 'console.log('.(int)$allGood . json_encode($em, true).');'; */
-		// return 'console.log('.(int)$allGood .');';
+
         return json_encode([(int) $allGood, Api::getInfo(), $em ], true);
     }
 }

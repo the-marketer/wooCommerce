@@ -15,6 +15,9 @@ use Mktr\Tracker\Routes\Feed;
 use Mktr\Tracker\Routes\Brands;
 use Mktr\Tracker\Routes\Orders;
 use Mktr\Tracker\Routes\Reviews;
+use Mktr\Tracker\Routes\Contacts;
+use Mktr\Tracker\Routes\MailPoet;
+use Mktr\Tracker\Routes\GForms;
 use Mktr\Tracker\Routes\Category;
 use Mktr\Tracker\Routes\FeedBack;
 use Mktr\Tracker\Routes\setEmail;
@@ -46,6 +49,15 @@ class Route
             'key' => 'Required|Key',
             //'start_date' => 'Required|DateCheck|StartDate'
         ),
+        'Contacts' => array(
+            'key' => 'Required|Key'
+        ),
+        'MailPoet' => array(
+            'key' => 'Required|Key'
+        ),
+        'GForms' => array(
+            'key' => 'Required|Key'
+        ),
         'Feed' => array(
             'key' => 'Required|Key'
         ),
@@ -62,10 +74,14 @@ class Route
             'key' => 'Required|Key'
         )
     );
+
     private static $defMime = array(
         'Orders' => 'json',
         'CodeGenerator' => 'json',
         'Reviews' => 'json',
+        'Contacts' => 'xml',
+        'MailPoet' => 'xml',
+        'GForms' => 'xml',
         'Feed' => 'xml',
         'Brands' => 'xml',
         'Category' =>'xml',
@@ -142,6 +158,7 @@ class Route
         
         $run = self::$name();
         ob_start();
+        ob_clean();
         if (isset(self::$isStatic[$name]))
         {
             $script = '';
@@ -175,7 +192,6 @@ class Route
             }
 
             FileSystem::setWorkDirectory();
-
             if ($read !== null && FileSystem::fileExists($fileName)) {
                 echo Valid::Output(FileSystem::readFile($fileName));
             } else {
@@ -183,7 +199,11 @@ class Route
                 FileSystem::writeFile($fileName, Valid::getOutPut());
             }
         } else {
-           echo Valid::Output($run->execute());
+            if ($run->get('fileName') !== null) {
+                echo Valid::Output($run->get('fileName'), array( $run->get('secondName') => $run->execute()));
+            } else {
+                echo Valid::Output($run->execute());
+            }  
         }
         ob_end_flush();
         exit();
@@ -226,6 +246,21 @@ class Route
     public static function Reviews()
     {
         return Reviews::init();
+    }
+
+    public static function Contacts()
+    {
+        return Contacts::init();
+    }
+
+    public static function MailPoet()
+    {
+        return MailPoet::init();
+    }
+
+    public static function GForms()
+    {
+        return GForms::init();
     }
 
     /** @noinspection PhpUnused */

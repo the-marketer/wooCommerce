@@ -13,6 +13,15 @@ namespace Mktr\Tracker\Routes;
 class Cron
 {
     private static $init = null;
+    private static $map = array();
+
+    public static function get($f = 'fileName')
+    {
+        if (isset(self::$map[$f])) {
+            return self::$map[$f];
+        }
+        return null;
+    }
 
     public static function init()
     {

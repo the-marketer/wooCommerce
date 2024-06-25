@@ -45,7 +45,7 @@ class Feed
                 /* 'pending', */
                 'publish'
             ),
-            'type' => array( 'simple', 'grouped', 'external', 'variable' ),
+            'type' => array( 'simple', 'grouped', 'external', 'variable', 'woosb' ),
             'order'   => 'ASC',
             'orderby' => 'ID',
             'return' => 'ids',
@@ -74,7 +74,7 @@ class Feed
             {
                 Product::getById($val);
                 
-                if (Product::getRegularPrice() == 0 && Product::getPrice() == 0 || Product::getImage() == false) { continue; }
+                if (Product::getRegularPrice() <= 0 && Product::getPrice() <= 0 || Product::getImage() == false) { continue; }
                 $created_at = Product::getCreatedAt();
 
                 if ($created_at === null) {

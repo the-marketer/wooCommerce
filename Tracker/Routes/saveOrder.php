@@ -20,6 +20,8 @@ class saveOrder
 {
     private static $init = null;
 
+    private static $map = array();
+    
     public static function init()
     {
         if (self::$init == null) {
@@ -27,6 +29,15 @@ class saveOrder
         }
         return self::$init;
     }
+
+    public static function get($f = 'fileName'){
+        if (isset(self::$map[$f]))
+        {
+            return self::$map[$f];
+        }
+        return null;
+    }
+
     public static function execute()
     {
         if ( ! function_exists( 'is_plugin_active' ) ) {

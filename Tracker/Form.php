@@ -50,13 +50,16 @@ class Form
     public static function initProcess()
     {
         $data = Config::POST(Config::$name);
+        
         if (!empty($data)) {
             $fail = array('tracking' => false, 'google' => false);
             $onboarding = false;
             foreach ($data[Config::$name] as $key=>$value) {
+
                 if (in_array($key, array('tracking_key', 'rest_key', 'customer_id')) && empty($value)) { $fail['tracking'] = true; }
                 if (in_array($key, array('google_tagCode')) && empty($value) && isset($data[Config::$name]['google_status']) && $data[Config::$name]['google_status'] == 1) { $fail['google'] = true; }
 				if (in_array($key, array('update_feed', 'update_review')) && empty($value)) { $value = 4; }
+                if (in_array($key, array('allow_export_gravity_data'))) { $value = serialize($data[Config::$name]['allow_export_gravity_data']); }
                 if ($key !== 'onboarding') {
                     Config::setValue($key, $value);
                 } else {

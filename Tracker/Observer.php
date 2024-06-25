@@ -16,6 +16,7 @@ class Observer
 {
     private static $init = null;
     private static $eventName = null;
+    private static $lastKey = null;
     private static $eventData = [];
 
     private static $OrderUP = false;
@@ -292,6 +293,19 @@ class Observer
         self::SessionSet();
     }
 
+    public static function setGEmail($data, $gID = null)
+    {
+        self::$eventName = 'setEmail';
+        
+        self::$eventData = $data;
+        self::SessionSet();
+        if ($gID !== null) {
+            $gEV = 'gform';
+            $add = Config::session()->get($gEV);
+            $add[self::$lastKey] = $gID;
+            Config::session()->set($gEV, $add);
+        }
+    }
 
     private static function SessionSet($key = null)
     {
@@ -300,10 +314,12 @@ class Observer
         if ($key === null) {
             $n = '';
             for ($i = 0, $indexMax = 9; $i < 5; ++$i) { $n .= random_int(0, 9); }
-            $add[time().$n] = self::$eventData;
+            self::$lastKey = time().$n;
         } else {
-            $add[$key] = self::$eventData;
+            self::$lastKey = $key;
         }
+
+        $add[self::$lastKey] = self::$eventData;
 
         Config::session()->set(self::$eventName, $add);
     }

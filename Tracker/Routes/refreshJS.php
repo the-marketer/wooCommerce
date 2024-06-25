@@ -16,6 +16,15 @@ use Mktr\Tracker\Config;
 class refreshJS
 {
     private static $init = null;
+    private static $map = array();
+
+    public static function get($f = 'fileName')
+    {
+        if (isset(self::$map[$f])) {
+            return self::$map[$f];
+        }
+        return null;
+    }
 
     public static function init()
     {
@@ -127,7 +136,7 @@ window.mktr.events = function () {
             $js[] = '} else if(window.mktr.tryLoadEventsFunc <= 5) { window.mktr.tryLoadEventsFunc++; setTimeout(window.mktr.LoadOn, 1500); } };';
             $js[] = 'window.mktr.LoadOn();';
             $js[] = '';
-            $js[] = 'document.addEventListener("click", function(event){ if (event.target.matches(window.mktr.selectors) || event.target.closest(window.mktr.selectors)) { window.mktr.LoadEventsFunc(); } });';
+            $js[] = 'document.addEventListener("click", function(event){ if (window.mktr.selectors !== "" && (event.target.matches(window.mktr.selectors) || event.target.closest(window.mktr.selectors))) { window.mktr.LoadEventsFunc(); } });';
             $js[] = 'window.mktr.LoadEventsFunc();';
             $js[] = '/* window.mktr.addToDataLayer(mktr_data.evData); */';
             $js[] = '';

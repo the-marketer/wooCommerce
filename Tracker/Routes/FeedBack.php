@@ -15,6 +15,15 @@ use Mktr\Tracker\Valid;
 class FeedBack
 {
     private static $init = null;
+    private static $map = array();
+
+    public static function get($f = 'fileName')
+    {
+        if (isset(self::$map[$f])) {
+            return self::$map[$f];
+        }
+        return null;
+    }
 
     public static function init()
     {
@@ -27,16 +36,28 @@ class FeedBack
     public static function execute()
     {
         Valid::setParam('mime-type', 'json');
+        $body = array(
+            'rating' => null,
+            'message' => null,
+            'status' => 1,
+            'platform' => \Mktr\Tracker\Run::platform(),
+            't' => time()
+        );
         if (isset($_POST['message'])) {
-            $d = \wp_remote_post('https://connector.themarketer.com/feedback/add',
-                array(
-                    'method'      => 'POST',
-                    'timeout'     => 5,
-                    'user-agent'  => 'mktr:' . \get_bloginfo( 'url' ),
-                    'body' => \Mktr\Tracker\Run::platform()
-                )
-            );
+            $body['message'] = $_POST['message']; 
         }
+        if (isset($_POST['rating'])) {
+            $body['rating'] = $_POST['rating'];
+            \Mktr\Tracker\Config::setValue("rated", 1);
+        }
+        $d = \wp_remote_post('https://connector.themarketer.com/feedback/add',
+            array(
+                'method'      => 'POST',
+                'timeout'     => 5,
+                'user-agent'  => 'mktr:' . \get_bloginfo( 'url' ),
+                'body' => $body
+            )
+        );
         return array('status' => 'succes');
     }
 }

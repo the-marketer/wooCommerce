@@ -141,7 +141,7 @@
     margin: 24px;
 }
 
-.mktr-button, .mk-action-close
+.mktr-button, .mktr-button-close
 {
     display: inline-block;
     margin-top: 10px;
@@ -182,7 +182,7 @@
     
 }
 
-.mktr-button.none-close, .mk-action-close
+.mktr-button.none-close, .mktr-modal .mktr-button-close
 {
     color: #344054 !important;
     border: 0px solid #D0D5DD !important;
@@ -401,6 +401,50 @@ a.mktr-button
     color: #FFFFFF !important;
     display: block;
     content: "theMarketer";
+}
+
+
+.mkcheck + .mk-btn-sub:after {
+    width: 120px !important;
+    height: 20px !important;
+    padding: 10px 10px;
+    border: 1px solid #D0D5DD !important;
+    border-radius: 6px;
+    color: #344054 !important;
+    text-align: center;
+}
+.mkcheck + .mk-btn-sub:after {
+    background: #ff3a19;
+    background-color: #fff;
+    content: "Unsubscribed";
+    display: block;
+}
+.mkcheck:checked + .mk-btn-sub:after {
+    background: #2259FA !important;
+    color: #FFFFFF !important;
+    display: block;
+    content: "Subscribed";
+}
+
+
+.mktr-rating span:before, .mktr-rating > span:hover ~ span:before,
+.mktr-rating > span.active ~ span:before {
+    content: "\2605";
+    position: absolute;
+    color: silver;
+}
+
+.mktr-rating:hover span:before,
+.mktr-rating.active span:before {
+    color: gold;
+}
+
+.mktr-modal-rate .mktr-content-field {
+    display: block;
+}
+
+.mktr-modal-rate .mktr-content-field .mktr-content-input {
+    margin-top: 0.5rem;
 }
 @media only screen and (max-width: 1080px) {
     .mktr-modal-body{

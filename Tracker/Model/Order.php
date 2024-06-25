@@ -241,19 +241,22 @@ class Order
         {
             $id = get_the_ID();
         }
+        try {
+            self::$asset = new WC_Order($id);
+            self::$refund = 0;
+        } catch(\Exception $e) {
+            return self::init();
+        }
         // 73 72
-        self::$asset = new WC_Order($id);
-        self::$refund = 0;
         return self::init();
     }
 
     public static function toArray()
     {
         $data = array();
-        foreach (self::$selfValue as $key=>$value) {
-            $data[$key] = self::$value();
+        if (self::$asset !== null) {
+            foreach (self::$selfValue as $key=>$value) { $data[$key] = self::$value(); }
         }
-
         return $data;
     }
 
@@ -261,11 +264,9 @@ class Order
     {
 
         $data = array();
-        foreach (self::$extraValue as $key=>$value)
-        {
-            $data[$key] = self::$value();
+        if (self::$asset !== null) {
+            foreach (self::$extraValue as $key=>$value) { $data[$key] = self::$value(); }
         }
-
         return $data;
     }
 }

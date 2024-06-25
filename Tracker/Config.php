@@ -75,6 +75,11 @@ class Config
         'push_status' => 'mktr_tracker/tracker/push_status',
         'default_stock' => 'mktr_tracker/tracker/default_stock',
         'allow_export' => 'mktr_tracker/tracker/allow_export',
+        'allow_export_gravity' => 'mktr_tracker/tracker/allow_export_gravity',
+        'allow_export_gravity_all' => 'mktr_tracker/tracker/allow_export_gravity_all',
+        'allow_export_gravity_data' => 'mktr_tracker/tracker/allow_export_gravity_data',
+        'allow_export_gravity_subscribe' => 'mktr_tracker/tracker/allow_export_gravity_subscribe',
+        'allow_export_gravity_tag' => 'mktr_tracker/tracker/allow_export_gravity_tag',
         'add_description' => 'mktr_tracker/tracker/add_description',
         'selectors' => 'mktr_tracker/tracker/selectors',
         'brand' => 'mktr_tracker/attribute/brand',
@@ -82,7 +87,9 @@ class Config
         'size' => 'mktr_tracker/attribute/size',
         'google_status' => 'mktr_google/google/status',
         'google_tagCode' => 'mktr_google/google/tagCode',
-        'woocommerce_version' => 'woocommerce_version'
+        'woocommerce_version' => 'woocommerce_version',
+        'rated' => 'mktr_tracker/tracker/rated',
+        'rated_install' => 'mktr_tracker/tracker/rated_install'
     );
 
     const configDefaults = array(
@@ -103,6 +110,11 @@ class Config
         'push_status' => 0,
         'default_stock' => 0,
         'allow_export' => 0,
+        'allow_export_gravity' => 0,
+        'allow_export_gravity_all' => 1,
+        'allow_export_gravity_data' => null,
+        'allow_export_gravity_subscribe' => 0,
+        'allow_export_gravity_tag' => '',
         'add_description' => 0,
         'selectors' => '.single_add_to_cart_button,.remove_from_cart_button,.mailpoet_submit,.wc-block-cart-item__remove-link,.add_to_cart_button,.woocommerce-cart-form .product-remove > a,a.remove,.wd-wishlist-btn',
         'brand' => 'brand',
@@ -110,7 +122,9 @@ class Config
         'size' => 'size',
         'google_status' => 1,
         'google_tagCode' => '',
-        'woocommerce_version' => null
+        'woocommerce_version' => null,
+        'rated' => 0,
+        'rated_install' => 0
     );
 
     const funcNames = array(
@@ -125,6 +139,10 @@ class Config
         'getSelectors' => array('selectors', false),
         'getDefaultStock' => array('default_stock', 'int'),
         'getAllowExport' => array('allow_export', 'int'),
+        'getAllowExportGravity' => array('allow_export_gravity', 'int'),
+        'getAllowExportGravityAll' => array('allow_export_gravity_all', 'int'),
+        'getAllowExportGravitySubscribe' => array('allow_export_gravity_subscribe', 'int'),
+        'getAllowExportGravityTag' => array('allow_export_gravity_tag', false),
         'getAddDescription' => array('add_description', 'int'),
         'getBrandAttribute' => array('brand', false),
         'getColorAttribute' => array('color', false),
@@ -133,6 +151,8 @@ class Config
         'getUpdateFeed' => array('update_feed', 'int'),
         'getCronReview' => array('cron_review', 'int'),
         'getUpdateReview' => array('update_review', 'int'),
+        'getRated' => array('rated', 'int'),
+        'getRatedInstall' => array('rated_install', 'int')
     );
 
     public static $checkList = ['key', 'start_date', 'end_date', 'page', 'customerId','expiration_date', 'value','type', 'mime-type', 'read','file'];
@@ -190,6 +210,7 @@ importScripts("https://t.themarketer.com/firebase.js");';
         return WC()->session;
         */
     }
+
     public static function getMailPoetId( $id = null ) {
         $i = Config::getValue('mailpoet_id_list');
         if ($id === false || Config::getValue('mailpoet_id_list') === null) {
@@ -259,19 +280,26 @@ importScripts("https://t.themarketer.com/firebase.js");';
     }
 
     public static function POST($key) {
-
         if (Config::$name === $key && isset($_POST[$key])) {
-            if (is_array($_POST[$key])) {
-                $list = [];
-                foreach ($_POST[$key] as $k=>$v) {
-                    $list[$key][$k] = sanitize_text_field($v);
-                }
-                return $list;
-            } else {
-                return sanitize_text_field($_POST[$key]);
-            }
+            return self::sanitize($key, $_POST);
         }
         return null;
+    }
+
+    public static function sanitize($key, $data, $f = false) {
+        if (is_array($data[$key])) {
+            $list = [];
+            foreach ($data[$key] as $k => $v) {
+                if ($f === true) {
+                    $list[$k] = self::sanitize($k, $data[$key], true);
+                } else {
+                    $list[$key][$k] = self::sanitize($k, $data[$key], true);
+                }
+            }
+            return $list;
+        } else {
+            return sanitize_text_field($data[$key]);
+        }
     }
 
     public static function REQUEST($key) {

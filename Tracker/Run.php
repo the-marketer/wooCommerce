@@ -17,7 +17,7 @@ class Run
     private static $init = null;
     private static $pPath = null;
     private static $platform = null;
-    public static $version = 'v1.3.4';
+    public static $version = MKTR_VERSION;
 
     public static function init() {
         if (self::$init == null) { self::$init = new self(); }
@@ -73,6 +73,9 @@ class Run
 	    add_action( 'deactivate_' . MKTR_BASE, [$this, 'unInstall']);
 
         add_action( 'init', array($this, 'addRoute'), 0 );
+
+        add_filter( 'gform_after_submission', array($this, 'gform_observer'), 10, 2 );
+
         add_action( 'before_woocommerce_init', function() {
             if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
                 \Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', MKTR, true );
@@ -80,6 +83,7 @@ class Run
         });
 
         if (is_admin()) {
+            add_action( 'gform_loaded', array($this, 'LoadGF'), 5 );
             Admin::loadAdmin();
         } else {
             Front::loadFront();
@@ -133,15 +137,58 @@ class Run
         add_action('MKTR_CRON', array($this, "cronAction"));
     }
 
+    public function LoadGF() {
+		\GFAddOn::register( '\Mktr\Tracker\GFMktr' );
+    }
+
     public function mailpoet_subscription_status_changed($id = null){
         if ($id !== null) {
             Observer::mailpoet_status_changed($id);
         }
     }
 
+    public function gform_observer($r, $f) {
+        $newData = [
+            'email_address' => null,
+            'lastname' => '',
+            'firstname' => ''
+        ];
+        foreach ($f['fields'] as $k => $v) {
+            if (in_array($v->type, ['name'])) {
+                foreach ($v->inputs as $kk => $vv) {
+                    $rID = $vv['id'];
+                    if (isset($r[$rID])) {
+                        if (in_array(strtolower($vv['label']), ['last', 'suffix'])) {
+                            $newData['lastname'] .= $r[$rID];
+                        } else {
+                            $newData['firstname'] .= $r[$rID];
+                        }
+                    }
+                }
+            } else if (in_array($v->type, ['email'])) {
+                $rID = $v->inputs[0]['id'];
+                if (isset($r[$rID])) {
+                    $newData['email_address'] = $r[$rID];
+                }
+            }
+        }
+        
+        if (!empty($newData['email_address'])) {
+            $n = [];
+            foreach ($newData as $k => $v) {
+                if (!empty($v)) {
+                    $n[$k] = $v;
+                }
+            }
+            // $r['gform_submit']
+            Observer::setGEmail($n, $r['form_id']);
+        }
+    }
+
     public function woodmart_body() {
         Events::$isWoodMart = true;
     }
+
     public function mailpoet_ajax() {
         if (self::$ajax === null && Config::REQUEST('method') === 'subscribe') {
             self::$ajax = true;
@@ -325,6 +372,7 @@ class Run
         Session::up();
         Config::setValue("redirect", 1);
         Config::setValue("onboarding", 0);
+        Config::setValue("rated_install", time() + 1209600 );
 		
         \wp_remote_post('https://connector.themarketer.com/feedback/install', array(
             'method'      => 'POST',

@@ -134,17 +134,15 @@ class Product
 
     public static function getVarValue($name, $var = null)
     {
-        if (self::$asset == null){
+        if (self::$asset == null) {
             self::getById();
         }
 
-        if (isset(self::$data[$name]))
-        {
+        if (isset(self::$data[$name])) {
             return self::$data[$name];
         }
 
-        if (isset(self::$varNames[$name]))
-        {
+        if (isset(self::$varNames[$name])) {
             $v = self::$varNames[$name];
             self::$data[$name] = $var->{$v}();
             return self::$data[$name];
@@ -223,18 +221,24 @@ class Product
     }
 
     public static function getName() {
-        return apply_filters( 'the_title', self::nameConvert() ? self::qTranslate(self::getValue('getName')) : self::getValue('getName'), self::getValue('getId') );
+        $name = (self::nameConvert() ? self::qTranslate(self::getVarValue('getName', self::$asset), ) : self::getVarValue('getName', self::$asset));
+        $nameFilter = apply_filters( 'the_title', $name, self::getId() );
+        if (empty($nameFilter)) {
+            return $name;
+        } else {
+            return $nameFilter;
+        }
     }
     
     public static function getDescription() {
         if (Config::getAddDescription() === 0) {
-            return self::getValue('getName');
+            return self::getVarValue('getName', self::$asset);
         }
         
         if (defined('ICL_LANGUAGE_CODE')) {
             if (ICL_LANGUAGE_CODE == 'en') {
                 //var_dump(ICL_LANGUAGE_CODE); die();
-                $en_content = get_post_meta(self::getValue('getId'), 'product_english_description', true);
+                $en_content = get_post_meta(self::getId(), 'product_english_description', true);
                 if (!empty($en_content)) {
                     return $en_content;
                 }
@@ -266,13 +270,82 @@ class Product
         }
         return empty($b) ? "N/A" : $b;
     }
-    
-    public static function getPrice($check = false)
-    {
+    public static function getPriceByPriority($price1 = 0, $price2 = 0) {
+        if ($price1 > 0) {
+            return $price1;
+        } else if ($price2 > 0){
+            return $price2;
+        } else {
+            return null;
+        }
+    }
+
+    public static function get_price( $product, $sett = false ) {
+        if ( $sett ) {
+            if (!array_key_exists('get_regular_price', self::$data)) {
+                self::$data['get_regular_price'] = 0;
+                $children = self::$asset->get_items();
+                $ids = array();
+                if (MKTR_LEMS) {
+                    $excludeIDS = get_post_meta(self::getId(), 'lems__exclude_ids_from_price');
+                    if (isset($excludeIDS[0])) {
+                        $ids = explode(',',$excludeIDS[0]);
+                    }
+                }
+                foreach ($children as $key => $value) {
+                    if (!in_array($value['id'], $ids)) {
+                        $_product = wc_get_product( $value['id'] );
+                        if ($_product) {
+                            $pPrice = self::getPriceByPriority($_product->get_regular_price(), $_product->get_price());
+                            if ($pPrice !== null) {
+								if (isset($value['qty'])) {
+                                	self::$data['get_regular_price'] += $pPrice * $value['qty'];
+								} else {
+									self::$data['get_regular_price'] += $pPrice;
+								}
+                            }
+                        }
+                    }
+                }
+            }
+            return self::$data['get_regular_price'];
+        } else {
+            if (!array_key_exists('get_price', self::$data)) {
+                self::$data['get_price'] = 0;
+                $children = self::$asset->get_items();
+                $ids = array();
+                if (MKTR_LEMS) {
+                    $excludeIDS = get_post_meta(self::getId(), 'lems__exclude_ids_from_price');
+                    if (isset($excludeIDS[0])) {
+                        $ids = explode(',',$excludeIDS[0]);
+                    }
+                }
+                foreach ($children as $key => $value) {
+                    if (!in_array($value['id'], $ids)) {
+                        $_product = wc_get_product( $value['id'] );
+                        if ($_product) {
+                            $pPrice = self::getPriceByPriority($_product->get_price(), $_product->get_regular_price());
+                            if ($pPrice !== null) {
+								if (isset($value['qty'])) {
+                                	self::$data['get_price'] += $pPrice * $value['qty'];
+								} else {
+									self::$data['get_price'] += $pPrice;
+								}
+                            }
+                        }
+                    }
+                }
+            }
+            return self::$data['get_price'];
+        }
+    }
+
+    public static function getPrice($check = false) {
         if (empty(self::$asset)) {
             return 0;
         }
         $p = 0;
+        $tax = false;
         if (self::$asset->is_type('variable')) {
             $v = self::getAvailableVariations();
             $def = self::$asset->get_default_attributes('none');
@@ -297,14 +370,43 @@ class Product
                     }
                 }
             }
-        } else {
+        } else if (self::$asset->is_type('grouped')) {
+			$children = self::$asset->get_children();
+            $ids = array();
+            if (MKTR_LEMS) {
+                $excludeIDS = get_post_meta(self::getId(), 'lems__exclude_ids_from_price');
+                if (isset($excludeIDS[0])) {
+                    $ids = explode(',',$excludeIDS[0]);
+                }
+            }
+			foreach ($children as $key => $value) {
+                if (!in_array($value, $ids)) {
+                    $_product = wc_get_product( $value );
+                    if ($_product) {
+                        $pPrice = self::getPriceByPriority($_product->get_price(), $_product->get_regular_price());
+                        if ($pPrice !== null) {
+                            $p = $pPrice;
+                            $tax = true;
+                            break;
+                        }
+                    }
+                }
+			}
+        } else if (self::$asset->is_type('woosb')) {
+            $p = self::get_price( self::$asset );
+            $tax = true;
+		} else {
             $p = self::getSalePrice();
+            $tax = true;
+        }
 
+        if ($tax) {
             if (self::checkTax()) {
                 $p = wc_get_price_including_tax(self::$asset, array('price' => $p));
             }
         }
-        return $check === true || $p >= '0' ? $p : self::getRegularPrice(true);
+        
+        return $check === true || $p > 0 ? $p : self::getRegularPrice(true);
     }
 
     public static function getRegularPrice($check = false)
@@ -313,6 +415,7 @@ class Product
             return 0;
         }
         $p = 0;
+        $tax = false;
         if (self::$asset->is_type('variable')) {
             $v = self::getAvailableVariations();
             $def = self::$asset->get_default_attributes('none');
@@ -337,15 +440,42 @@ class Product
                     }
                 }
             }
-        } else {
+        } else if (self::$asset->is_type('grouped')) {
+			$children = self::$asset->get_children();
+            $ids = array();
+            if (MKTR_LEMS) {
+                $excludeIDS = get_post_meta(self::getId(), 'lems__exclude_ids_from_price');
+                if (isset($excludeIDS[0])) {
+                    $ids = explode(',',$excludeIDS[0]);
+                }
+            }
+			foreach ($children as $key => $value) {
+                if (!in_array($value, $ids)) {
+                    $_product = wc_get_product( $value );
+                    if ($_product) {
+                        $pPrice = self::getPriceByPriority($_product->get_regular_price(), $_product->get_price());
+                        if ($pPrice !== null) {
+                            $p = $pPrice;
+                            $tax = true;
+                            break;
+                        }
+                    }
+                }
+			}
+		} else if (self::$asset->is_type('woosb')) {
+            $p = self::get_price( self::$asset, true);
+            $tax = true;
+		} else {
             $p = self::getSaleRegularPrice();
+            $tax = true;
+        }
 
+        if ($tax) {
             if (self::checkTax()) {
                 $p = wc_get_price_including_tax(self::$asset, array('price' => $p));
             }
         }
-
-        return $check === true || $p >= '0'  ? $p : self::getPrice(true);
+        return $check === true || $p > 0  ? $p : self::getPrice(true);
     }
 
     public static function getImage()
@@ -366,9 +496,31 @@ class Product
 
         return $list;
     }
-    public static function getStock()
-    {
-        $MasterQty = self::getStockQuantity();
+    public static function getStock() {
+        if (self::$asset->is_type('grouped')) {
+			$children = self::$asset->get_children();
+            foreach ($children as $key => $value) {
+                $_product = wc_get_product( $value );
+				if ($_product) {
+                    $pPrice = self::getPriceByPriority($_product->get_regular_price(), $_product->get_price());
+                    if ($pPrice !== null) {
+                        $MasterQty = $_product->get_stock_quantity();
+                        break;
+                    }
+				}
+			}
+        } else if (self::$asset->is_type('woosb')) {
+            $MasterQty = 0;
+            $children = self::$asset->get_items();
+            foreach ($children as $key => $value) {
+                $_product = wc_get_product( $value['id'] );
+                if ($_product && $_product->get_stock_quantity() > 0) {
+                    $MasterQty = $MasterQty + $_product->get_stock_quantity();
+                }
+            }
+        } else {
+            $MasterQty = self::getStockQuantity();
+        }
         
         if ($MasterQty < 0 || $MasterQty === null) {
             $stock = Config::getDefaultStock();

@@ -16,3 +16,4 @@ In WordPress Admin Menu Go to Plugins > Add New Plugin > Upload Plugin > click "
 - basel WishList
 - MailPoet Subscriber Manager
 - GxG Woo custom languages
+- Gravity Forms

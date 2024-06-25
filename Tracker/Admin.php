@@ -15,6 +15,7 @@ class Admin
     private static $init = null;
 
     private static $notice = array();
+    private static $rate_active = null;
     private static $defOptions = array(
         array('value' => 0, 'label' => "Disable"),
         array('value' => 1, 'label' => "Enable")
@@ -107,6 +108,35 @@ class Admin
                 array('value' => 1, 'label' => 'In Stock'),
                 array('value' => 2, 'label' => 'In supplier stock')
             ),
+            'placeholder' => null
+        ),
+        'allow_export_gravity' => array(
+            'label' => 'Export Gravity Form entries',
+            'tag' => 'input',
+            'type' => 'checkbox',
+            'name' => 'allow_export_gravity',
+            'placeholder' => null
+        ),
+        'allow_export_gravity_all' => array(
+            'label' => 'Gravity Form All',
+            'tag' => 'input',
+            'type' => 'checkbox',
+            'name' => 'allow_export_gravity_all',
+            'placeholder' => null
+        ),
+        'allow_export_gravity_subscribe' => array(
+            'label' => 'Contact status',
+            'tag' => 'input',
+            'type' => 'checkbox-sub',
+            'description' => 'Choose Contact status',
+            'name' => 'allow_export_gravity_subscribe',
+            'placeholder' => null
+        ),
+        'allow_export_gravity_tag' => array(
+            'label' => 'Tag',
+            'tag' => 'input',
+            'type' => 'text',
+            'name' => 'allow_export_gravity_tag',
             'placeholder' => null
         ),
         'allow_export' => array(
@@ -206,8 +236,22 @@ class Admin
         add_action('woocommerce_order_edit_status', array(Observer::init(), 'orderUp'), 10, 2);
         add_action('admin_footer', array(self::init(), 'feedback'));
         add_action('admin_enqueue_scripts', array(self::init(), 'scripts'));
-    }
 
+        add_filter( 'gform_form_settings_menu', array( self::init(), 'gform_menu' ), 99, 2 );
+        /*global $_registered_pages;
+        add_action( 'themarketer_page_mktr_gravity', array(self::init(), 'gravity') );
+        $_registered_pages['themarketer_page_mktr_gravity'] = true;*/
+    }
+    public static function gform_menu($setting_tabs, $form_id)
+    {
+        foreach ($setting_tabs as $key => $v) {
+            if ($v['name'] == 'mktr') {
+                unset($setting_tabs[$key]);
+            }
+        }
+        return $setting_tabs;
+    }
+    
     public static function addNotice($notice)
     {
         self::$notice[] = is_array($notice) ? $notice : array('message' => $notice);
@@ -250,14 +294,14 @@ class Admin
                 array(
                     "type" => "footer",
                     "content" => array(
-                        '<div class="mktr-content-left"><button type="button" class="mktr-button none-close mk-action-deactivate">Close and deactivate <span class="icon mktr-dis"></span></button></div>',
-                        '<div class="mktr-content-right"><button type="button" class="mktr-button mk-action-submit">Submit Feedback <span class="icon mktr-feedback"></span></button></div><br class="mktr-space"/>',
-                        '<button type="button" class="mktr-button-close mk-action-close"><span class="icon mktr-close swg-dark"></span></button>'
+                        '<div class="mktr-content-left"><button type="button" class="mktr-button none-close mktr-modal-feedback-deactivate">Close and deactivate <span class="icon mktr-dis"></span></button></div>',
+                        '<div class="mktr-content-right"><button type="button" class="mktr-button mktr-modal-feedback-submit">Submit Feedback <span class="icon mktr-feedback"></span></button></div><br class="mktr-space"/>',
+                        '<button type="button" class="mktr-button-close mktr-modal-feedback-close"><span class="icon mktr-close swg-dark"></span></button>'
                     )
                 )
             );
     
-            echo '<div class="mktr-modal"><div class="mktr-modal-body">'. self::gForm($form, false) .'</div></div>';
+            echo '<div class="mktr-modal mktr-modal-feedback"><div class="mktr-modal-body">'. self::gForm($form, false) .'</div></div>';
         }
     }
 
@@ -265,8 +309,9 @@ class Admin
     {
 		if (function_exists('get_current_screen') ) {
             $screen = get_current_screen();
+            
             if ( !is_null($screen) ) {
-                return [ preg_match('(themarketer)', $screen->id) === 1, preg_match('(plugins)', $screen->id) === 1];
+                return [ preg_match('(themarketer|admin_page_mktr_gravity)', $screen->id) === 1, preg_match('(plugins)', $screen->id) === 1];
             }
         }
 		return [false, false];
@@ -274,13 +319,13 @@ class Admin
 
     public function scripts() {
         $d = self::deactivation();
-        if ($d[0]) {
-            wp_enqueue_style('mktr-admin', Run::plug_url('/assets/style.css'));
-        }
-        if ($d[1]) {
+        if ($d[1] || self::rateActive()) {
             wp_enqueue_style('mktr-survey', Run::plug_url('/assets/deactivation.css'));
             wp_enqueue_script('mktr-survey', Run::plug_url('/assets/deactivation.js'));
             wp_localize_script('mktr-survey', 'mktr_data', array( 'url' => Config::getBaseURL() ));
+        }
+        if ($d[0]) {
+            wp_enqueue_style('mktr-admin', Run::plug_url('/assets/style.css'));
         }
 	}
 /*
@@ -289,9 +334,20 @@ class Admin
         return $notice;
     }
 */
+    public static function rateActive()
+    {
+        if (self::$rate_active === null) {
+            self::$rate_active = Config::getRated() == 0 && Config::getRatedInstall() < time();
+        }
+        return self::$rate_active;
+    }
+
     public static function notice()
     {
         if (Config::getValue("redirect") == 1) {
+            if (Config::getRatedInstall() == 0) {
+                Config::setValue("rated_install", time()+1209600);
+            }
             Config::setValue("redirect", 0);
             \wp_redirect(\admin_url('admin.php?page=mktr_tracker'));
         }
@@ -299,10 +355,61 @@ class Admin
         if (Config::getStatus() == 1 && empty(Config::getKey()) || Config::getOnboarding() !== 2) {
             $out[] = '<div class="updated notice notice-success is-dismissible"><p>theMarketer is almost ready. <a href="'.admin_url('admin.php?page=mktr_tracker').'">Click Here</a></p></div>';
         }
+        if (self::rateActive()) {
+            $out[] = '<div class="mktr-modal mktr-modal-rate">
+    <div class="mktr-modal-body">
+        <div class="mktr-head"><img src="' . Run::plug_url('/assets/logo.png') . '"></div>
+        <div class="mktr-content">
+            <div class="mktr-content-body">
+                <div class="mktr-content-text">
+                    <h2>How would you rate your experience so far with theMarketing?</h2>
+                    <div class="mktr-content-field">
+                        <label class="mktr-content-label">On a scale from 1 to 5</label>
+                        <div class="mktr-content-input">
+                        <input type="hidden" id="mktr-rating-value" value="0">
+                        <div class="mktr-rating"><span rate="1">☆</span><span rate="2">☆</span><span rate="3">☆</span><span rate="4">☆</span><span rate="5">☆</span></div>
+                        </div>
+                    </div>
+                    <div class="mktr-content-field mktr-modal-rate-message" style="display:none">
+                        <label for="mktr-rating-message" class="mktr-content-label">Message</label>
+                        <div class="mktr-content-input">
+                            <textarea id="mktr-rating-message" rows="2" cols="100" placeholder="We would love to hear your feedback on how we can make things better."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="mktr-content-footer">
+                <div class="mktr-content-right">
+                    <button type="button" class="mktr-button mktr-modal-rate-submit">Submit Feedback <span class="icon mktr-feedback"></span></button>
+                </div>
+            </div>
+            <button type="button" class="mktr-button-close mktr-modal-rate-close"><span class="icon mktr-close swg-dark"></span></button>
+        </div>
+    </div>
+</div>';
+
+            self::$notice[] = array(
+                'type' => 'info',
+                'class' => 'mktr-modal-rate-active',
+                'dismissible' => false,
+                'message' => 'We would love to hear your opinion, How are things going with theMarketer? Click HERE!'
+            );
+        }
+
         if (!empty(self::$notice)) {
             /* notice-error | notice-success | notice-fail | notice-info*/
             foreach (self::$notice as $value) {
-                $out[] = '<div class="notice notice-'. (isset($value['type']) ? $value['type'] : 'success') . ' is-dismissible"><p>'.esc_html($value['message']).'</p></div>';
+                $class = array(
+                    'notice',
+                    'notice-'.(isset($value['type']) ? $value['type'] : 'success')
+                );
+                if (isset($value['dismissible']) && $value['dismissible']) {
+                    $class[] = 'is-dismissible';
+                }
+                if (!empty($value['class'])) {
+                    $class[] = $value['class'];
+                }
+                $out[] = '<div class="' . implode(' ', $class) . '"><p>' . esc_html($value['message']) . '</p></div>';
             }
         }
         echo implode(PHP_EOL, $out);
@@ -373,9 +480,32 @@ class Admin
                 'mktr_google',
                 array(self::init(), 'google')
             );
+            $plug = 'gravityforms/gravityforms.php';
+            $active = \is_plugin_active($plug);
+            if ($active) {
+                add_submenu_page(
+                    'mktr',
+                    'Gravity Form',
+                    'Gravity Form',
+                    'manage_options',
+                    'gf_settings&subview=mktr',
+                    array(self::init(), 'gravity')
+                );
+
+                if (Config::getAllowExportGravity()) {
+                    add_submenu_page(
+                        'options.php',
+                        'Gravity Form entries',
+                        'Gravity Form entries',
+                        'manage_options',
+                        'mktr_gravity',
+                        array(self::init(), 'gravity')
+                    );
+                }
+            }
         }
     }
-
+    
     public static function gForm($fields = array(), $getv = true){
         $content = '<form method="POST" action="" enctype="multipart/form-data">';
         $content .= '<div class="mktr-head"><img src="'.Run::plug_url('/assets/logo.png').'"></div>';
@@ -388,7 +518,14 @@ class Admin
                     $content .= '<h1>'.$v['title'].'</h1>';
                 }
                 foreach ($v['content'] as $data) {
-                    $content .= '<div class="mktr-content-notice '.$data['type'].'">'.$data['message'].'</div>';
+                    $class = array(
+                        'mktr-content-notice',
+                        (isset($data['type']) ? $data['type'] : 'success')
+                    );
+                    if (!empty($data['class'])) {
+                        $class[] = $data['class'];
+                    }
+                    $content .= '<div class="'.implode(' ', $class).'">'.$data['message'].'</div>';
                 }
                 $content .= '</div>';
             } else if ($v['type'] === 'head') {
@@ -399,55 +536,108 @@ class Admin
                 foreach($v['content'] as $kk => $c) {
                     if (is_array($c)) {
                         if ($getv) {
-                            $value = Config::getValue($c['name']);
+                            if ($c['name'] === 'allow_export_gravity_data') {
+                                $vv = Config::getValue($c['name']);
+                                $v = unserialize($vv);
+                                $value = $c['def'];
+                                if (isset($c['extra']) && isset($v[$c['extra'][0]][$c['extra'][1]])) {
+                                    $value = $v[$c['extra'][0]][$c['extra'][1]];
+                                }
+                            } else {
+                                $value = Config::getValue($c['name']);
+                            }
                         } else {
                             $value = '';
                         }
                         if (is_array($value)) { $value = implode('|', $value); }
-                        $content .= '<div class="mktr-content-field">';
-                        if ($c['type'] !== 'radio') {
-                            $content .= '<label for="'.Config::$name.'_'.$c['name'].'" class="mktr-content-label">'.$c['label'].'</label>';
-                            $content .= '<div class="mktr-content-input">';
+
+                        if (!in_array($c['type'], array('radio','hidden'))) {
+                            $inputData = "";
                             if ($c['type'] === 'checkbox') {
-                                $content .= '<input type="hidden" id="mk_check_' . $c['name'] . '_value" name="'.Config::$name.'['.$c['name'].']" value="' . (int) $value .'">';
-                                $content .= '<input id="mk_check_'. $c['name'] .'" class="mkcheck" type="checkbox" onchange="document.querySelector(\'#mk_check_' . $c['name'] .
+                                if ($c['name'] === 'allow_export_gravity_data' && isset($c['extra'])) {
+                                    $fid = 'mk_check_' . $c['name'].'_'.$c['extra'][0].'_'.$c['extra'][1];
+                                    $name = $c['name'].']['.$c['extra'][0].']['.$c['extra'][1];
+                                } else {
+                                    $fid = 'mk_check_' . $c['name'];
+                                    $name = $c['name'];
+                                }
+                                $inputData .= '<input type="hidden" id="' . $fid . '_value" name="'.Config::$name.'['.$name.']" value="' . (int) $value .'">';
+                                $inputData .= '<input id="' . $fid .'" class="mkcheck" type="checkbox" onchange="document.querySelector(\'#' . $fid .
                                 '_value\').value=this.checked ? 1 : 0; this.innerHTML = this.checked ? \'Active\':\'Inactive\'" ' . ((int) $value === 1 ? 'checked' : '') .
-                                '/><label class="mk-btn" for="mk_check_'. $c['name'] .'" ></label>';
+                                '/><label class="mk-btn" for="' . $fid .'" ></label>';
                             } else if ($c['type'] === 'checkbox-optin') {
-                                $content .= '<input type="hidden" id="mk_check_' . $c['name'] . '_value" name="'.Config::$name.'['.$c['name'].']" value="' . (int) $value .'">';
-                                $content .= '<input id="mk_check_'. $c['name'] .'" class="mkcheck" type="checkbox" onchange="document.querySelector(\'#mk_check_' . $c['name'] .
+                                $inputData .= '<input type="hidden" id="mk_check_' . $c['name'] . '_value" name="'.Config::$name.'['.$c['name'].']" value="' . (int) $value .'">';
+                                $inputData .= '<input id="mk_check_'. $c['name'] .'" class="mkcheck" type="checkbox" onchange="document.querySelector(\'#mk_check_' . $c['name'] .
                                 '_value\').value=this.checked ? 1 : 0; this.innerHTML = this.checked ? \'Active\':\'Inactive\'" ' . ((int) $value === 1 ? 'checked' : '') .
                                 '/><label class="mk-btn-opt" for="mk_check_'. $c['name'] .'" ></label>';
+                            }  else if ($c['type'] === 'checkbox-sub') {
+                                
+                                if ($c['name'] === 'allow_export_gravity_data' && isset($c['extra'])) {
+                                    $fid = 'mk_check_' . $c['name'].'_'.$c['extra'][0].'_'.$c['extra'][1];
+                                    $name = $c['name'].']['.$c['extra'][0].']['.$c['extra'][1];
+                                } else {
+                                    $fid = 'mk_check_' . $c['name'];
+                                    $name = $c['name'];
+                                }
+
+                                $inputData .= '<input type="hidden" id="' . $fid . '_value" name="'.Config::$name.'['.$name.']" value="' . (int) $value .'">';
+                                $inputData .= '<input id="' . $fid .'" class="mkcheck" type="checkbox" onchange="document.querySelector(\'#' . $fid .
+                                '_value\').value=this.checked ? 1 : 0; this.innerHTML = this.checked ? \'Active\':\'Inactive\'" ' . ((int) $value === 1 ? 'checked' : '') .
+                                '/><label class="mk-btn-sub" for="' . $fid .'" ></label>';
                             } else if ($c['type'] === 'select') {
-                                $content .= '<select id="'.Config::$name.'_'.$c['name'].'" name="'.Config::$name.'['.$c['name'].']" '.( empty($value) ? "" : ' value="'.$value.'"' ).'>';
+                                $inputData .= '<select id="'.Config::$name.'_'.$c['name'].'" name="'.Config::$name.'['.$c['name'].']" '.( empty($value) ? "" : ' value="'.$value.'"' ).'>';
                                 if (empty($c['options'])) { $c['options'] = self::$defOptions; }
                                 foreach($c['options'] as $o) {
-                                    $content .= '<option value="'.$o['value'].'" '.($value == $o['value'] ? 'selected="selected" ' : '').'>'.$o['label'].'</option>';
+                                    $inputData .= '<option value="'.$o['value'].'" '.($value == $o['value'] ? 'selected="selected" ' : '').'>'.$o['label'].'</option>';
                                 }
-                                $content .= '</select>';
+                                $inputData .= '</select>';
                             } else if ($c['type'] === 'textarea') {
-                                $content .= '<'.$c['tag'].
+                                $inputData .= '<'.$c['tag'].
                                 ' id="'.Config::$name.'_'.$c['name'].
                                 '" rows="2" cols="100" name="'.Config::$name.'['.$c['name'].']" placeholder="'.(isset($c['placeholder']) ? $c['placeholder'] : $c['label']).
                                 '" '.( empty($value) ? "" : ' value="'.$value.'"' ).'></'.$c['tag'].'>';
                             } else {
-                                $content .= '<'.$c['tag'].
-                                ' type="'.$c['type'].'" id="'.Config::$name.'_'.$c['name'].
-                                '" name="'.Config::$name.'['.$c['name'].']" placeholder="'.(isset($c['placeholder']) ? $c['placeholder'] : $c['label']).
+                                if ($c['name'] === 'allow_export_gravity_data' && isset($c['extra'])) {
+                                    $fid = 'mk_check_' . $c['name'].'_'.$c['extra'][0].'_'.$c['extra'][1];
+                                    $name = $c['name'].']['.$c['extra'][0].']['.$c['extra'][1];
+                                } else {
+                                    $fid = 'mk_check_' . $c['name'];
+                                    $name = $c['name'];
+                                }
+                                $inputData .= '<'.$c['tag'].
+                                ' type="'.$c['type'].'" id="'.$fid.
+                                '" name="'.Config::$name.'['.$name.']" placeholder="'.(isset($c['placeholder']) ? $c['placeholder'] : $c['label']).
                                 '" '.( empty($value) ? "" : ' value="'.$value.'"' ).'/>';
                             }
+                            // '.Config::$name.'_'.$c['name'].' 
+                            $content .= '<div class="mktr-content-field">';
+                            $content .= '<label for="'.$fid.'" class="mktr-content-label">'.$c['label'].'</label>';
+                            $content .= '<div class="mktr-content-input">';
+                            $content .= $inputData;
                             if (!empty($c['description'])) {
                                 $content .= '<p class="description">'.$c['description'].'</p>';
                             }
+                            $content .= '</div>';    
                             $content .= '</div>';
                         } else {
-                            $content .= '<div class="mktr-content-radio">';
-                            $content .= '<'.$c['tag'].' type="'.$c['type'].'" id="'.Config::$name.'_'.$kk.$c['name'].'" name="'.Config::$name.'['.$c['name'].']" placeholder="'.
-                            (isset($c['placeholder']) ? $c['placeholder'] : $c['label']).'" '.( empty($value) ? "" : ' value="'.$value.'"' ).'/>';
-                            $content .= '<label for="'.Config::$name.'_'.$kk.$c['name'].'" class="mktr-content-label">'.$c['label'].'</label>';
-                            $content .= '</div>';
+                            if ($c['type'] === 'radio') {
+
+                                $content .= '<div class="mktr-content-field">';
+                                $content .= '<div class="mktr-content-radio">';
+                                $content .= '<'.$c['tag'].' type="'.$c['type'].'" id="'.Config::$name.'_'.$kk.$c['name'].'" name="'.Config::$name.'['.$c['name'].']" placeholder="'.
+                                (isset($c['placeholder']) ? $c['placeholder'] : $c['label']).'" '.( empty($value) ? "" : ' value="'.$value.'"' ).'/>';
+                                $content .= '<label for="'.Config::$name.'_'.$kk.$c['name'].'" class="mktr-content-label">'.$c['label'].'</label>';
+                                $content .= '</div>';
+                                $content .= '</div>';
+                            } else {
+                                if ($c['name'] === 'allow_export_gravity_data' && isset($c['extra'])) {
+                                    $name = $c['name'].']['.$c['extra'][0].']['.$c['extra'][1];
+                                } else {
+                                    $name = $c['name'];
+                                }
+                                $content .= '<input type="hidden" name="'.Config::$name.'['.$name.']" value="' . $value .'">';
+                            }
                         }
-                        $content .= '</div>';
                     } else {
                         $content .= ($kk === 0 ? "" : "<br />"). $c;
                     }
@@ -537,14 +727,26 @@ class Admin
                 "You can always return here and disable them.",
             )
         );
+        $c = array(
+            self::$inputs['status'],
+            self::$inputs['google_status']
+        );
+        $plug = 'gravityforms/gravityforms.php';
+        $active = \is_plugin_active($plug);
+        if ($active) {
+            $c[] = self::$inputs['allow_export_gravity'];
+        }
+
+        if (!$active && Config::getAllowExportGravity()) { 
+            Config::setValue('allow_export_gravity', 0);
+        }
+        
         $forms[1][] = array(
             "type" => "body",
             "title" => "Components status:",
-            "content" => array(
-                self::$inputs['status'],
-                self::$inputs['google_status']
-            )
+            "content" => $c
         );
+
         $forms[1][] = array(
             "type" => "hidden",
             "content" => self::$inputs['onboarding']
@@ -625,17 +827,29 @@ class Admin
                 self::$inputs['update_review']
             )
         );
+        $c = array(
+            self::$inputs['opt_in'],
+            self::$inputs['add_description'],
+            self::$inputs['push_status'],
+            self::$inputs['allow_export'],
+            self::$inputs['default_stock'],
+            self::$inputs['selectors']
+        );
+        $plug = 'gravityforms/gravityforms.php';
+        $active = \is_plugin_active($plug);
+
+        if ($active) {
+            $c[] = self::$inputs['allow_export_gravity'];
+        }
+
+        if (!$active && Config::getAllowExportGravity()) { 
+            Config::setValue('allow_export_gravity', 0);
+        }
+        
         $form[] = array(
             "type" => "body",
             "title" => "Extra Settings",
-            "content" => array(
-                self::$inputs['opt_in'],
-                self::$inputs['add_description'],
-                self::$inputs['push_status'],
-                self::$inputs['allow_export'],
-                self::$inputs['default_stock'],
-                self::$inputs['selectors']
-            )
+            "content" => $c
         );
         $form[] = array(
             "type" => "body",
@@ -658,6 +872,103 @@ class Admin
             )
         );
         
+        echo self::gForm($form);
+    }
+
+    public static function gravity()
+    {
+        $form = array();
+        
+        if (!empty(self::$notice)) {
+            $form[] = array(
+                "type" => "notice",
+                "content" => self::$notice
+            );
+        }
+
+        $c = array(
+            self::$inputs['allow_export_gravity_all']
+        );
+
+        if (Config::getAllowExportGravityAll()) {
+            $c[] = self::$inputs['allow_export_gravity_subscribe'];
+            $c[] = self::$inputs['allow_export_gravity_tag'];
+        }
+
+        $form[] = array(
+            "type" => "body",
+            "title" => "Gravity Form Settings",
+            "content" => $c
+        );
+
+        if (!Config::getAllowExportGravityAll()) {
+            if ( ! class_exists( 'GFFormsModel' ) ) {
+                require_once( ABSPATH . 'wp-content/plugins/gravityforms/forms_model.php' );
+            }
+            if ( ! class_exists( 'GF_Query' ) ) {
+                require_once( ABSPATH . 'wp-content/plugins/gravityforms/includes/query/class-gf-query.php' );
+            }
+
+            $table = \GFFormsModel::get_forms(1);
+            
+            foreach ($table as $kk => $vv) {
+                $form[] = array(
+                    "type" => "body",
+                    "title" => "Form ".$vv->title ,// . " (".$vv->entry_count." entries)",
+                    "content" => array(
+                        array(
+                            'tag' => 'input',
+                            'type' => 'hidden',
+                            'name' => 'allow_export_gravity_data',
+                            'extra' => array ( $vv->id, 'id' ),
+                            'def' => $vv->id,
+                            'placeholder' => null
+                        ),
+                        array(
+                            'label' => 'Tracking',
+                            'tag' => 'input',
+                            'type' => 'checkbox',
+                            'name' => 'allow_export_gravity_data',
+                            'extra' => array ( $vv->id, 'status' ),
+                            'def' => 0,
+                            'placeholder' => null
+                        ),
+                        array(
+                            'label' => 'Contact status',
+                            'tag' => 'input',
+                            'type' => 'checkbox-sub',
+                            'description' => 'What status do you want the contact to have in theMarketer.',
+                            'name' => 'allow_export_gravity_data',
+                            'extra' => array ( $vv->id, 'subscribe' ),
+                            'def' => 0,
+                            'placeholder' => null
+                        ),
+                        array(
+                            'label' => 'Tag',
+                            'tag' => 'input',
+                            'type' => 'text',
+                            'name' => 'allow_export_gravity_data',
+                            'extra' => array ( $vv->id, 'tag' ),
+                            'def' => 0,
+                            'placeholder' => null
+                        )
+                    )
+                );
+            }
+        }
+
+        $form[] = array(
+            "type" => "hidden",
+            "content" => self::$inputs['onboarding']
+        );
+
+        $form[] = array(
+            "type" => "footer",
+            "content" => array(
+                '<div class="mktr-content-left">Need help? <a href="https://themarketer.com/integrations/woocommerce" target="_blank"> Visit our help article <span class="icon mktr-export"></span></a></div>',
+                '<div class="mktr-content-right"><button type="submit" class="mktr-button">Save changes <span class="icon mktr-save"></span></button></div><br class="mktr-space"/>'
+            )
+        );
         echo self::gForm($form);
     }
 }

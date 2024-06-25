@@ -67,7 +67,7 @@ class Orders
         $toSkip = array();
         do {
             $orders = wc_get_orders($args);
-            $pages = 0;
+            $pages = $stop ? 0 : $orders->max_num_pages;
 			
             foreach ($orders->orders as $val) {
                 Order::getById($val);

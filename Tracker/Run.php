@@ -83,7 +83,6 @@ class Run
         });
 
         if (is_admin()) {
-            add_action( 'gform_loaded', array($this, 'LoadGF'), 5 );
             Admin::loadAdmin();
         } else {
             Front::loadFront();
@@ -135,10 +134,6 @@ class Run
         // add_action('wp_ajax_woodmart_ajax_add_to_cart', array(self::init(), 'test'));
         // add_action('woocommerce_loaded', function (){  });
         add_action('MKTR_CRON', array($this, "cronAction"));
-    }
-
-    public function LoadGF() {
-		\GFAddOn::register( '\Mktr\Tracker\GFMktr' );
     }
 
     public function mailpoet_subscription_status_changed($id = null){

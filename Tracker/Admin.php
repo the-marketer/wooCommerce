@@ -236,11 +236,6 @@ class Admin
         add_action('woocommerce_order_edit_status', array(Observer::init(), 'orderUp'), 10, 2);
         add_action('admin_footer', array(self::init(), 'feedback'));
         add_action('admin_enqueue_scripts', array(self::init(), 'scripts'));
-
-        add_filter( 'gform_form_settings_menu', array( self::init(), 'gform_menu' ), 99, 2 );
-        /*global $_registered_pages;
-        add_action( 'themarketer_page_mktr_gravity', array(self::init(), 'gravity') );
-        $_registered_pages['themarketer_page_mktr_gravity'] = true;*/
     }
     public static function gform_menu($setting_tabs, $form_id)
     {
@@ -480,6 +475,7 @@ class Admin
                 'mktr_google',
                 array(self::init(), 'google')
             );
+            /*
             $plug = 'gravityforms/gravityforms.php';
             $active = \is_plugin_active($plug);
             if ($active) {
@@ -503,6 +499,7 @@ class Admin
                     );
                 }
             }
+            */
         }
     }
     
@@ -731,8 +728,10 @@ class Admin
             self::$inputs['status'],
             self::$inputs['google_status']
         );
+        /*
         $plug = 'gravityforms/gravityforms.php';
         $active = \is_plugin_active($plug);
+
         if ($active) {
             $c[] = self::$inputs['allow_export_gravity'];
         }
@@ -740,6 +739,7 @@ class Admin
         if (!$active && Config::getAllowExportGravity()) { 
             Config::setValue('allow_export_gravity', 0);
         }
+        */
         
         $forms[1][] = array(
             "type" => "body",
@@ -835,6 +835,7 @@ class Admin
             self::$inputs['default_stock'],
             self::$inputs['selectors']
         );
+        /*
         $plug = 'gravityforms/gravityforms.php';
         $active = \is_plugin_active($plug);
 
@@ -845,7 +846,7 @@ class Admin
         if (!$active && Config::getAllowExportGravity()) { 
             Config::setValue('allow_export_gravity', 0);
         }
-        
+        */
         $form[] = array(
             "type" => "body",
             "title" => "Extra Settings",

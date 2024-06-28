@@ -26,26 +26,32 @@ if (!defined('MKTR')) {
 if (!defined('MKTR_DIR')) {
     define('MKTR_DIR', dirname(__FILE__));
 }
+
 if (!defined('MKTR_BASE')) {
     define('MKTR_BASE', plugin_basename(MKTR));
 }
+
 if (!defined('MKTR_DIR_NAME')) {
     define('MKTR_DIR_NAME', basename(dirname(MKTR)));
 }
+
 if (!defined('MKTR_DEBUG')) {
     define('MKTR_DEBUG', false);
 }
+
 if (!defined('MKTR_INSTALL')) {
     define('MKTR_INSTALL', true);
 }
+
 if (!defined('MKTR_LEMS')) {
     define('MKTR_LEMS', false);
 }
-require_once MKTR_DIR . '/vendor/autoload.php';
 
 if (!defined('MKTR_VERSION')) {
     define('MKTR_VERSION', 'v1.3.3');
 }
+
+require_once MKTR_DIR . '/vendor/autoload.php';
 
 function eDebug() {
     if (isset($_COOKIE['EAX_DEBUG'])) {

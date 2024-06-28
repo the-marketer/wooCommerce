@@ -340,6 +340,7 @@ class Run
     public static function Update()
     {
         \Mktr\Tracker\Routes\refreshJS::execute(false);
+        \Mktr\Tracker\Observer::pushStatus();
         
         $name = MKTR_DIR . '/mktr.php';
         $content = file_get_contents($name);

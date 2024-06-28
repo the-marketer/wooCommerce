@@ -54,6 +54,7 @@ class Form
         if (!empty($data)) {
             $fail = array('tracking' => false, 'google' => false);
             $onboarding = false;
+            $push_status = true;
             foreach ($data[Config::$name] as $key=>$value) {
 
                 if (in_array($key, array('tracking_key', 'rest_key', 'customer_id')) && empty($value)) { $fail['tracking'] = true; }
@@ -66,7 +67,7 @@ class Form
                     $onboarding = array($key, $value);
                 }
                 
-                if ($key == 'push_status') { Observer::pushStatus(); }
+                if ($key == 'push_status') { Observer::pushStatus(); $push_status = false; }
                 if ($key == 'opt_in') {
                     $plug = 'mailpoet/mailpoet.php';
                     if ( ! function_exists( 'is_plugin_active' ) ) {
@@ -153,6 +154,10 @@ class Form
                         }
                     }
                 }
+            }
+            
+            if ($push_status) {
+                Observer::pushStatus();
             }
 
             if ($fail['tracking'] && ( Config::getValue('status') == 1 || $onboarding[1] != 2 )) {

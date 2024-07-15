@@ -166,6 +166,7 @@ class Events
      * @var array
      */
     private static $bMultiCat;
+    private static $listName = [];
 
     public static function init()
     {
@@ -366,22 +367,86 @@ class Events
         return implode("|", array_reverse($build));
     }
 
-    public static function buildMultiCategory($List)
-    {
-        self::$bMultiCat = [];
-        
+    public static function buildMultiCategory($List) {
+        $buildMultiCat = [];
+        $newBuild = [];
+        $NewMultiCat = [];
+		
+        $skip = [];
         if(is_array($List)){
             foreach ($List as $value) {
-                Category::getById($value->term_id);
-                self::buildSingleCategory();
+            self::$listName[$value->term_id] = $value->name;
+                if ($value->parent == 0) {
+                    if (!isset($buildMultiCat[$value->term_id])) {
+                        $buildMultiCat[$value->term_id] = [];
+                    }
+                } else {
+                    $buildMultiCat[$value->parent]["id".$value->term_id] = $value->term_id;
+                }
             }
         }
-        if (empty(self::$bMultiCat)) {
-            self::$bMultiCat[] = "Default Category";
+
+        foreach ($buildMultiCat as $parent => $categoryTree) {
+            if (!in_array($parent, $skip)) {
+                if (empty($categoryTree)) {
+                    $list = [ $parent => self::getNameCat($parent) ];
+                    $newBuild[] = $list;
+                } else {
+                    foreach($categoryTree as $key => $input) {
+                        $list = [ $parent => self::getNameCat($parent) ];
+                        if(isset($buildMultiCat[$input])) {
+                            if ($parent !== $input) {
+                                $skip[$input] = $input;
+                                $list[$input] = self::getNameCat($input);
+
+                                self::bMC($buildMultiCat, $buildMultiCat[$input], $input, $list);
+                            }
+                        } else {
+                            $list[$input] = self::getNameCat($input);
+                        }
+                        $newBuild[] = $list;
+                    }
+                }
+            }
         }
-        return implode("|", array_reverse(self::$bMultiCat));
+
+        if (empty($newBuild)) {
+            $newBuild[0]['default'] = "Default Category";
+        }
+        
+        foreach ($newBuild as $k => $data) {
+            $imp = implode('|', $data);
+            $NewMultiCat[$imp] = $imp;
+        }
+
+        $categoriesTree = implode('||', $NewMultiCat);
+        
+        return $categoriesTree;
     }
 
+    public static function getNameCat($id) {
+        if (!isset(self::$listName[$id])) {
+            $cat = get_term_by( 'id', $id, 'product_cat' );
+            self::$listName[$id] = $cat->name;
+        }
+        return self::$listName[$id];
+    }
+
+    public static function bMC($buildMultiCat, $catList, $parent, &$list) {
+        foreach ($catList as $cat) {
+            if ($cat !== $parent) {
+                if(isset($buildMultiCat[$cat])) {
+                    foreach(self::bMC($buildMultiCat, $buildMultiCat[$cat], $cat, $list) as $k) {
+                        $list[$k] = self::getNameCat($k);
+                    }
+                } else {
+                    $list[$cat] = self::getNameCat($cat);
+                }
+            }
+        }
+        return $list;
+    }
+	
     public static function buildSingleCategory()
     {
         self::$bMultiCat[] = Category::getName();

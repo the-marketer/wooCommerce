@@ -361,7 +361,7 @@ class Product
                     $is_def = true;
                     foreach($def as $k => $v) {
                         if($val['attributes']['attribute_'.$k]!=$v){
-                            $is_def=false;             
+                            $is_def = false;             
                         }
                     }
                     if ($is_def) {

@@ -41,10 +41,13 @@ class Observer
             $v = Product::getById($variation_id ?: $product_id);
             if ($v !== false) {
                 self::$eventName = 'addToCart';
-
+                $quantity = (int) $quantity;
+                if ($quantity <= 0) {
+                    $quantity = 1;
+                }
                 self::$eventData = array(
                     'product_id' => Product::getParentId() == 0 ? Product::getId() : Product::getParentId(),
-                    'quantity' => (int) $quantity,
+                    'quantity' => $quantity,
                     'variation' => array(
                         'id' => Product::getId(),
                         'sku' => Product::getSku()
@@ -64,10 +67,13 @@ class Observer
             Product::getById($variation_id ?: $product_id);
 
             self::$eventName = 'removeFromCart';
-
+            $quantity = (int) $quantity;
+            if ($quantity <= 0) {
+                $quantity = 1;
+            }
             self::$eventData = array(
                 'product_id' => Product::getParentId() == 0 ? Product::getId() : Product::getParentId(),
-                'quantity'=> (int) $quantity,
+                'quantity'=> $quantity,
                 'variation' => array(
                     'id' => Product::getId(),
                     'sku' => Product::getSku()
@@ -82,10 +88,16 @@ class Observer
         Product::getById($variation_id ?: $product_id);
 
         self::$eventName = 'addToWishlist';
+        /*
+        $quantity = (int) $quantity;
+        if ($quantity <= 0) {
+            $quantity = 1;
+        }
+        */
 
         self::$eventData = array(
             'product_id' => Product::getParentId() == 0 ? Product::getId() : Product::getParentId(),
-            //'quantity'=> (int) $quantity,
+            //'quantity'=> $quantity,
             'variation' => array(
                 'id' => Product::getId(),
                 'sku' => Product::getSku()
@@ -100,10 +112,16 @@ class Observer
         Product::getById($variation_id ?: $product_id);
 
         self::$eventName = 'removeFromWishlist';
+        /*
+        $quantity = (int) $quantity;
+        if ($quantity <= 0) {
+            $quantity = 1;
+        }
+        */
 
         self::$eventData = array(
             'product_id' => Product::getParentId() == 0 ? Product::getId() : Product::getParentId(),
-            //'quantity'=> (int) $quantity,
+            //'quantity'=> $quantity,
             'variation' => array(
                 'id' => Product::getId(),
                 'sku' => Product::getSku()

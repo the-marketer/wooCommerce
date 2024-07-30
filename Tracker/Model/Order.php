@@ -223,7 +223,7 @@ class Order
 
             if (Product::getId() !== false && Product::getId() !== null) {
                 $products[] = array(
-                    "product_id" => $o['product_id'],
+                    "product_id" => Product::getId(),
                     "price" => (($o['subtotal'] + (Product::checkTax() && isset($o['subtotal_tax']) ? $o['subtotal_tax'] : 0)) / $o['quantity']),
                     /* // round($o['total'] + (isset($o['subtotal_tax']) ? $o['subtotal_tax'] : 0)),
                     // ($o['subtotal'] / $o['quantity']) */

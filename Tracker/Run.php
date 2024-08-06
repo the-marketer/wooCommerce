@@ -107,6 +107,12 @@ class Run
         add_action('wp_ajax_basel_ajax_add_to_cart', array($this, 'add_to_cart'), 1);
         add_action('wp_ajax_nopriv_basel_ajax_add_to_cart', array($this, 'add_to_cart'), 1);
 
+        add_action('wp_ajax_basel_add_to_wishlist', array($this, 'add_to_wishlist'), 1);
+        add_action('wp_ajax_nopriv_basel_add_to_wishlist', array($this, 'add_to_wishlist'), 1);
+
+        add_action('wp_ajax_basel_remove_from_wishlist', array($this, 'remove_from_wishlist'), 1);
+        add_action('wp_ajax_nopriv_basel_remove_from_wishlist', array($this, 'remove_from_wishlist'), 1);
+
         add_action('wp_ajax_nopriv_woodmart_ajax_add_to_cart', array($this, 'add_to_cart'));
         add_action('wp_ajax_woodmart_ajax_add_to_cart', array($this, 'add_to_cart'));
 

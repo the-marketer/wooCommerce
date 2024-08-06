@@ -4,7 +4,7 @@ Tags: WooCommerce, theMarketer, Email marketing, Loyalty Program, Woocommerce em
 Requires at least: 4.6
 Tested up to: 6.4.2
 Requires PHP: 5.6
-Stable tag: 1.3.4
+Stable tag: 1.3.5
 Requires WooCommerce at least: 4.0.0
 Tested WooCommerce up to: 8.4.0
 License: GPLv2
@@ -39,7 +39,7 @@ _Launcher_ - Meet your most powerful online shop assistant. Skyrocket your conve
 
 _Free under 1000 subscribers._
 
-theMarketer paid plans start from as low as 5 EUR/month. Subscription prices are calculated based on the number of unique subscribers your store has. 
+theMarketer paid plans start from as low as 20 EUR/month. Subscription prices are calculated based on the number of unique subscribers your store has. 
 
 == Installation ==
 

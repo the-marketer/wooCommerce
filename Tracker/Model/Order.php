@@ -46,7 +46,7 @@ class Order
         'getCity' => 'get_billing_city',
         'getAddress1' => 'get_billing_address_1',
         'getAddress2' => 'get_billing_address_2',
-        'getDiscount' => 'get_discount_total',
+        // 'getDiscount' => 'get_discount_total',
         'getShipping' => 'get_shipping_total',
         'getTotal' => 'get_total',
         'getTax' => 'get_total_tax'
@@ -139,6 +139,14 @@ class Order
 
     public static function getAddress(){
         return self::getAddress1() . ' ' . self::getAddress2();
+    }
+
+    public static function getDiscount() {
+        $discount = self::$asset->get_discount_total();
+        if (Product::checkTax()) {
+            return round((self::$asset->get_discount_tax() + $discount), 2);
+        }
+        return $discount;
     }
 
     public static function getDiscountCode()

@@ -47,7 +47,7 @@ class Order
         'getAddress1' => 'get_billing_address_1',
         'getAddress2' => 'get_billing_address_2',
         // 'getDiscount' => 'get_discount_total',
-        'getShipping' => 'get_shipping_total',
+        // 'getShipping' => 'get_shipping_total',
         'getTotal' => 'get_total',
         'getTax' => 'get_total_tax'
     );
@@ -144,9 +144,17 @@ class Order
     public static function getDiscount() {
         $discount = self::$asset->get_discount_total();
         if (Product::checkTax()) {
-            return round((self::$asset->get_discount_tax() + $discount), 2);
+            return \Mktr\Tracker\Valid::digit2((self::$asset->get_discount_tax() + $discount), 2);
         }
         return $discount;
+    }
+
+    public static function getShipping() {
+        $shipping = self::$asset->get_shipping_total();
+        if (Product::checkTax()) {
+            return \Mktr\Tracker\Valid::digit2((self::$asset->get_shipping_tax() + $shipping), 2);
+        }
+        return $shipping;
     }
 
     public static function getDiscountCode()
@@ -198,7 +206,7 @@ class Order
                     "category" => Product::getCat(),
                     "brand" => Product::getBrand(),
                     "price" => Product::getRegularPrice(),
-                    "sale_price" => (($o['subtotal'] + (Product::checkTax() && isset($o['subtotal_tax']) ? $o['subtotal_tax'] : 0)) / $o['quantity']),
+                    "sale_price" => \Mktr\Tracker\Valid::digit2((($o['subtotal'] + (Product::checkTax() && isset($o['subtotal_tax']) ? $o['subtotal_tax'] : 0)) / $o['quantity']), 2),
                     /* // "sale_price" => round($o['total'] + (isset($o['subtotal_tax']) ? $o['subtotal_tax'] : 0)), */
                     "quantity" => $o['quantity'],
                     "variation_id" => Product::getId(),
@@ -232,7 +240,7 @@ class Order
             if (Product::getId() !== false && Product::getId() !== null) {
                 $products[] = array(
                     "product_id" => Product::getId(),
-                    "price" => (($o['subtotal'] + (Product::checkTax() && isset($o['subtotal_tax']) ? $o['subtotal_tax'] : 0)) / $o['quantity']),
+                    "price" => \Mktr\Tracker\Valid::digit2((($o['subtotal'] + (Product::checkTax() && isset($o['subtotal_tax']) ? $o['subtotal_tax'] : 0)) / $o['quantity']), 2),
                     /* // round($o['total'] + (isset($o['subtotal_tax']) ? $o['subtotal_tax'] : 0)),
                     // ($o['subtotal'] / $o['quantity']) */
                     "quantity" => $o['quantity'],

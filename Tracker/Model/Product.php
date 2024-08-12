@@ -270,6 +270,7 @@ class Product
         }
         return empty($b) ? "N/A" : $b;
     }
+
     public static function getPriceByPriority($price1 = 0, $price2 = 0) {
         if ($price1 > 0) {
             return $price1;
@@ -406,7 +407,7 @@ class Product
             }
         }
         
-        return $check === true || $p > 0 ? $p : self::getRegularPrice(true);
+        return \Mktr\Tracker\Valid::digit2(($check === true || $p > 0 ? $p : self::getRegularPrice(true)), 2);
     }
 
     public static function getRegularPrice($check = false)
@@ -475,7 +476,8 @@ class Product
                 $p = wc_get_price_including_tax(self::$asset, array('price' => $p));
             }
         }
-        return $check === true || $p > 0  ? $p : self::getPrice(true);
+
+        return \Mktr\Tracker\Valid::digit2(($check === true || $p > 0 ? $p : self::getPrice(true)), 2);
     }
 
     public static function getImage()

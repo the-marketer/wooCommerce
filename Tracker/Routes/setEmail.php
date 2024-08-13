@@ -74,16 +74,18 @@ class setEmail
                     }
                 }
                 $info = array( "email" => $val['email_address'] );
-                // $status = \MailPoet\Models\Subscriber::findOne($val['email_address'])->status;
                 $gSub = Config::getSubscriber($val['email_address']);
 
                 if ($gSub !== false) {
+                    if (is_array($gSub)) {
+                        $gSub = (object) $gSub;
+                    }
                     $status = $gSub->status;
                 } else {
                     $status = "NotFound";
                 }
 
-                if ($status === \MailPoet\Models\Subscriber::STATUS_SUBSCRIBED)
+                if ($status === Config::mStatus())
                 {
                     $name = array();
 

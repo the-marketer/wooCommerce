@@ -40,12 +40,18 @@ class Feed
 
     public static function execute()
     {
+        if (Product::cOverWrite()) {
+            $productTypes = array( 'simple', 'grouped', 'external', 'variable', 'woosb' );
+        } else {
+            $productTypes = apply_filters('marketer_override_feed_product_types', ['simple', 'grouped', 'external', 'variable', 'woosb']);
+        }
+        
         $args = array(
             'status' => array(
                 /* 'pending', */
                 'publish'
             ),
-            'type' => array( 'simple', 'grouped', 'external', 'variable', 'woosb' ),
+            'type' => $productTypes,
             'order'   => 'ASC',
             'orderby' => 'ID',
             'return' => 'ids',
@@ -74,7 +80,16 @@ class Feed
             {
                 Product::getById($val);
                 
-                if (Product::getRegularPrice() <= 0 && Product::getPrice() <= 0 || Product::getImage() == false) { continue; }
+                if (Product::cOverWrite()) {
+                    if (Product::getRegularPrice() <= 0 && Product::getPrice() <= 0 || Product::getImage() == false) {
+                        continue;
+                    }
+                } else {
+                    if (Product::getImage() == false) {
+                        continue;
+                    }
+                }
+
                 $created_at = Product::getCreatedAt();
 
                 if ($created_at === null) {

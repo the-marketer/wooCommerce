@@ -58,8 +58,6 @@ class Reviews
 				));
 				
 				if (empty($c)) {
-                    // $user = get_user_by( 'email', $value->review_email);
-                    // \MailPoet\Models\Subscriber::getWooCommerceSegmentSubscriber($value->review_email)->status;
                     $add = array(
                             'comment_post_ID'      => (string) $value->product_id, // <=== The product ID where the review will show up
                             'comment_author'       => (string) $value->review_author,

@@ -48,6 +48,18 @@ class MailPoet
         if (!$active) {
             return [];
         }
+        
+        if (class_exists(\MailPoet\API\API::class)) {
+            try {
+                $mailpoet_api = \MailPoet\API\API::MP('v1');
+                $data = $mailpoet_api->getSubscribers([], $limit, $offset);
+            } catch (\Exception $e){
+                $data = false;
+            }
+
+            return $data;
+        }
+
         if (\MailPoet\Settings\SettingsController::getInstance()->get('woocommerce.optin_on_checkout.enabled') == 1) {
             try {
                 $ids = Config::getMailPoetId();
@@ -55,7 +67,7 @@ class MailPoet
                     $data = \MailPoet\Models\Subscriber::tableAlias('subscribers')
                     ->select('subscribers.*')
                     ->join( MP_SUBSCRIBER_SEGMENT_TABLE, 'relation.subscriber_id = subscribers.id', 'relation' )
-                    ->whereIn('relation.segment_id', Config::getMailPoetId())
+                    ->whereIn('relation.segment_id', $ids)
                     ->offset($offset)
                     ->limit($limit)
                     ->findMany();
@@ -63,7 +75,7 @@ class MailPoet
                     $data = \MailPoet\Models\Subscriber::tableAlias('subscribers')
                     ->select('subscribers.*')
                     ->join( MP_SUBSCRIBER_SEGMENT_TABLE, 'relation.subscriber_id = subscribers.id', 'relation' )
-                    ->where('relation.segment_id', Config::getMailPoetId())
+                    ->where('relation.segment_id',$ids)
                     ->offset($offset)
                     ->limit($limit)
                     ->findMany();
@@ -73,10 +85,8 @@ class MailPoet
             }
 
             return $data;
-            if ( $data !== false) {
-                return $data;
-            }
         }
+
         return \MailPoet\Models\Subscriber::offset($offset)
         ->limit($limit)
         ->findMany();
@@ -108,8 +118,11 @@ class MailPoet
 
             foreach ($data as $v) {
                 if ($v !== false) {
+                    if (is_array($v)) {
+                        $v = (object) $v;
+                    }
                     $status = $v->status;
-                    if ($status === \MailPoet\Models\Subscriber::STATUS_SUBSCRIBED) {
+                    if ($status === Config::mStatus()) {
                         $get[] = [ 
                             'first_name' => $v->first_name,
                             'last_name' => $v->last_name,

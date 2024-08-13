@@ -160,8 +160,14 @@ class Observer
     public static function mailpoet_status_changed( $i = null ) {
         if ($i !== null && self::$mStatusChange === false) {
             self::$mStatusChange = true;
-            $s = \MailPoet\Models\Subscriber::findOne((int) $i);
-
+            
+            if (class_exists(\MailPoet\Subscribers\SubscribersRepository::class)) {
+                $repo = \MailPoet\DI\ContainerWrapper::getInstance()->get(\MailPoet\Subscribers\SubscribersRepository::class);
+                $s = $repo->findOneBy(['id' => (int) $i]);
+            } else {
+                $s = \MailPoet\Models\Subscriber::findOne((int) $i);
+            }
+            
             $check = Config::session()->get('emailSend');
             $time = time();
             
@@ -178,12 +184,15 @@ class Observer
             $gSub = Config::getSubscriber($s->email);
 
             if ($gSub !== false) {
+                if (is_array($gSub)) {
+                    $gSub = (object) $gSub;
+                }
                 $status = $gSub->status;
             } else {
                 $status = "NotFound";
             }
 
-            if ($status === \MailPoet\Models\Subscriber::STATUS_SUBSCRIBED)
+            if ($status === Config::mStatus())
             {
                 $name = array();
 
@@ -305,7 +314,6 @@ class Observer
 
     public static function setEmail($email)
     {
-        // Config::getSubscriber('test4_sub@eax.ro')->status
         self::$eventName = 'setEmail';
         self::$eventData = array( 'email_address' => $email );
         self::SessionSet();

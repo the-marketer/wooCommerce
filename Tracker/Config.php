@@ -38,6 +38,7 @@ class Config
     public static $MKTR_TABLE = null;
     public static $MKTR_DB = null;
     public static $product_cat = null;
+    public static $cMStatus = null;
 
     const space = PHP_EOL . "        ";
     /* TODO Google Test */
@@ -223,24 +224,44 @@ importScripts("https://t.themarketer.com/firebase.js");';
         $i = Config::getValue('mailpoet_id_list');
         if ($id === false || Config::getValue('mailpoet_id_list') === null) {
             $repo = \MailPoet\DI\ContainerWrapper::getInstance()->get(\MailPoet\Segments\SegmentsRepository::class);
-            $i = null;
-            foreach($repo->findAll() as $v) { if ($v->getName() === 'TheMarketer') { $i = $v->getId(); } }
+            
+            $i = array();
+            $TheMarketerID = null;
+            $listType = array(\MailPoet\Entities\SegmentEntity::TYPE_WC_USERS, \MailPoet\Entities\SegmentEntity::TYPE_WP_USERS);
+
+            foreach($repo->findAll() as $v) {
+                if ($v->getName() === 'TheMarketer') {
+                    $TheMarketerID = $v->getId();
+                    $i[] = (string) $v->getId();
+                } else if (in_array($v->getType(), $listType)) {
+                    $i[] = (string) $v->getId();
+                }
+            }
+            
             try {
-                $sAdd = $repo->createOrUpdate('TheMarketer', 'TheMarketer List', \MailPoet\Entities\SegmentEntity::TYPE_DEFAULT, [], $i, true);
+                $sAdd = $repo->createOrUpdate('TheMarketer', 'TheMarketer List', \MailPoet\Entities\SegmentEntity::TYPE_DEFAULT, [], $TheMarketerID, true);
             } catch ( \Exception $e ) {
-                // var_dump($e);die;
                 return null;
             }
-            $i = [];
-            $i[] = (string) $sAdd->getId();
-            $i[] = \MailPoet\Models\Segment::getWooCommerceSegment()->id;
-            $i[] = \MailPoet\Models\Segment::getWPSegment()->id;
+
             Config::setValue('mailpoet_id_list', $i);
         }
         return $i;
     }
 
     public static function getSubscriber($customerEmail) {
+
+        if (class_exists(\MailPoet\API\API::class)) {
+            try {
+                $mailpoet_api = \MailPoet\API\API::MP('v1');
+                return $mailpoet_api->getSubscriber($customerEmail);
+            } catch (\Exception $e){
+                $data = false;
+            }
+
+            return $data;
+        }
+
         if (\MailPoet\Settings\SettingsController::getInstance()->get('woocommerce.optin_on_checkout.enabled') == 1) {
             try {
                 $ids = self::getMailPoetId();
@@ -249,14 +270,14 @@ importScripts("https://t.themarketer.com/firebase.js");';
                     ->select('subscribers.*')
                     ->where('subscribers.email', $customerEmail)
                     ->join( MP_SUBSCRIBER_SEGMENT_TABLE, 'relation.subscriber_id = subscribers.id', 'relation' )
-                    ->whereIn('relation.segment_id', self::getMailPoetId())
+                    ->whereIn('relation.segment_id', $ids)
                     ->findOne();
                 } else {
                     $data = \MailPoet\Models\Subscriber::tableAlias('subscribers')
                     ->select('subscribers.*')
                     ->where('subscribers.email', $customerEmail)
                     ->join( MP_SUBSCRIBER_SEGMENT_TABLE, 'relation.subscriber_id = subscribers.id', 'relation' )
-                    ->where('relation.segment_id', self::getMailPoetId())
+                    ->where('relation.segment_id', $ids)
                     ->findOne();
                 }
             } catch (\Exception $e){
@@ -264,11 +285,20 @@ importScripts("https://t.themarketer.com/firebase.js");';
             }
 
             return $data;
-            if ( $data !== false) {
-                return $data;
+        }
+
+        return \MailPoet\Models\Subscriber::findOne($customerEmail);
+    }
+
+    public static function mStatus() {
+        if (self::$cMStatus == null) {
+            if (class_exists(\MailPoet\Entities\SubscriberEntity::class)) {
+                self::$cMStatus = \MailPoet\Entities\SubscriberEntity::STATUS_SUBSCRIBED;
+            } else {
+                self::$cMStatus = \MailPoet\Models\Subscriber::STATUS_SUBSCRIBED;
             }
         }
-        return \MailPoet\Models\Subscriber::findOne($customerEmail);
+        return self::$cMStatus;
     }
 
     public static function tableName()

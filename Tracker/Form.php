@@ -75,9 +75,12 @@ class Form
                     }
                     $active    = \is_plugin_active($plug);
                     if ($active) {
-                        if (Config::getValue('opt_in_oldmail') === null) {
-                            Config::setValue('opt_in_oldmail', \MailPoet\Settings\SettingsController::getInstance()->get('signup_confirmation.enabled'));
+                        $stat = \MailPoet\Settings\SettingsController::getInstance()->get('signup_confirmation.enabled');
+                        
+                        if (Config::getValue('opt_in_oldmail') === null || $stat != 0) {
+                            Config::setValue('opt_in_oldmail', $stat);
                         }
+                        
                         if ($value == 1) {
                             \MailPoet\Settings\SettingsController::getInstance()->set('signup_confirmation.enabled', 0);
                         } else {

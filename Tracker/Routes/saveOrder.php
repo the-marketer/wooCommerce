@@ -82,18 +82,19 @@ class saveOrder
                     $val = Observer::getEmail($sOrder['email_address']);
 
                     $info = array( "email" => $sOrder['email_address'] );
-                    // $status = \MailPoet\Models\Subscriber::getWooCommerceSegmentSubscriber($val['email_address'])->status;
-                    // $status = \MailPoet\Models\Subscriber::findOne($val['email_address'])->status;
                     if ($sOrder['email_address'] !== null) {
                         $gSub = Config::getSubscriber($sOrder['email_address']);
 
                         if ($gSub !== false) {
+                            if (is_array($gSub)) {
+                                $gSub = (object) $gSub;
+                            }
                             $status = $gSub->status;
                         } else {
                             $status = "NotFound";
                         }
                         
-                        if ($status === \MailPoet\Models\Subscriber::STATUS_SUBSCRIBED) {
+                        if ($status === Config::mStatus()) {
                             if ($check !== null && isset($check[$sOrder['email_address']])) {
                                 if (($time - $check[$sOrder['email_address']]) <= 60) {
                                     \Mktr\Tracker\Logs::debug($sOrder['email_address'], 'emailSendBlockSetEmail'); 

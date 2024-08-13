@@ -69,7 +69,13 @@ class Feed
             {
                 Product::getById($val);
                 
-                if (Product::getRegularPrice() == 0 && Product::getPrice() == 0 || Product::getImage() == false) { continue; }
+                $skipZeroPriceProduct = apply_filters('marketer_skip_zero_price_product', true);
+
+                if ($skipZeroPriceProduct && (Product::getRegularPrice() == 0 && Product::getPrice() == 0)) {
+                    continue;
+                }
+
+                if (Product::getImage() == false) { continue; }
                 $created_at = Product::getCreatedAt();
 
                 if ($created_at === null) {

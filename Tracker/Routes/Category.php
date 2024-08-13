@@ -39,8 +39,10 @@ class Category
 
     public static function execute()
     {
+        $categoryTaxonomyName = apply_filters('marketer_override_product_category', 'product_cat');
+
         $args = array(
-            'taxonomy' => 'product_cat',
+            'taxonomy' => $categoryTaxonomyName,
             'order' => 'DESC',
             'return' => 'ids'
         );
@@ -67,10 +69,12 @@ class Category
     /** @noinspection PhpUndefinedMethodInspection */
     public static function buildCategory($categoryRegistry = null)
     {
+        $categoryTaxonomyName = apply_filters('marketer_override_product_category', 'product_cat');
+
         $build = array($categoryRegistry->name);
         if (property_exists($categoryRegistry, 'category_parent')) {
             while ($categoryRegistry->category_parent > 0) {
-                $categoryRegistry = get_term_by('id', $categoryRegistry->category_parent, 'product_cat');
+                $categoryRegistry = get_term_by('id', $categoryRegistry->category_parent, $categoryTaxonomyName);
                 $build[] = $categoryRegistry->name;
             }
         }

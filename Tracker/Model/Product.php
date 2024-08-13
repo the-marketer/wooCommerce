@@ -201,7 +201,9 @@ class Product
 
     public static function getCat()
     {
-        return Events::buildMultiCategory(get_the_terms(self::getId(), 'product_cat'));
+        $categoryTaxonomyName = apply_filters('marketer_override_product_category', 'product_cat');
+
+        return Events::buildMultiCategory(get_the_terms(self::getId(), $categoryTaxonomyName));
     }
 
     public static function qTranslate($string) {
@@ -294,7 +296,7 @@ class Product
 
     public static function getImage()
     {
-       return wp_get_attachment_url(self::getMainImgId());
+       return apply_filters('marketer_override_product_image_feed', wp_get_attachment_url(self::getMainImgId()), self::$asset);
     }
 
     public static function getImages()

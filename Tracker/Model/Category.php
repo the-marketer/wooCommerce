@@ -65,8 +65,10 @@ class Category
         {
             $id = get_queried_object()->term_id;
         }
-
-        self::$asset = get_term_by('id', $id, 'product_cat');
+        
+        $taxonomyName = apply_filters('marketer_override_product_category', 'product_cat');
+        
+        self::$asset = get_term_by('id', $id, $taxonomyName);
         return self::init();
     }
 

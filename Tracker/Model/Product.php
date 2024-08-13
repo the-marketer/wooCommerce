@@ -79,6 +79,8 @@ class Product
     );
     private static $AcquisitionPriceMeta = null;
 
+    public static $getImage = null;
+
     public static function init()
     {
         if (self::$init == null) {
@@ -201,7 +203,7 @@ class Product
 
     public static function getCat()
     {
-        return Events::buildMultiCategory(get_the_terms(self::getId(), 'product_cat'));
+        return Events::buildMultiCategory(get_the_terms(self::getId(), \Mktr\Tracker\Config::getProductCat()));
     }
 
     public static function qTranslate($string) {
@@ -480,9 +482,20 @@ class Product
         return \Mktr\Tracker\Valid::digit2(($check === true || $p > 0 ? $p : self::getPrice(true)), 2);
     }
 
+    public static function cForImage() {
+        if (self::$getImage !== null) {
+            self::$getImage = \Mktr\Tracker\Config::getProductCat() === 'product_cat';
+        }
+        return self::$getImage;
+    }
+
     public static function getImage()
     {
-       return wp_get_attachment_url(self::getMainImgId());
+        if (self::cForImage()) {
+            return wp_get_attachment_url(self::getMainImgId());
+        } else {
+            return apply_filters('marketer_override_product_image_feed', wp_get_attachment_url(self::getMainImgId()), self::$asset);
+        }
     }
 
     public static function getImages()

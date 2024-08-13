@@ -40,7 +40,7 @@ class Category
     public static function execute()
     {
         $args = array(
-            'taxonomy' => 'product_cat',
+            'taxonomy' => \Mktr\Tracker\Config::getProductCat(),
             'order' => 'DESC',
             'return' => 'ids'
         );
@@ -52,14 +52,12 @@ class Category
         {
             $get[] = array(
                 "name" => $val->name,
-                "url" => get_term_link($val->slug, 'product_cat'),
+                "url" => get_term_link($val->slug, \Mktr\Tracker\Config::getProductCat()),
                 'id'=> $val->term_id,
                 "hierarchy" => self::buildCategory($val),
                 // "image_url" => $category->getImageUrl()
             );
         }
-
-
 
         return $get;
     }
@@ -70,7 +68,7 @@ class Category
         $build = array($categoryRegistry->name);
         if (property_exists($categoryRegistry, 'category_parent')) {
             while ($categoryRegistry->category_parent > 0) {
-                $categoryRegistry = get_term_by('id', $categoryRegistry->category_parent, 'product_cat');
+                $categoryRegistry = get_term_by('id', $categoryRegistry->category_parent, \Mktr\Tracker\Config::getProductCat());
                 $build[] = $categoryRegistry->name;
             }
         }

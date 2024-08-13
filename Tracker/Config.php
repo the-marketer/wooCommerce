@@ -37,6 +37,7 @@ class Config
     
     public static $MKTR_TABLE = null;
     public static $MKTR_DB = null;
+    public static $product_cat = null;
 
     const space = PHP_EOL . "        ";
     /* TODO Google Test */
@@ -210,7 +211,14 @@ importScripts("https://t.themarketer.com/firebase.js");';
         return WC()->session;
         */
     }
-
+    
+    public static function getProductCat() {
+        if (Config::$product_cat === null) {
+            Config::$product_cat = apply_filters('marketer_override_product_category', 'product_cat');
+        }
+        return Config::$product_cat;
+    }
+    
     public static function getMailPoetId( $id = null ) {
         $i = Config::getValue('mailpoet_id_list');
         if ($id === false || Config::getValue('mailpoet_id_list') === null) {

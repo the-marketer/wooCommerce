@@ -66,7 +66,7 @@ class Category
             $id = get_queried_object()->term_id;
         }
 
-        self::$asset = get_term_by('id', $id, 'product_cat');
+        self::$asset = get_term_by('id', $id, \Mktr\Tracker\Config::getProductCat());
         return self::init();
     }
 

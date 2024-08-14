@@ -344,7 +344,7 @@ class Product
     }
     
     public static function cOverWrite() {
-        if (self::$getOverWrite !== null) {
+        if (self::$getOverWrite === null) {
             self::$getOverWrite = \Mktr\Tracker\Config::getProductCat() === 'product_cat';
         }
         return self::$getOverWrite;

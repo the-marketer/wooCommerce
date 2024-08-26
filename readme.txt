@@ -56,32 +56,33 @@ theMarketer paid plans start from as low as 20 EUR/month. Subscription prices ar
 
 == Frequently Asked Questions ==
 
-1. Why am I getting technical errors during integration?
+= Why am I getting technical errors during integration? =
 
 This typically happens for two reasons:
-
+    
 a. No actions have been taken on the site: If no events have been triggered, they’ll remain inactive (red) until they pass validation. Simply log in and perform a test action, like placing a mock order, and the events should clear.
 
 b. The integration is incorrect or your product feed is invalid: If the product feed hasn’t been validated, any product-based events (everything except "View Homepage") will appear as red. Double-check the product feed and integration.
 
-2. Can I require an email opt-in confirmation for my forms?
+= Can I require an email opt-in confirmation for my forms? =
 
 Yes, absolutely! You can enable this in your account settings under 'Settings' > 'Opt-in'.
 
-3. Can theMarketer send transactional emails for my WordPress site?
+= Can theMarketer send transactional emails for my WordPress site? =
 
 Yes, theMarketer can send your transactional emails, but keep in mind that we only act as the sender. You will need to provide and handle all other aspects of the setup. You can find the API documentation for transactional emails and SMS in our integration docs.
 
-4. How do I install theMarketer on my WordPress site?
+= How do I install theMarketer on my WordPress site?
 
 Here’s a quick guide to get you started:
 
 Go to 'Plugins' > 'Add new', and search for theMarketer plugin.
+
 Click Install Now, then Activate.
 
 For more detailed instructions, check out our WordPress integration guide.
 
-5. How can I reach theMarketer support?
+= How can I reach theMarketer support? =
 
 You can reach out to our support team in two ways:
 

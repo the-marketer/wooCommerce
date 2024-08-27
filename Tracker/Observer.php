@@ -312,6 +312,24 @@ class Observer
         self::SessionSet();
     }
 
+    public static function email($user)
+    {
+        $send = self::getEmail($user->user_email, $user);
+
+        self::$eventName = "setPhone";
+
+        self::$eventData = array(
+            'phone' => get_user_meta($user->ID, 'billing_phone', true)
+        );
+
+        self::SessionSet();
+
+        self::$eventName = 'setEmail';
+        self::$eventData = $send;
+
+        self::SessionSet();
+    }
+    
     public static function setEmail($email)
     {
         self::$eventName = 'setEmail';

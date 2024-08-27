@@ -75,6 +75,12 @@ class Run
         add_action( 'init', array($this, 'addRoute'), 0 );
 
         add_filter( 'gform_after_submission', array($this, 'gform_observer'), 10, 2 );
+        
+        // add_action( 'wp_ajax_ajaxregister', array( $this, 'registerOrLogIn' ));
+        // add_action( 'wp_ajax_nopriv_ajaxregister', array( $this, 'registerOrLogIn' ));
+
+        add_filter( 'woocommerce_registration_auth_new_customer', array($this, 'Register'), 10, 2);
+        add_action( 'styler_after_login', array( $this, 'LogIn' ));
 
         add_action( 'before_woocommerce_init', function() {
             if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
@@ -146,6 +152,30 @@ class Run
         if ($id !== null) {
             Observer::mailpoet_status_changed($id);
         }
+    }
+
+    public function registerOrLogIn()
+    {
+        $email = Config::REQUEST('email');
+        if ($email !== null) {
+            Observer::emailAndPhone($email);
+        }
+    }
+    
+    public function LogIn($user)
+    {
+        if (isset($user->user_email)) {
+            Observer::email($user);
+        }
+    }
+
+    public function Register($status = null, $uID = null)
+    {
+        $user = get_user_by('id', $uID);
+        if (isset($user->user_email)) {
+            Observer::email($user);
+        }
+        return $status;
     }
 
     public function gform_observer($r, $f) {

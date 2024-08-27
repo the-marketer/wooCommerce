@@ -305,7 +305,7 @@ class Observer
     
             self::$eventData = array( 'phone' => get_user_meta($user->ID, 'billing_phone', true) );
             
-            if (!empty(self::$eventData['phone'])) {
+            if (!empty(self::$eventData['phone']) && self::$eventData['phone'] !== '') {
                 self::SessionSet();
             }
     

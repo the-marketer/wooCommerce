@@ -25,6 +25,7 @@ class Observer
     private static $addToCart = false;
     private static $removeFromCart = false;
 
+    private static $setEmailStatus = false;
 
     public static function init()
     {
@@ -294,60 +295,72 @@ class Observer
 
     public static function emailAndPhone($email)
     {
-        $user = get_user_by('email', $email);
+        if (self::$setEmailStatus === false) {
+            self::$setEmailStatus = true;
+            $user = get_user_by('email', $email);
 
-        $send = self::getEmail($email, $user);
-
-        self::$eventName = "setPhone";
-
-        self::$eventData = array( 'phone' => get_user_meta($user->ID, 'billing_phone', true) );
-        
-        if (!empty(self::$eventData['phone'])) {
+            $send = self::getEmail($email, $user);
+    
+            self::$eventName = "setPhone";
+    
+            self::$eventData = array( 'phone' => get_user_meta($user->ID, 'billing_phone', true) );
+            
+            if (!empty(self::$eventData['phone'])) {
+                self::SessionSet();
+            }
+    
+            self::$eventName = 'setEmail';
+            self::$eventData = $send;
+    
             self::SessionSet();
         }
-
-        self::$eventName = 'setEmail';
-        self::$eventData = $send;
-
-        self::SessionSet();
     }
 
     public static function email($user)
     {
-        $send = self::getEmail($user->user_email, $user);
+        if (self::$setEmailStatus === false) {
+            self::$setEmailStatus = true;
+            $send = self::getEmail($user->user_email, $user);
 
-        self::$eventName = "setPhone";
+            self::$eventName = "setPhone";
 
-        self::$eventData = array(
-            'phone' => get_user_meta($user->ID, 'billing_phone', true)
-        );
+            self::$eventData = array(
+                'phone' => get_user_meta($user->ID, 'billing_phone', true)
+            );
 
-        self::SessionSet();
+            self::SessionSet();
 
-        self::$eventName = 'setEmail';
-        self::$eventData = $send;
+            self::$eventName = 'setEmail';
+            self::$eventData = $send;
 
-        self::SessionSet();
+            self::SessionSet();
+        }
     }
     
     public static function setEmail($email)
     {
-        self::$eventName = 'setEmail';
-        self::$eventData = array( 'email_address' => $email );
-        self::SessionSet();
+        if (self::$setEmailStatus === false) {
+            self::$setEmailStatus = true;
+            self::$eventName = 'setEmail';
+            self::$eventData = array( 'email_address' => $email );
+            self::SessionSet();
+        }
     }
 
     public static function setGEmail($data, $gID = null)
     {
-        self::$eventName = 'setEmail';
-        
-        self::$eventData = $data;
-        self::SessionSet();
-        if ($gID !== null) {
-            $gEV = 'gform';
-            $add = Config::session()->get($gEV);
-            $add[self::$lastKey] = $gID;
-            Config::session()->set($gEV, $add);
+        if (self::$setEmailStatus === false) {
+            self::$setEmailStatus = true;
+            self::$eventName = 'setEmail';
+            
+            self::$eventData = $data;
+            self::SessionSet();
+            if ($gID !== null) {
+                $gEV = 'gform';
+                $add = Config::session()->get($gEV);
+                $add[self::$lastKey] = $gID;
+                Config::session()->set($gEV, $add);
+            }
         }
     }
 

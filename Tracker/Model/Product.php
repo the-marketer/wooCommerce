@@ -226,9 +226,9 @@ class Product
         $name = (self::nameConvert() ? self::qTranslate(self::getVarValue('getName', self::$asset), ) : self::getVarValue('getName', self::$asset));
         $nameFilter = apply_filters( 'the_title', $name, self::getId() );
         if (empty($nameFilter)) {
-            return mb_convert_encoding($name, "UTF-8", mb_detect_encoding($name, "auto"));
+            return $name;
         } else {
-            return mb_convert_encoding($nameFilter, "UTF-8", mb_detect_encoding($nameFilter, "auto"));
+            return $nameFilter;
         }
     }
     

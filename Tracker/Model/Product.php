@@ -224,7 +224,7 @@ class Product
 
     public static function getName() {
         $name = (self::nameConvert() ? self::qTranslate(self::getVarValue('getName', self::$asset), ) : self::getVarValue('getName', self::$asset));
-        $nameFilter = apply_filters( 'the_title', $name, self::getId() );
+        $nameFilter = apply_filters( 'woocommerce_product_title', $name, self::getId() );
         if (empty($nameFilter)) {
             return $name;
         } else {

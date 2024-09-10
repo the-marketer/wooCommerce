@@ -4,7 +4,7 @@ Tags: WooCommerce, theMarketer, Email marketing, Loyalty Program, Woocommerce em
 Requires at least: 4.6
 Tested up to: 6.4.2
 Requires PHP: 5.6
-Stable tag: 1.3.6
+Stable tag: 1.3.7
 Requires WooCommerce at least: 4.0.0
 Tested WooCommerce up to: 8.4.0
 License: GPLv2
@@ -60,9 +60,8 @@ theMarketer paid plans start from as low as 20 EUR/month. Subscription prices ar
 
 This typically happens for two reasons:
     
-a. No actions have been taken on the site: If no events have been triggered, they’ll remain inactive (red) until they pass validation. Simply log in and perform a test action, like placing a mock order, and the events should clear.
-
-b. The integration is incorrect or your product feed is invalid: If the product feed hasn’t been validated, any product-based events (everything except "View Homepage") will appear as red. Double-check the product feed and integration.
+1. No actions have been taken on the site: If no events have been triggered, they’ll remain inactive (red) until they pass validation. Simply log in and perform a test action, like placing a mock order, and the events should clear.
+2. The integration is incorrect or your product feed is invalid: If the product feed hasn’t been validated, any product-based events (everything except "View Homepage") will appear as red. Double-check the product feed and integration.
 
 = Can I require an email opt-in confirmation for my forms? =
 

@@ -239,7 +239,7 @@ class Order
 
             if (Product::getId() !== false && Product::getId() !== null) {
                 $products[] = array(
-                    "product_id" => Product::getId(),
+                    "product_id" => $o['product_id'],
                     "price" => \Mktr\Tracker\Valid::digit2((($o['subtotal'] + (Product::checkTax() && isset($o['subtotal_tax']) ? $o['subtotal_tax'] : 0)) / $o['quantity']), 2),
                     /* // round($o['total'] + (isset($o['subtotal_tax']) ? $o['subtotal_tax'] : 0)),
                     // ($o['subtotal'] / $o['quantity']) */

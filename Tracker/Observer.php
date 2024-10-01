@@ -256,7 +256,7 @@ class Observer
 
     public static function registerOrLogIn($user_login, $user = null) {
         if (!is_null($user)) {
-            setcookie("mktr", sanitize_email(( is_array($user) ? $user["user_email"] : $user->user_email )), strtotime('+30 days'));
+            setcookie("mktr", sanitize_email(( is_array($user) ? $user["user_email"] : $user->user_email )), strtotime('+30 days'), COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true);
         }
     }
 
@@ -306,13 +306,13 @@ class Observer
             self::$eventData = array( 'phone' => get_user_meta($user->ID, 'billing_phone', true) );
             
             if (!empty(self::$eventData['phone']) && self::$eventData['phone'] !== '') {
-                self::SessionSet();
+                self::SessionSet(self::$eventData['phone']);
             }
     
             self::$eventName = 'setEmail';
             self::$eventData = $send;
     
-            self::SessionSet();
+            self::SessionSet(self::$eventData['email_address']);
         }
     }
 
@@ -328,12 +328,12 @@ class Observer
                 'phone' => get_user_meta($user->ID, 'billing_phone', true)
             );
 
-            self::SessionSet();
+            self::SessionSet(self::$eventData['phone']);
 
             self::$eventName = 'setEmail';
             self::$eventData = $send;
 
-            self::SessionSet();
+            self::SessionSet(self::$eventData['email_address']);
         }
     }
     
@@ -343,7 +343,7 @@ class Observer
             self::$setEmailStatus = true;
             self::$eventName = 'setEmail';
             self::$eventData = array( 'email_address' => $email );
-            self::SessionSet();
+            self::SessionSet(self::$eventData['email_address']);
         }
     }
 
@@ -354,7 +354,7 @@ class Observer
             self::$eventName = 'setEmail';
             
             self::$eventData = $data;
-            self::SessionSet();
+            self::SessionSet(self::$eventData['email_address']);
             if ($gID !== null) {
                 $gEV = 'gform';
                 $add = Config::session()->get($gEV);

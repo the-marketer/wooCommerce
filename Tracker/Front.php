@@ -135,7 +135,7 @@ class Front
     {
         if (isset($_COOKIE['mktr'])) {
             Observer::emailAndPhone($_COOKIE['mktr']);
-            setcookie("mktr", '', 0);
+            setcookie("mktr", '', 0, COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true);
             unset($_COOKIE['mktr']);
         }
 

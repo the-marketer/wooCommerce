@@ -91,7 +91,8 @@ class Config
         'google_tagCode' => 'mktr_google/google/tagCode',
         'woocommerce_version' => 'woocommerce_version',
         'rated' => 'mktr_tracker/tracker/rated',
-        'rated_install' => 'mktr_tracker/tracker/rated_install'
+        'rated_install' => 'mktr_tracker/tracker/rated_install',
+        'translate_press' => 'mktr_tracker/tracker/translate_press'
     );
 
     const configDefaults = array(
@@ -126,7 +127,8 @@ class Config
         'google_tagCode' => '',
         'woocommerce_version' => null,
         'rated' => 0,
-        'rated_install' => 0
+        'rated_install' => 0,
+        'translate_press' => 0,
     );
 
     const funcNames = array(
@@ -154,7 +156,8 @@ class Config
         'getCronReview' => array('cron_review', 'int'),
         'getUpdateReview' => array('update_review', 'int'),
         'getRated' => array('rated', 'int'),
-        'getRatedInstall' => array('rated_install', 'int')
+        'getRatedInstall' => array('rated_install', 'int'),
+        'getTranslatePress' => array('translate_press', 'int')
     );
 
     public static $checkList = ['key', 'start_date', 'end_date', 'page', 'customerId','expiration_date', 'value','type', 'mime-type', 'read','file'];
@@ -381,7 +384,26 @@ importScripts("https://t.themarketer.com/firebase.js");';
 
     public static function getBaseURL()
     {
+        if (Config::getTranslatePress() == 1) {
+            $site_url = get_site_url();
+            $request_uri = $_SERVER['REQUEST_URI'];
+            $segments = explode('/', trim($request_uri, '/'));
+            $first_segment = isset($segments[0]) ? $segments[0] : '';
+            if (self::isValidLanguageCode($first_segment)) {
+                return $site_url . '/' . $first_segment . '/';
+            }
+        
+            return $site_url . '/';
+        }
+
         return get_site_url(). '/';
+    }
+    
+    public static function isValidLanguageCode($code)
+    {
+        $supported_languages = array('en-ch', 'fr-ch', 'de-ch', 'it-ch'); // Adjust this list to your site’s languages
+        
+        return in_array($code, $supported_languages);
     }
 
     /** @noinspection PhpUnused */

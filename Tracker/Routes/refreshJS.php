@@ -62,7 +62,7 @@ class refreshJS
             $js[] = 'window.mktr.try = 0;';
             $js[] = 'window.mktr.tryLoadEventsFunc = 0;';
             $js[] = 'window.mktr.selectors = "'.Config::getSelectors().'";';
-            $js[] = 'window.mktr.url = "'.Config::getBaseURL().'";';
+            $js[] = 'window.mktr.url = mktr_data.BaseURL;';
             $js[] = 'window.mktr.version = "' . \Mktr\Tracker\Run::$version . '"';
             $js[] = 'window.mktr.debug = function () { if (typeof dataLayer != "undefined") { for (let i of dataLayer) { console.log("Mktr","Google",i); } } };';
             $js[] = '';

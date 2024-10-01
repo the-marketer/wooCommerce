@@ -162,6 +162,15 @@ class Form
             if ($push_status) {
                 Observer::pushStatus();
             }
+            if ( ! function_exists( 'is_plugin_active' ) ) {
+                require_once( ABSPATH . '/wp-admin/includes/plugin.php' );
+            }
+            $active = \is_plugin_active('translatepress-multilingual/index.php');
+            if ($active) {
+                Config::setValue('translate_press', 1);
+            } else {
+                Config::setValue('translate_press', 0);
+            }
 
             if ($fail['tracking'] && ( Config::getValue('status') == 1 || $onboarding[1] != 2 )) {
                 Admin::addNotice( array( 'type' => 'error', 'message'=> 'To enable tracking you need to fill all required (*) fields' ) );

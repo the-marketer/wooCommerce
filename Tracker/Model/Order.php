@@ -30,6 +30,8 @@ class Order
 
     private static $data = array();
 
+    private static $names = array();
+
     private static $refund = 0;
     /* "status" */
     private static $valueNames = array(
@@ -38,8 +40,8 @@ class Order
         'getStatus' => 'get_status',
         // 'getRefunds' => 'get_refund_amount',
         'getDateAt'=> 'get_date_created',
-        'getFirstName' => 'get_billing_first_name',
-        'getLastName' => 'get_billing_last_name',
+        // 'getFirstName' => 'get_billing_first_name',
+        // 'getLastName' => 'get_billing_last_name',
         'getEmail' => 'get_billing_email',
         'getPhone' => 'get_billing_phone',
         'getState' => 'get_billing_state',
@@ -147,6 +149,42 @@ class Order
             return \Mktr\Tracker\Valid::digit2((self::$asset->get_discount_tax() + $discount), 2);
         }
         return $discount;
+    }
+
+    public static function getFirstName() {
+        $n = self::getLastNameAndFirstName();
+        return $n['firstname'];
+    }
+
+    public static function getLastName() {
+        $n = self::getLastNameAndFirstName();
+        return $n['lastname'];
+    }
+
+    public static function getLastNameAndFirstName() {
+        if (empty(self::$names)) {
+            $fname = self::$asset->get_billing_first_name();
+            $lname = self::$asset->get_billing_last_name();
+            
+            if (!empty($fname) && !empty($lname)) {
+                $nn = array( $fname, $lname );
+            } else if (!empty($fname)) {
+                $nn = explode(' ', $fname, 2);
+            } else if (!empty($lname)) {
+                $nn = explode(' ', $lname, 2);
+            } else {
+                $em = explode("@", self::$asset->get_billing_email());
+                $nn = explode(' ', str_replace('_', ' ', $em[0]), 2);
+            }
+
+            if (!isset($nn[1])) { $nn[1] = ''; }
+            
+            self::$names = array(
+                'firstname' => $nn[0],
+                'lastname' => $nn[1]
+            );
+        }
+        return self::$names;
     }
 
     public static function getShipping() {
@@ -260,6 +298,7 @@ class Order
         try {
             self::$asset = new WC_Order($id);
             self::$refund = 0;
+            self::$names = array();
         } catch(\Exception $e) {
             return self::init();
         }

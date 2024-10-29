@@ -48,7 +48,7 @@ class Product
         'getParentId' => 'get_parent_id',
         'getSku' => 'get_sku',
         // 'getAvailableVariations' => 'get_available_variations',
-        'getUrl' => 'get_permalink',
+        // 'getUrl' => 'get_permalink',
         'getImg' => 'get_image',
         'getStockQuantity' => 'get_stock_quantity',
         'getIsInStock' => 'is_in_stock',
@@ -496,12 +496,17 @@ class Product
         }
     }
 
+    public static function getUrl()
+    {
+        return Config::url_encode(self::$asset->get_permalink());
+    }
+
     public static function getImage()
     {
         if (self::cOverWrite()) {
-            return wp_get_attachment_url(self::getMainImgId());
+            return Config::url_encode(wp_get_attachment_url(self::getMainImgId()));
         } else {
-            return apply_filters('marketer_override_product_image_feed', wp_get_attachment_url(self::getMainImgId()), self::$asset);
+            return Config::url_encode(apply_filters('marketer_override_product_image_feed', wp_get_attachment_url(self::getMainImgId()), self::$asset));
         }
     }
 
@@ -513,7 +518,7 @@ class Product
 
         foreach (self::getGalleryImageIds() as $id)
         {
-            $list['image'][] = wp_get_attachment_url($id);
+            $list['image'][] = Config::url_encode(wp_get_attachment_url($id));
         }
 
         return $list;

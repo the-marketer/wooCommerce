@@ -296,7 +296,7 @@ class Admin
                 )
             );
     
-            echo '<div class="mktr-modal mktr-modal-feedback"><div class="mktr-modal-body">'. self::gForm($form, false) .'</div></div>';
+            echo '<div class="mktr-modal mktr-modal-feedback" style="display:none"><div class="mktr-modal-body">'. self::gForm($form, false) .'</div></div>';
         }
     }
 
@@ -351,7 +351,7 @@ class Admin
             $out[] = '<div class="updated notice notice-success is-dismissible"><p>theMarketer is almost ready. <a href="'.admin_url('admin.php?page=mktr_tracker').'">Click Here</a></p></div>';
         }
         if (self::rateActive()) {
-            $out[] = '<div class="mktr-modal mktr-modal-rate">
+            $out[] = '<div class="mktr-modal mktr-modal-rate" style="display:none">
     <div class="mktr-modal-body">
         <div class="mktr-head"><img src="' . Run::plug_url('/assets/logo.png') . '"></div>
         <div class="mktr-content">

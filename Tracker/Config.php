@@ -409,11 +409,10 @@ importScripts("https://t.themarketer.com/firebase.js");';
     public static function url_encode($url)
     {
         $parsed_url = parse_url($url);
-
-        $encoded_path = implode('/', array_map('rawurlencode', explode('/', $parsed_url['path'])));
-        $query = isset($parsed_url['query']) ? '?' . $parsed_url['query'] : '';
-        $encoded_url = $parsed_url['scheme'] . '://' . $parsed_url['host'] . $encoded_path . $query;
-        if ($encoded_url != '://') {
+        if (isset($parsed_url['host'])) {
+            $encoded_path = implode('/', array_map('rawurlencode', explode('/', $parsed_url['path'])));
+            $query = isset($parsed_url['query']) ? '?' . $parsed_url['query'] : '';
+            $encoded_url = $parsed_url['scheme'] . '://' . $parsed_url['host'] . $encoded_path . $query;
             return $encoded_url;
         }
         return false;

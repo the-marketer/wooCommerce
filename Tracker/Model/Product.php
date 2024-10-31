@@ -529,12 +529,14 @@ class Product
         foreach (self::getGalleryImageIds() as $id)
         {
             $img = wp_get_attachment_url($id);
-            $newURL = Config::url_encode($img);
+            if ($img != false && $img != 'false') {
+                $newURL = Config::url_encode($img);
             
-            if ($newURL) {
-                $list['image'][] = $newURL;
-            } else {
-                $list['image'][] = $img;
+                if ($newURL) {
+                    $list['image'][] = $newURL;
+                } else {
+                    $list['image'][] = $img;
+                }
             }
             
         }

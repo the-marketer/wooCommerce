@@ -504,9 +504,19 @@ class Product
     public static function getImage()
     {
         if (self::cOverWrite()) {
-            return Config::url_encode(wp_get_attachment_url(self::getMainImgId()));
+            $img = wp_get_attachment_url(self::getMainImgId());
+            $newURL = Config::url_encode($img);
+            if ($newURL) {
+                return $newURL;
+            }
+            return $img;
         } else {
-            return Config::url_encode(apply_filters('marketer_override_product_image_feed', wp_get_attachment_url(self::getMainImgId()), self::$asset));
+            $img = apply_filters('marketer_override_product_image_feed', wp_get_attachment_url(self::getMainImgId()), self::$asset);
+            $newURL = Config::url_encode($img);
+            if ($newURL) {
+                return $newURL;
+            }
+            return $img;
         }
     }
 
@@ -518,7 +528,15 @@ class Product
 
         foreach (self::getGalleryImageIds() as $id)
         {
-            $list['image'][] = Config::url_encode(wp_get_attachment_url($id));
+            $img = wp_get_attachment_url($id);
+            $newURL = Config::url_encode($img);
+            
+            if ($newURL) {
+                $list['image'][] = $newURL;
+            } else {
+                $list['image'][] = $img;
+            }
+            
         }
 
         return $list;

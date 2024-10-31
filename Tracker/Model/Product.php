@@ -540,6 +540,9 @@ class Product
             }
             
         }
+        if (empty($list['image'])) {
+            $list['image'][] = self::getImage();
+        }
 
         return $list;
     }

@@ -41,9 +41,9 @@ class Feed
     public static function execute()
     {
         if (Product::cOverWrite()) {
-            $productTypes = array( 'simple', 'grouped', 'external', 'variable', 'woosb' );
+            $productTypes = array( 'simple', 'grouped', 'external', 'variable', 'woosb', 'bundle' );
         } else {
-            $productTypes = apply_filters('marketer_override_feed_product_types', ['simple', 'grouped', 'external', 'variable', 'woosb']);
+            $productTypes = apply_filters('marketer_override_feed_product_types', array( 'simple', 'grouped', 'external', 'variable', 'woosb', 'bundle' ));
         }
         
         $args = array(

@@ -579,7 +579,8 @@ class Product
         }
 
         $stock = $stock + self::$stock;
-        
+
+        if ($stock > 999999998) { $stock = 999999998; }
         return $stock;
     }
 

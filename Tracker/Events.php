@@ -39,8 +39,7 @@ class Events
         "addToWishlist"=> [false, "__sm__add_to_wishlist"],
         "removeFromWishlist"=> [false, "__sm__remove_from_wishlist"],
         "saveOrder"=> [true, "__sm__order"],
-        "setEmail"=> [true, "__sm__set_email"],
-        "setPhone"=> [false, "__sm__set_phone"]
+        "setEmail"=> [true, "__sm__set_email"]
     ];
 
     const eventsName = [
@@ -55,8 +54,7 @@ class Events
         "__sm__initiate_checkout" => "Checkout",
         "__sm__order" => "saveOrder",
         "__sm__search" => "Search",
-        "__sm__set_email" => "setEmail",
-        "__sm__set_phone" => "setPhone"
+        "__sm__set_email" => "setEmail"
     ];
 
     const eventsSchema = [
@@ -79,11 +77,6 @@ class Events
         "Search" => [
             "search_term" => "search_term"
         ],
-
-        "setPhone" => [
-            "phone" => "phone"
-        ],
-
         "addToWishlist" => [
             "product_id" => "product_id",
             "variation" => [
@@ -210,7 +203,7 @@ class Events
         foreach (self::observerGetEvents as $event=>$Name) {
             $eventData = Config::session()->get($event);
             if (!empty($eventData)) {
-                if ( in_array($event, ["saveOrder", "setEmail", "setPhone"]) ) {
+                if ( in_array($event, ["saveOrder", "setEmail"]) ) {
                     foreach ($eventData as $key=>$value) {
                         $ev = self::getEvent($Name[1], $value);
                         if ($event === "saveOrder") { $saveOrder = true; }

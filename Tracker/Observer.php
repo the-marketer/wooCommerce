@@ -298,20 +298,17 @@ class Observer
         if (self::$setEmailStatus === false) {
             self::$setEmailStatus = true;
             $user = get_user_by('email', $email);
-
             $send = self::getEmail($email, $user);
-    
-            self::$eventName = "setPhone";
-    
-            self::$eventData = array( 'phone' => get_user_meta($user->ID, 'billing_phone', true) );
-            
-            if (!empty(self::$eventData['phone']) && self::$eventData['phone'] !== '') {
-                self::SessionSet(self::$eventData['phone']);
-            }
-    
+
             self::$eventName = 'setEmail';
             self::$eventData = $send;
-    
+            
+            $phone = get_user_meta($user->ID, 'billing_phone', true);
+            
+            if (!empty($phone) && $phone !== '') {
+                self::$eventData['phone'] = $phone;
+            }
+            
             self::SessionSet(self::$eventData['email_address']);
         }
     }
@@ -321,18 +318,15 @@ class Observer
         if (self::$setEmailStatus === false) {
             self::$setEmailStatus = true;
             $send = self::getEmail($user->user_email, $user);
-
-            self::$eventName = "setPhone";
-
-            self::$eventData = array(
-                'phone' => get_user_meta($user->ID, 'billing_phone', true)
-            );
-
-            self::SessionSet(self::$eventData['phone']);
+            $phone = get_user_meta($user->ID, 'billing_phone', true);
+            
+            if (!empty($phone) && $phone !== '') {
+                self::$eventData['phone'] = $phone;
+            }
 
             self::$eventName = 'setEmail';
             self::$eventData = $send;
-
+            
             self::SessionSet(self::$eventData['email_address']);
         }
     }

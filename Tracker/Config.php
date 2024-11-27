@@ -241,7 +241,7 @@ importScripts("https://t.themarketer.com/firebase.js");';
             }
 
             if ($TheMarketerID !== null) {
-                $i[] = $TheMarketerID;
+                $i[] = (string) $TheMarketerID;
             }
             
             try {

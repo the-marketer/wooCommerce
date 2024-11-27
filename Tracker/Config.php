@@ -235,10 +235,13 @@ importScripts("https://t.themarketer.com/firebase.js");';
             foreach($repo->findAll() as $v) {
                 if ($v->getName() === 'TheMarketer') {
                     $TheMarketerID = $v->getId();
-                    $i[] = (string) $v->getId();
                 } else if (in_array($v->getType(), $listType)) {
                     $i[] = (string) $v->getId();
                 }
+            }
+
+            if ($TheMarketerID !== null) {
+                $i[] = $TheMarketerID;
             }
             
             try {
@@ -253,11 +256,27 @@ importScripts("https://t.themarketer.com/firebase.js");';
     }
 
     public static function getSubscriber($customerEmail) {
-
+        $data = false;
         if (class_exists(\MailPoet\API\API::class)) {
             try {
                 $mailpoet_api = \MailPoet\API\API::MP('v1');
-                return $mailpoet_api->getSubscriber($customerEmail);
+                $v = $mailpoet_api->getSubscriber($customerEmail);
+
+                if (MKTR_MAILPOET_SEGMENT && (is_object($v) || is_array($v))) {
+                    $isSub = false;
+                    $ids = Config::getMailPoetId();
+                    $dataSub = is_array($v) ? $v['subscriptions'] : $v->subscriptions;
+                    foreach ($dataSub as $sub) {
+                        if ($sub['segment_id'] == end($ids) && $sub['status'] == Config::mStatus()) {
+                            $isSub = true;
+                        }
+                    }
+                    if ($isSub) {
+                        return $v;
+                    }
+                } else {
+                    return $v;
+                }                
             } catch (\Exception $e){
                 $data = false;
             }

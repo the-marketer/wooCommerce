@@ -112,6 +112,7 @@ class MailPoet
 
         $get = array();
         $toSkip = array();
+        $ids = null;
         do {
             $data = self::get_customers($args);
             $pages = $stop ? 0 : count($data);
@@ -123,11 +124,28 @@ class MailPoet
                     }
                     $status = $v->status;
                     if ($status === Config::mStatus()) {
-                        $get[] = [ 
-                            'first_name' => $v->first_name,
-                            'last_name' => $v->last_name,
-                            'email' => $v->email
-                        ];
+                        $isSub = false;
+                            
+                        if (MKTR_MAILPOET_SEGMENT && (is_object($v) || is_array($v))) {
+                            if ($ids == null) {
+                                $ids = Config::getMailPoetId();
+                            }
+                            $dataSub = is_array($v) ? $v['subscriptions'] : $v->subscriptions;
+                            foreach ($dataSub as $sub) {
+                                if ($sub['segment_id'] == end($ids) && $sub['status'] == Config::mStatus()) {
+                                    $isSub = true;
+                                }
+                            }
+                        } else {
+                            $isSub = true;
+                        }
+                        if ($isSub) {
+                            $get[] = [ 
+                                'first_name' => $v->first_name,
+                                'last_name' => $v->last_name,
+                                'email' => $v->email
+                            ];
+                        }
                     }
                 }
             }

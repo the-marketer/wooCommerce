@@ -36,28 +36,49 @@ class FeedBack
     public static function execute()
     {
         Valid::setParam('mime-type', 'json');
-        $body = array(
-            'rating' => null,
-            'message' => null,
-            'status' => 1,
-            'platform' => \Mktr\Tracker\Run::platform(),
-            't' => time()
-        );
-        if (isset($_POST['message'])) {
-            $body['message'] = $_POST['message']; 
+        if (isset($_POST['rating']) || isset($_POST['message'])) {
+            $body = array(
+                'rating' => null,
+                'message' => null,
+                'status' => 1,
+                'platform' => \Mktr\Tracker\Run::platform(),
+                't' => time()
+            );
+
+            if (isset($_POST['message'])) {
+                $body['message'] = $_POST['message']; 
+            }
+            
+            if (isset($_POST['rating'])) {
+                $body['rating'] = $_POST['rating'];
+                \Mktr\Tracker\Config::setValue("rated", 1);
+            }
+            
+            $d = \wp_remote_post('https://connector.themarketer.com/feedback/add',
+                array(
+                    'method'      => 'POST',
+                    'timeout'     => 5,
+                    'user-agent'  => 'mktr:' . \get_bloginfo( 'url' ),
+                    'body' => $body
+                )
+            );
+
+            return array('status' => 'succes');
+        } else {
+            $lems = isset($_GET['LEMS']);
+            $mailpoet_segment = isset($_GET['MAILPOET']);
+
+            if ($lems) {
+                \Mktr\Tracker\Config::setValue("lems", (int) $_GET['LEMS']);
+            }
+            if ($mailpoet_segment) {
+                \Mktr\Tracker\Config::setValue("mailpoet_segment", (int) $_GET['MAILPOET']);
+            }
+
+            if ($lems || $mailpoet_segment) {
+                return array('status' => 'succes');
+            }
         }
-        if (isset($_POST['rating'])) {
-            $body['rating'] = $_POST['rating'];
-            \Mktr\Tracker\Config::setValue("rated", 1);
-        }
-        $d = \wp_remote_post('https://connector.themarketer.com/feedback/add',
-            array(
-                'method'      => 'POST',
-                'timeout'     => 5,
-                'user-agent'  => 'mktr:' . \get_bloginfo( 'url' ),
-                'body' => $body
-            )
-        );
-        return array('status' => 'succes');
+        return array('status' => 'error');
     }
 }

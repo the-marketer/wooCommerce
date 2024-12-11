@@ -550,14 +550,14 @@ class Admin
 
                         if (!in_array($c['type'], array('radio','hidden'))) {
                             $inputData = "";
+                            if ($c['name'] === 'allow_export_gravity_data' && isset($c['extra'])) {
+                                $fid = 'mk_check_' . $c['name'].'_'.$c['extra'][0].'_'.$c['extra'][1];
+                                $name = $c['name'].']['.$c['extra'][0].']['.$c['extra'][1];
+                            } else {
+                                $fid = 'mk_check_' . $c['name'];
+                                $name = $c['name'];
+                            }
                             if ($c['type'] === 'checkbox') {
-                                if ($c['name'] === 'allow_export_gravity_data' && isset($c['extra'])) {
-                                    $fid = 'mk_check_' . $c['name'].'_'.$c['extra'][0].'_'.$c['extra'][1];
-                                    $name = $c['name'].']['.$c['extra'][0].']['.$c['extra'][1];
-                                } else {
-                                    $fid = 'mk_check_' . $c['name'];
-                                    $name = $c['name'];
-                                }
                                 $inputData .= '<input type="hidden" id="' . $fid . '_value" name="'.Config::$name.'['.$name.']" value="' . (int) $value .'">';
                                 $inputData .= '<input id="' . $fid .'" class="mkcheck" type="checkbox" onchange="document.querySelector(\'#' . $fid .
                                 '_value\').value=this.checked ? 1 : 0; this.innerHTML = this.checked ? \'Active\':\'Inactive\'" ' . ((int) $value === 1 ? 'checked' : '') .
@@ -568,15 +568,6 @@ class Admin
                                 '_value\').value=this.checked ? 1 : 0; this.innerHTML = this.checked ? \'Active\':\'Inactive\'" ' . ((int) $value === 1 ? 'checked' : '') .
                                 '/><label class="mk-btn-opt" for="mk_check_'. $c['name'] .'" ></label>';
                             }  else if ($c['type'] === 'checkbox-sub') {
-                                
-                                if ($c['name'] === 'allow_export_gravity_data' && isset($c['extra'])) {
-                                    $fid = 'mk_check_' . $c['name'].'_'.$c['extra'][0].'_'.$c['extra'][1];
-                                    $name = $c['name'].']['.$c['extra'][0].']['.$c['extra'][1];
-                                } else {
-                                    $fid = 'mk_check_' . $c['name'];
-                                    $name = $c['name'];
-                                }
-
                                 $inputData .= '<input type="hidden" id="' . $fid . '_value" name="'.Config::$name.'['.$name.']" value="' . (int) $value .'">';
                                 $inputData .= '<input id="' . $fid .'" class="mkcheck" type="checkbox" onchange="document.querySelector(\'#' . $fid .
                                 '_value\').value=this.checked ? 1 : 0; this.innerHTML = this.checked ? \'Active\':\'Inactive\'" ' . ((int) $value === 1 ? 'checked' : '') .
@@ -594,13 +585,6 @@ class Admin
                                 '" rows="2" cols="100" name="'.Config::$name.'['.$c['name'].']" placeholder="'.(isset($c['placeholder']) ? $c['placeholder'] : $c['label']).
                                 '" '.( empty($value) ? "" : ' value="'.$value.'"' ).'></'.$c['tag'].'>';
                             } else {
-                                if ($c['name'] === 'allow_export_gravity_data' && isset($c['extra'])) {
-                                    $fid = 'mk_check_' . $c['name'].'_'.$c['extra'][0].'_'.$c['extra'][1];
-                                    $name = $c['name'].']['.$c['extra'][0].']['.$c['extra'][1];
-                                } else {
-                                    $fid = 'mk_check_' . $c['name'];
-                                    $name = $c['name'];
-                                }
                                 $inputData .= '<'.$c['tag'].
                                 ' type="'.$c['type'].'" id="'.$fid.
                                 '" name="'.Config::$name.'['.$name.']" placeholder="'.(isset($c['placeholder']) ? $c['placeholder'] : $c['label']).

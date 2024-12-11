@@ -381,18 +381,38 @@ class Run
         $name = MKTR_DIR . '/mktr.php';
         $content = file_get_contents($name);
 
+        if (Config::getValue('lems') == 1) {
+            $lems = 'true';
+        } else {
+            $lems = 'false';
+        }
+
+        if (Config::getValue('mailpoet_segment') == 1) {
+            $mailpoet_segment = 'true';
+        } else {
+            $mailpoet_segment = 'false';
+        }
+
         $newContent = str_replace(array(
             "define('MKTR', __FILE__)",
             "define('MKTR_DIR', dirname(__FILE__));",
             "define('MKTR_BASE', plugin_basename(MKTR));",
             "define('MKTR_DIR_NAME', basename(dirname(MKTR)));",
-            "define('MKTR_INSTALL', true);"
+            "define('MKTR_INSTALL', true);",
+            "define('MKTR_LEMS', false);",
+            "define('MKTR_LEMS', true);",
+            "define('MKTR_MAILPOET_SEGMENT', false);",
+            "define('MKTR_MAILPOET_SEGMENT', true);"
         ), array(
             "define('MKTR', '".MKTR."')",
             "define('MKTR_DIR', '".MKTR_DIR."');",
             "define('MKTR_BASE', '".MKTR_BASE."');",
             "define('MKTR_DIR_NAME', '".MKTR_DIR_NAME."');",
-            "define('MKTR_INSTALL', false);"
+            "define('MKTR_INSTALL', false);",
+            "define('MKTR_LEMS', ".$lems.");",
+            "define('MKTR_LEMS', ".$lems.");",
+            "define('MKTR_MAILPOET_SEGMENT', ".$mailpoet_segment.");",
+            "define('MKTR_MAILPOET_SEGMENT', ".$mailpoet_segment.");"
         ), $content);
 
         $file = fopen($name, 'w+');

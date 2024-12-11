@@ -92,7 +92,9 @@ class Config
         'woocommerce_version' => 'woocommerce_version',
         'rated' => 'mktr_tracker/tracker/rated',
         'rated_install' => 'mktr_tracker/tracker/rated_install',
-        'translate_press' => 'mktr_tracker/tracker/translate_press'
+        'translate_press' => 'mktr_tracker/tracker/translate_press',
+        'lems' => 'mktr_tracker/tracker/lems',
+        'mailpoet_segment' => 'mktr_tracker/tracker/mailpoet_segment'
     );
 
     const configDefaults = array(
@@ -129,6 +131,8 @@ class Config
         'rated' => 0,
         'rated_install' => 0,
         'translate_press' => 0,
+        'lems' => 0,
+        'mailpoet_segment' => 0
     );
 
     const funcNames = array(
@@ -157,7 +161,9 @@ class Config
         'getUpdateReview' => array('update_review', 'int'),
         'getRated' => array('rated', 'int'),
         'getRatedInstall' => array('rated_install', 'int'),
-        'getTranslatePress' => array('translate_press', 'int')
+        'getTranslatePress' => array('translate_press', 'int'),
+        'getLems' => array('lems', 'int'),
+        'getMailpoetSegment' => array('mailpoet_segment', 'int')
     );
 
     public static $checkList = ['key', 'start_date', 'end_date', 'page', 'customerId','expiration_date', 'value','type', 'mime-type', 'read','file'];

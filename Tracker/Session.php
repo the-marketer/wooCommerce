@@ -96,6 +96,8 @@ class Session
                 $data = [ 'data' => serialize(self::init()->data), 'expire' => date('Y-m-d H:i:s', strtotime('+2 day')) ];
                 if (self::init()->insert) {
                     $data['uid'] = $uid;
+                    $del = Config::db()->prepare("DELETE FROM `" . $table_name . "` WHERE `uid` = %s", $uid);
+                    Config::db()->query($del);
                     Config::db()->insert($table_name, $data);
                 } else {
                     Config::db()->update($table_name, $data, array('uid' => $uid));

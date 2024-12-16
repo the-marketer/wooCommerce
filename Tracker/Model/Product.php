@@ -623,14 +623,21 @@ class Product
         $variation_ids        = self::$asset->get_children();
 		$available_variations = array();
         
-		foreach ( $variation_ids as $variation_id ) {
-            $variation = wc_get_product( $variation_id );
-			if (! $variation && (! $variation->exists() || ! $variation->variation_is_visible())) {
-                // || ! $variation->is_in_stock()
-				continue;
-			}
+        global $product;
+        
+        $product = self::$asset;
 
-            $available_variations[] = self::$asset->get_available_variation( $variation );
+		foreach ( $variation_ids as $variation_id ) {
+            if (!empty($variation_id)) {
+                $variation = wc_get_product( $variation_id );
+                
+                if (! $variation && (! $variation->exists() || ! $variation->variation_is_visible())) {
+                    // || ! $variation->is_in_stock()
+                    continue;
+                }
+    
+                $available_variations[] = self::$asset->get_available_variation( $variation );
+            }
         }
         return $available_variations;
     }

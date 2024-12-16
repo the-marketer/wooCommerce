@@ -421,7 +421,11 @@ class Events
     public static function getNameCat($id) {
         if (!isset(self::$listName[$id])) {
             $cat = get_term_by( 'id', $id, 'product_cat' );
-            self::$listName[$id] = $cat->name;
+            if (isset($cat->name)) {
+                self::$listName[$id] = $cat->name;
+            } else {
+                self::$listName[$id] = "N/A";
+            }
         }
         return self::$listName[$id];
     }

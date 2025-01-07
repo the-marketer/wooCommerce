@@ -5,7 +5,7 @@
  * @project     TheMarketer.com
  * @website     https://themarketer.com/
  * @author      Alexandru Buzica (EAX LEX S.R.L.) <b.alex@eax.ro>
- * @license     http://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
+ * @license     https://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
  * @docs        https://themarketer.com/resources/api
  */
 
@@ -161,14 +161,16 @@ class Valid
         return self::$error;
     }
 
-    public static function Output($data, $data1 = null, $name = null)
+    public static function Output($data, $data1 = null, $name = null, $cron = false)
     {
         $mi = self::getParam('mime-type', Config::defMime);
 
-        header("Content-type: ".self::mime[$mi]."; charset=utf-8");
-        header("HTTP/1.1 200 OK");
-        http_response_code(201);
-        header("Status: 200 All rosy");
+        if (!headers_sent() || $cron === false) {
+            header("Content-type: ".self::mime[$mi]."; charset=utf-8");
+            header("HTTP/1.1 200 OK");
+            http_response_code(201);
+            header("Status: 200 All rosy");
+        }
 
         self::$getOut = "";
 

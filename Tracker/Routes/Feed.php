@@ -4,7 +4,7 @@
  * @project     TheMarketer.com
  * @website     https://themarketer.com/
  * @author      Alexandru Buzica (EAX LEX S.R.L.) <b.alex@eax.ro>
- * @license     http://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
+ * @license     https://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
  * @docs        https://themarketer.com/resources/api
  */
 
@@ -40,7 +40,18 @@ class Feed
 
     public static function execute()
     {
+        if (Product::cOverWrite()) {
+            $productTypes = array( 'simple', 'grouped', 'external', 'variable', 'woosb', 'bundle' );
+        } else {
+            $productTypes = apply_filters('marketer_override_feed_product_types', array( 'simple', 'grouped', 'external', 'variable', 'woosb', 'bundle' ));
+        }
+        
         $args = array(
+            'status' => array(
+                /* 'pending', */
+                'publish'
+            ),
+            'type' => $productTypes,
             'order'   => 'ASC',
             'orderby' => 'ID',
             'return' => 'ids',
@@ -69,7 +80,16 @@ class Feed
             {
                 Product::getById($val);
                 
-                if (Product::getRegularPrice() == 0 && Product::getPrice() == 0 || Product::getImage() == false) { continue; }
+                if (Product::cOverWrite()) {
+                    if (Product::getRegularPrice() <= 0 && Product::getPrice() <= 0 || Product::getImage() == false) {
+                        continue;
+                    }
+                } else {
+                    if (Product::getImage() == false) {
+                        continue;
+                    }
+                }
+
                 $created_at = Product::getCreatedAt();
 
                 if ($created_at === null) {
@@ -77,6 +97,8 @@ class Feed
                 } else {
                     $created_at = Valid::correctDate($created_at);
                 }
+
+                $variation = Product::getVariation();
 
                 $oo = array(
                     'id' => Product::getId(),
@@ -96,7 +118,7 @@ class Feed
                     'stock' => Product::getStock(),
                     'media_gallery' => Product::getImages(),
                     'variations' => array(
-                        'variation' => Product::getVariation()
+                        'variation' => $variation
                     ),
                     'created_at' => $created_at,
                 );

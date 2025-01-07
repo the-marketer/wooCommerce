@@ -4,7 +4,7 @@
  * @project     TheMarketer.com
  * @website     https://themarketer.com/
  * @author      Alexandru Buzica (EAX LEX S.R.L.) <b.alex@eax.ro>
- * @license     http://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
+ * @license     https://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
  * @docs        https://themarketer.com/resources/api
  */
 
@@ -67,7 +67,7 @@ class Orders
         $toSkip = array();
         do {
             $orders = wc_get_orders($args);
-            $pages = 0;
+            $pages = $stop ? 0 : $orders->max_num_pages;
 			
             foreach ($orders->orders as $val) {
                 Order::getById($val);

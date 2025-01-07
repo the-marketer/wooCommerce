@@ -5,7 +5,7 @@
  * @project     TheMarketer.com
  * @website     https://themarketer.com/
  * @author      Alexandru Buzica (EAX LEX S.R.L.) <b.alex@eax.ro>
- * @license     http://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
+ * @license     https://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
  * @docs        https://themarketer.com/resources/api
  */
 
@@ -30,7 +30,6 @@ class FileSystem
     /** @noinspection PhpUnused */
     public static function setWorkDirectory($name = 'Storage')
     {
-        
         if ($name != 'base' && !self::$useRoot)
         {
             self::$path = Config::getDir() . $name . "/";
@@ -65,36 +64,24 @@ class FileSystem
     {
         self::$lastPath = self::getPath() . $fName;
 
-        if(self::fileExists($fName))
+        if(self::fileExists($fName) && filesize(self::$lastPath) > 0)
         {
             $file = fopen(self::$lastPath, $mode);
 
             $contents = fread($file, filesize(self::$lastPath));
 
             fclose($file);
-        } else {
-            $contents = '';
-        }
 
-        return $contents;
+            return $contents;
+        } else {
+            return '';
+        }
     }
 
     /** @noinspection PhpUnused */
     public static function readFile($fName, $mode = "rb")
     {
-        $contents = '';
-        self::$lastPath = self::getPath() . $fName;
-
-        if(self::fileExists($fName))
-        {
-            $file = fopen(self::$lastPath, $mode);
-
-            $contents = fread($file, filesize(self::$lastPath));
-
-            fclose($file);
-        }
-
-        return $contents;
+        return self::rFile($fName, $mode);
     }
 
     /** @noinspection PhpUnused */

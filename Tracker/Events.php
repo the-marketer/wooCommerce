@@ -4,7 +4,7 @@
  * @project     TheMarketer.com
  * @website     https://themarketer.com/
  * @author      Alexandru Buzica (EAX LEX S.R.L.) <b.alex@eax.ro>
- * @license     http://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
+ * @license     https://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
  * @docs        https://themarketer.com/resources/api
  */
 
@@ -20,6 +20,9 @@ class Events
     private static $shName = null;
     private static $data = array();
 
+    public static $isWoodMart = false;
+    private static $load_js = true;
+    
     private static $assets = array();
 
     const actions = [
@@ -36,8 +39,7 @@ class Events
         "addToWishlist"=> [false, "__sm__add_to_wishlist"],
         "removeFromWishlist"=> [false, "__sm__remove_from_wishlist"],
         "saveOrder"=> [true, "__sm__order"],
-        "setEmail"=> [true, "__sm__set_email"],
-        "setPhone"=> [false, "__sm__set_phone"]
+        "setEmail"=> [true, "__sm__set_email"]
     ];
 
     const eventsName = [
@@ -52,8 +54,7 @@ class Events
         "__sm__initiate_checkout" => "Checkout",
         "__sm__order" => "saveOrder",
         "__sm__search" => "Search",
-        "__sm__set_email" => "setEmail",
-        "__sm__set_phone" => "setPhone"
+        "__sm__set_email" => "setEmail"
     ];
 
     const eventsSchema = [
@@ -76,11 +77,6 @@ class Events
         "Search" => [
             "search_term" => "search_term"
         ],
-
-        "setPhone" => [
-            "phone" => "phone"
-        ],
-
         "addToWishlist" => [
             "product_id" => "product_id",
             "variation" => [
@@ -163,6 +159,7 @@ class Events
      * @var array
      */
     private static $bMultiCat;
+    private static $listName = [];
 
     public static function init()
     {
@@ -172,55 +169,54 @@ class Events
         return self::$init;
     }
 
-    public static function loader()
+    public static function mktr_data()
     {
-        $lines = array();
+        $mktr_data = array(
+            'uuid'=> null,
+            'clear' => 0,
+            'isWoodMart' => (int) self::$isWoodMart,
+            'push' => array(),
+            'BaseURL' => Config::getBaseURL(),
+            'js' => array()/* ,
+            'evData' => \Mktr\Tracker\Routes\loadEvents::execute(false) */
+        );
 
-        $key = Config::getKey();
-
-        $lines[] = vsprintf(Config::loader, array( $key ));
-
-        $lines[] = 'window.mktr = window.mktr || {}; window.mktr.debug = function () { if (typeof dataLayer != "undefined") { for (let i of dataLayer) { console.log("Mktr","Google",i); } } };';
-        $lines[] = '';
-        $wh =  array(Config::space, implode(Config::space, $lines));
-        $rep = array("%space%","%implode%");
-        /** @noinspection BadExpressionStatementJS */
-        /** @noinspection JSUnresolvedVariable */
-        echo str_replace("&#124;&#124;", "||", ent2ncr(str_replace($rep, $wh, '<!-- Mktr Script Start -->%space%<script type="text/javascript">%space%%implode%%space%</script>%space%<!-- Mktr Script END -->')));
-    }
-
-
-
-    public function loadEvents()
-    {
-        $loadJS = $lines = array();
-        $lines[] = "window.mktr.try = 0; window.mktr.LoadEvents = function () { if (window.mktr.try <= 5 && typeof dataLayer != 'undefined') { ";
-        foreach (self::actions as $key=>$value) {
-            if ($key() || $key === 'is_home' && is_front_page()) {
-                $lines[] = "dataLayer.push(".self::getEvent($value)->toJson().");";
-                break;
+        if ($mktr_data['isWoodMart']) {
+            $wishList = Config::session()->get("woodmart_wishlist_products");
+            if ($wishList === null) {
+                $wishList = (isset($_COOKIE['woodmart_wishlist_products']) ? $_COOKIE['woodmart_wishlist_products'] : '{}');
+                Config::session()->set("woodmart_wishlist_products", $wishList);
+                Config::session()->set("woodmart_wishlist_count", (isset($_COOKIE['woodmart_wishlist_count']) ? $_COOKIE['woodmart_wishlist_count'] : 0));
             }
+            $mktr_data['wishList'] = $wishList;
         }
-
+        if (Session::$saveCookie) {
+            $mktr_data['uuid'] = Session::getUid();
+        }
+        
         $clear = Config::session()->get("ClearMktr");
 
-        if ($clear === null) {
-            $clear = array();
-        }
+        if ($clear === null) { $clear = array(); }
+
+        $saveOrder = false;
 
         foreach (self::observerGetEvents as $event=>$Name) {
             $eventData = Config::session()->get($event);
             if (!empty($eventData)) {
-                foreach ($eventData as $key=>$value) {
-                    $lines[] = "dataLayer.push(".self::getEvent($Name[1], $value)->toJson().");";
-                    if (!$Name[0]) {
-                        $clear[$event][$key] = $key;
+                if ( in_array($event, ["saveOrder", "setEmail"]) ) {
+                    foreach ($eventData as $key=>$value) {
+                        $ev = self::getEvent($Name[1], $value);
+                        if ($event === "saveOrder") { $saveOrder = true; }
+                        if ($ev !== false) {
+                            $mktr_data['push'][] = $ev->toArray();
+                            if (!$Name[0]) { $clear[$event][$key] = $key; }
+                        }
                     }
                 }
 
                 if ($Name[0]) {
                     //Config::session()->set($event, array());
-                    $loadJS[$event] = true;
+                    $mktr_data['js'][$event] = true;
                 } /** @noinspection PhpStatementHasEmptyBodyInspection */ else {
                     // $clear[$event][$key] = "clear";
                     // Config::session()->set($event, array());
@@ -228,26 +224,54 @@ class Events
             }
         }
 
-        $baseURL = Config::getBaseURL();
-
-        foreach ($loadJS as $k=>$v) {
-            $lines[] = '(function(){ let add = document.createElement("script"); add.async = true; add.src = "'.esc_js($baseURL).'mktr/api/'.esc_js($k).'/?mktr_time="+(new Date()).getTime(); let s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(add,s); })();';
+        foreach (self::actions as $key => $value) {
+            if ( $key === 'is_checkout'&& $saveOrder === false && $key() || $key !== 'is_checkout' && $key() || $key === 'is_home' && is_front_page() ) {
+                $ev = self::getEvent($value);
+                if ($ev !== false) {
+                    $mktr_data['push'][] = $ev->toArray();
+                }
+                break;
+            }
         }
-
         if (!empty($clear)) {
             Config::session()->set("ClearMktr", $clear);
-
-            $lines[] = '(function(){ let add = document.createElement("script"); add.async = true; add.src = "'.esc_js($baseURL).'mktr/api/clearEvents/?mktr_time="+(new Date()).getTime(); let s = document.getElementsByTagName("script")[0]; s.parentNode.insertBefore(add,s); })();';
+            $mktr_data['clear'] = 1;
         }
+        return $mktr_data;
+    }
+    
+    public function initEvents() {
+        if (self::$load_js) {
+            self::$load_js = false;
+            $js_file = Config::getValue('js_file');
 
-        $lines[] = 'setTimeout(window.mktr.debug, 1500);';
-        $lines[] = " } else if(window.mktr.try <= 5) { window.mktr.try++; setTimeout(window.mktr.LoadEvents, 1500); } }; setTimeout(window.mktr.LoadEvents, 1500);";
+            if ( $js_file !== null ) {
+                wp_enqueue_script('mktr-loader', Run::plug_url('/assets/mktr.'.$js_file.'.js'), array(), false, array('strategy'  => 'async'));
+                $mktr_data = self::mktr_data();
+                wp_localize_script('mktr-loader', 'mktr_data', $mktr_data);
+            }
+        }
+    }
 
-        $wh =  array(Config::space, implode(Config::space, $lines));
-        $rep = array("%space%","%implode%");
-        /** @noinspection BadExpressionStatementJS */
-        /** @noinspection JSUnresolvedVariable */
-        echo ent2ncr(str_replace($rep, $wh, '<!-- Mktr Script Start -->%space%<script type="text/javascript">%space%%implode%%space%</script>%space%<!-- Mktr Script END -->'));
+    public static function loader()
+    {
+        if (self::$load_js) {
+            self::$load_js = false;
+            $js_file = Config::getValue('js_file');
+            
+            if ( $js_file !== null ) {
+                $mktr_data = self::mktr_data();
+
+                $content = "<!-- Mktr Script Start -->";
+                $content .= '<script type="text/javascript" async>';
+                if (!empty($mktr_data)) {
+                    $content .= 'window.mktr_data = '. json_encode($mktr_data, true) .';';
+                }
+                $content .= '</script><script async src="'.Run::plug_url('/assets/mktr.'.$js_file.'.js').'" ></script>';
+                $content .= "<!-- Mktr Script END -->";
+                echo $content;
+            }
+        }
     }
 
     public static function build()
@@ -295,11 +319,18 @@ class Events
                 self::$assets['category'] = self::buildCategory();
                 break;
             case "Product":
-                self::$assets['product_id'] = Product::getId();
+                if (Product::getId() !== null) {
+                    self::$assets['product_id'] = Product::getId();
+                } else {
+                    return false;
+                }
                 break;
             case "saveOrder":
                 Order::getById($eventData);
                 self::$assets = Order::toArray();
+                if (empty(self::$assets['products']) || (empty(self::$assets['email_address']) && empty(self::$assets['phone']))) {
+                    return false;
+                }
                 break;
             case "Search":
                 self::$assets['search_term'] = get_search_query(true);
@@ -330,22 +361,90 @@ class Events
         return implode("|", array_reverse($build));
     }
 
-    public static function buildMultiCategory($List)
-    {
-        self::$bMultiCat = [];
-        
+    public static function buildMultiCategory($List) {
+        $buildMultiCat = [];
+        $newBuild = [];
+        $NewMultiCat = [];
+		
+        $skip = [];
         if(is_array($List)){
             foreach ($List as $value) {
-                Category::getById($value->term_id);
-                self::buildSingleCategory();
+            self::$listName[$value->term_id] = $value->name;
+                if ($value->parent == 0) {
+                    if (!isset($buildMultiCat[$value->term_id])) {
+                        $buildMultiCat[$value->term_id] = [];
+                    }
+                } else {
+                    $buildMultiCat[$value->parent]["id".$value->term_id] = $value->term_id;
+                }
             }
         }
-        if (empty(self::$bMultiCat)) {
-            self::$bMultiCat[] = "Default Category";
+
+        foreach ($buildMultiCat as $parent => $categoryTree) {
+            if (!in_array($parent, $skip)) {
+                if (empty($categoryTree)) {
+                    $list = [ $parent => self::getNameCat($parent) ];
+                    $newBuild[] = $list;
+                } else {
+                    foreach($categoryTree as $key => $input) {
+                        $list = [ $parent => self::getNameCat($parent) ];
+                        if(isset($buildMultiCat[$input])) {
+                            if ($parent !== $input) {
+                                $skip[$input] = $input;
+                                $list[$input] = self::getNameCat($input);
+
+                                self::bMC($buildMultiCat, $buildMultiCat[$input], $input, $list);
+                            }
+                        } else {
+                            $list[$input] = self::getNameCat($input);
+                        }
+                        $newBuild[] = $list;
+                    }
+                }
+            }
         }
-        return implode("|", array_reverse(self::$bMultiCat));
+
+        if (empty($newBuild)) {
+            $newBuild[0]['default'] = "Default Category";
+        }
+        
+        foreach ($newBuild as $k => $data) {
+            $imp = implode('|', $data);
+            $NewMultiCat[$imp] = $imp;
+        }
+
+        $categoriesTree = implode('||', $NewMultiCat);
+        
+        return $categoriesTree;
     }
 
+    public static function getNameCat($id) {
+        if (!isset(self::$listName[$id])) {
+            $cat = get_term_by( 'id', $id, 'product_cat' );
+            if (isset($cat->name)) {
+                self::$listName[$id] = $cat->name;
+            } else {
+                self::$listName[$id] = "N/A";
+            }
+        }
+        return self::$listName[$id];
+    }
+
+    public static function bMC($buildMultiCat, $catList, $parent, &$list) {
+        foreach ($catList as $cat) {
+            if ($cat !== $parent) {
+                if(isset($buildMultiCat[$cat])) {
+                    foreach(self::bMC($buildMultiCat, $buildMultiCat[$cat], $cat, $list) as $k) {
+                        $list[$k] = self::getNameCat($k);
+                    }
+                } else {
+                    $list[$cat] = self::getNameCat($cat);
+                }
+            }
+        }
+        return $list;
+    }
+	
     public static function buildSingleCategory()
     {
         self::$bMultiCat[] = Category::getName();
@@ -355,6 +454,11 @@ class Events
 
             self::$bMultiCat[] = Category::getName();
         }
+    }
+
+    public function toArray()
+    {
+        return self::$data;
     }
 
     public function toJson()

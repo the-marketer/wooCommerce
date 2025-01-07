@@ -1,0 +1,34 @@
+@import "deactivation.css";
+
+.notice, .updated, #wpfooter[role="contentinfo"]{
+    display: none !important;
+}
+body, #wpbody, #wpcontent, #wpwrap{
+    background-color: #FEFEFE !important;
+}
+
+#wpcontent{
+    margin-left: 160px !important;
+    padding-left: 0px !important;
+}
+
+#wpbody-content
+{
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: auto;
+    color: #344054 !important;
+}
+
+
+@media only screen and (max-width: 960px) {
+    #wpcontent{
+        margin-left: 36px !important;
+    }
+}
+@media screen and (max-width: 782px) {
+    
+    #wpcontent{
+        margin-left: 0px !important;
+    }
+}

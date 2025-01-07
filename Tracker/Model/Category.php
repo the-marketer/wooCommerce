@@ -4,7 +4,7 @@
  * @project     TheMarketer.com
  * @website     https://themarketer.com/
  * @author      Alexandru Buzica (EAX LEX S.R.L.) <b.alex@eax.ro>
- * @license     http://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
+ * @license     https://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
  * @docs        https://themarketer.com/resources/api
  */
 
@@ -66,7 +66,7 @@ class Category
             $id = get_queried_object()->term_id;
         }
 
-        self::$asset = get_term_by('id', $id, 'product_cat');
+        self::$asset = get_term_by('id', $id, \Mktr\Tracker\Config::getProductCat());
         return self::init();
     }
 

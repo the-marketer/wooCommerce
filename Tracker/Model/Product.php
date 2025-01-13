@@ -422,10 +422,10 @@ class Product
                 $p = wc_get_price_including_tax(self::$asset, array('price' => $p));
             }
         }
-        if (self::cOverWrite()) {
-            return \Mktr\Tracker\Valid::digit2(($check === true || $p > 0 ? $p : self::getRegularPrice(true)), 2);
-        } else if (self::checkWooDiscountRules()) {
+        if (self::checkWooDiscountRules()) {
             return \Mktr\Tracker\Valid::digit2(apply_filters('advanced_woo_discount_rules_get_product_discount_price', self::getRegularPrice(true), self::$asset, 2));
+        } else if (self::cOverWrite()) {
+            return \Mktr\Tracker\Valid::digit2(($check === true || $p > 0 ? $p : self::getRegularPrice(true)), 2);
         } else {
             return apply_filters('marketer_override_product_price', \Mktr\Tracker\Valid::digit2(($check === true || $p > 0 ? $p : self::getRegularPrice(true)), 2));
         }

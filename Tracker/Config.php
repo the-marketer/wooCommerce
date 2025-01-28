@@ -70,7 +70,7 @@ class Config
         'cron_feed' => 'mktr_tracker/tracker/cron_feed',
         'update_feed' => 'mktr_tracker/tracker/update_feed',
         'cron_review' => 'mktr_tracker/tracker/cron_review',
-        'update_review' => 'mktr_tracker/tracker/update_feed',
+        'update_review' => 'mktr_tracker/tracker/update_review',
         'opt_in' => 'mktr_tracker/tracker/opt_in',
         'opt_in_oldmail' => 'mktr_tracker/tracker/opt_in_oldmail',
         'mailpoet_id_list' => 'mktr_tracker/tracker/mailpoet_id_list',

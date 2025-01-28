@@ -70,7 +70,7 @@ class Config
         'cron_feed' => 'mktr_tracker/tracker/cron_feed',
         'update_feed' => 'mktr_tracker/tracker/update_feed',
         'cron_review' => 'mktr_tracker/tracker/cron_review',
-        'update_review' => 'mktr_tracker/tracker/update_feed',
+        'update_review' => 'mktr_tracker/tracker/update_review',
         'opt_in' => 'mktr_tracker/tracker/opt_in',
         'opt_in_oldmail' => 'mktr_tracker/tracker/opt_in_oldmail',
         'mailpoet_id_list' => 'mktr_tracker/tracker/mailpoet_id_list',
@@ -435,9 +435,17 @@ importScripts("https://t.themarketer.com/firebase.js");';
     {
         $parsed_url = parse_url($url);
         if (isset($parsed_url['host'])) {
-            $encoded_path = implode('/', array_map('rawurlencode', explode('/', $parsed_url['path'])));
-            $query = isset($parsed_url['query']) ? '?' . $parsed_url['query'] : '';
-            $encoded_url = $parsed_url['scheme'] . '://' . $parsed_url['host'] . $encoded_path . $query;
+			$is_encoded = preg_match('~%[0-9A-F]{2}~i', $parsed_url['path']);
+
+			if ($is_encoded) {
+				$encoded_path = $parsed_url['path'];
+			} else {
+				$encoded_path = implode('/', array_map('rawurlencode', explode('/', $parsed_url['path'])));
+			}
+            
+			$query = isset($parsed_url['query']) ? '?' . $parsed_url['query'] : '';
+			$encoded_url = $parsed_url['scheme'] . '://' . $parsed_url['host'] . $encoded_path . $query;
+			
             return $encoded_url;
         }
         return false;

@@ -39,6 +39,7 @@ class Product
     private static $asset = null;
     private static $data = array();
     private static $tax = null;
+    private static $woo_discount_rules = null;
     private static $stock = 0;
     private static $nameConvert = null;
 
@@ -93,6 +94,12 @@ class Product
     {
         if (self::$tax === null){ self::$tax = wc_tax_enabled(); }
         return self::$tax;
+    }
+
+    public static function checkWooDiscountRules()
+    {
+        if (self::$woo_discount_rules === null){ self::$woo_discount_rules = \is_plugin_active('woo-discount-rules/woo-discount-rules.php'); }
+        return self::$woo_discount_rules;
     }
 
     public static function __callStatic($name, $arguments)
@@ -198,7 +205,7 @@ class Product
             $margin = 0;
         }
 
-        return $margin;
+        return (int) $margin;
     }
 
     public static function getCat()
@@ -415,7 +422,9 @@ class Product
                 $p = wc_get_price_including_tax(self::$asset, array('price' => $p));
             }
         }
-        if (self::cOverWrite()) {
+        if (self::checkWooDiscountRules()) {
+            return \Mktr\Tracker\Valid::digit2(apply_filters('advanced_woo_discount_rules_get_product_discount_price', self::getRegularPrice(true), self::$asset, 2));
+        } else if (self::cOverWrite()) {
             return \Mktr\Tracker\Valid::digit2(($check === true || $p > 0 ? $p : self::getRegularPrice(true)), 2);
         } else {
             return apply_filters('marketer_override_product_price', \Mktr\Tracker\Valid::digit2(($check === true || $p > 0 ? $p : self::getRegularPrice(true)), 2));
@@ -708,17 +717,22 @@ class Product
                         */
 					}
 
+                    if (self::checkWooDiscountRules()) {
+                        $val['display_price'] = apply_filters('advanced_woo_discount_rules_get_product_discount_price', $val['display_price'], $val['variation_id'], 2);
+                    }
+
                     $v = array(
                         'id' => $val['variation_id'],
                         'sku' => $val['sku'],
                         'acquisition_price' => self::getAcquisitionPrice(),
-                        'price' => $val['display_regular_price'],
-                        'sale_price' => $val['display_price'],
+                        'price' => \Mktr\Tracker\Valid::digit2($val['display_regular_price']),
+                        'sale_price' => \Mktr\Tracker\Valid::digit2($val['display_price']),
                         'availability' => self::checkAvailability($stock, $val['is_in_stock']),
                         'stock' => $stock,
                         'size' => $attribute['size'],
                         'color' => $attribute['color']
                     );
+
 
                     if (empty($v['size'])) {
                         unset($v['size']);

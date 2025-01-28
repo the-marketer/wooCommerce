@@ -57,6 +57,7 @@ class refreshJS
 );
             $js[] = '/* -- Mktr Script START -- */';
             $js[] = 'window.mktr = window.mktr || {};';
+            $js[] = 'window.dataLayer = window.dataLayer || [];';
             $js[] = 'window.mktr.LoadEventsBool = true;';
             $js[] = 'window.mktr.Load = true;';
             $js[] = 'window.mktr.try = 0;';

@@ -52,7 +52,7 @@ if (!defined('MKTR_MAILPOET_SEGMENT')) {
 }
 
 if (!defined('MKTR_VERSION')) {
-    define('MKTR_VERSION', 'v1.4.4');
+    define('MKTR_VERSION', 'v1.4.5');
 }
 
 require_once MKTR_DIR . '/vendor/autoload.php';

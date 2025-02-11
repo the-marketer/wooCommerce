@@ -146,6 +146,10 @@ class Run
         // add_action('wp_ajax_woodmart_ajax_add_to_cart', array(self::init(), 'test'));
         // add_action('woocommerce_loaded', function (){  });
         add_action('MKTR_CRON', array($this, "cronAction"));
+        add_action('template_redirect', array($this, 'mktr_auto_add_to_cart_checkout'));
+        add_action('template_redirect', array($this, 'mktr_auto_apply_discount_code'));
+        add_action('woocommerce_cart_emptied', array($this, 'remove_all_coupons'));
+        add_action('woocommerce_remove_cart_item', array($this, 'remove_all_coupons'));
     }
 
     public function mailpoet_subscription_status_changed($id = null){
@@ -354,6 +358,71 @@ class Run
             }
         }
         return $product_id;
+    }
+
+    public function mktr_auto_add_to_cart_checkout() {
+        if (isset($_GET['mktrAddCart']) && $_GET['mktrAddCart'] == 1 && isset($_GET['mktrPID']) && is_numeric($_GET['mktrPID'])) {
+            $product_id = absint($_GET['mktrPID']);
+            $quantity = 1;
+
+            $found = false;
+            foreach (WC()->cart->get_cart() as $cart_item) {
+                if ($cart_item['product_id'] == $product_id) {
+                    $found = true;
+                    break;
+                }
+            }
+
+            if (!$found) {
+                WC()->cart->add_to_cart($product_id, $quantity);
+            } else {
+                wc_add_notice(__('The product is already in the cart.', 'woocommerce'), 'notice');
+            }
+
+            wp_redirect(wc_get_checkout_url());
+            exit;
+        }
+    }
+
+    public function mktr_auto_apply_discount_code() {
+        try {
+            if (isset($_GET['mktrAddDiscount']) && $_GET['mktrAddDiscount'] == 1 && isset($_GET['code'])) {
+                $code = sanitize_text_field($_GET['code']);
+                if (!empty($code)) {
+                    $applied_coupons = WC()->cart->get_applied_coupons();
+                    if (!empty($applied_coupons) || isset($_SESSION['coupon_applied'])) {
+                        wc_add_notice(apply_filters('mktr_existing_coupon_message', __('A coupon is already applied. Please remove it before applying a new one.', 'woocommerce')), 'error');
+                        wp_redirect(wc_get_checkout_url());
+                        exit;
+                    }
+
+                    if (WC()->cart->is_empty()) {
+                        wc_add_notice(apply_filters('mktr_empty_cart_message', __('Your cart is empty. Please add products to your cart before applying a discount code.', 'woocommerce')), 'error');
+                        wp_redirect(apply_filters('mktr_empty_cart_redirect_url', wc_get_checkout_url()));
+                        exit;
+                    } else {
+                        $coupon_id = wc_get_coupon_id_by_code($code);
+                        if ($coupon_id !== 0) {
+                            WC()->cart->apply_coupon($code);
+                            WC()->cart->calculate_totals();
+                            WC()->cart->set_session();
+                            $_SESSION['coupon_applied'] = true;
+                            wp_redirect(wc_get_checkout_url());
+                            exit;
+                        } else {
+                            wc_add_notice(apply_filters('mktr_invalid_coupon_message', __('Invalid discount code.', 'woocommerce')), 'error');
+                        }
+                    }
+                }
+            }
+        } catch(Exception $e) {
+            echo 'Message: ' .$e->getMessage();
+        }
+    }
+
+    public function remove_all_coupons() {
+        WC()->cart->remove_coupons();
+        unset($_SESSION['coupon_applied']);
     }
 
     public function cronAction() {

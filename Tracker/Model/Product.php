@@ -40,6 +40,7 @@ class Product
     private static $data = array();
     private static $tax = null;
     private static $woo_discount_rules = null;
+    private static $booster = null;
     private static $stock = 0;
     private static $nameConvert = null;
 
@@ -100,6 +101,12 @@ class Product
     {
         if (self::$woo_discount_rules === null){ self::$woo_discount_rules = \is_plugin_active('woo-discount-rules/woo-discount-rules.php'); }
         return self::$woo_discount_rules;
+    }
+
+    public static function checkBooster()
+    {
+        if (self::$booster === null){ self::$booster = \is_plugin_active('booster-plus-for-woocommerce/booster-plus-for-woocommerce.php'); }
+        return self::$booster;
     }
 
     public static function __callStatic($name, $arguments)
@@ -422,13 +429,24 @@ class Product
                 $p = wc_get_price_including_tax(self::$asset, array('price' => $p));
             }
         }
+        $out = 0;
+        
         if (self::checkWooDiscountRules()) {
-            return \Mktr\Tracker\Valid::digit2(apply_filters('advanced_woo_discount_rules_get_product_discount_price', self::getRegularPrice(true), self::$asset, 2));
+            $out = apply_filters('advanced_woo_discount_rules_get_product_discount_price', self::getRegularPrice(true), self::$asset, 2);
         } else if (self::cOverWrite()) {
-            return \Mktr\Tracker\Valid::digit2(($check === true || $p > 0 ? $p : self::getRegularPrice(true)), 2);
+            $out = ($check === true || $p > 0 ? $p : self::getRegularPrice(true));
         } else {
-            return apply_filters('marketer_override_product_price', \Mktr\Tracker\Valid::digit2(($check === true || $p > 0 ? $p : self::getRegularPrice(true)), 2));
+            $out = apply_filters('marketer_override_product_price', \Mktr\Tracker\Valid::digit2(($check === true || $p > 0 ? $p : self::getRegularPrice(true)), 2));
         }
+
+        if (self::checkBooster()) {
+            $out = $out > $p && $p > 0 ? $p : $out;
+            if ($out > self::$asset->get_price()) {
+                $out = self::$asset->get_price();
+            }
+        }
+
+        return \Mktr\Tracker\Valid::digit2($out);
     }
 
     public static function getRegularPrice($check = false)
@@ -498,11 +516,15 @@ class Product
             }
         }
 
+        $out = 0;
+
         if (self::cOverWrite()) {
-            return \Mktr\Tracker\Valid::digit2(($check === true || $p > 0 ? $p : self::getPrice(true)), 2);
+            $out = ($check === true || $p > 0 ? $p : self::getPrice(true));
         } else {
-            return apply_filters('marketer_override_product_regular_price', \Mktr\Tracker\Valid::digit2(($check === true || $p > 0 ? $p : self::getPrice(true)), 2));
+            $out = apply_filters('marketer_override_product_regular_price', \Mktr\Tracker\Valid::digit2(($check === true || $p > 0 ? $p : self::getPrice(true)), 2));
         }
+
+        return \Mktr\Tracker\Valid::digit2($out);
     }
 
     public static function getUrl()
@@ -644,8 +666,9 @@ class Product
                     // || ! $variation->is_in_stock()
                     continue;
                 }
-    
-                $available_variations[] = self::$asset->get_available_variation( $variation );
+                $newData = self::$asset->get_available_variation( $variation );
+                $newData['obj'] = $variation;
+                $available_variations[] = $newData;
             }
         }
         return $available_variations;
@@ -716,9 +739,19 @@ class Product
 						$val['sku'] = implode('-', $val['sku']);
                         */
 					}
+                    $val['old_display_price'] = $val['display_price'];
 
                     if (self::checkWooDiscountRules()) {
                         $val['display_price'] = apply_filters('advanced_woo_discount_rules_get_product_discount_price', $val['display_price'], $val['variation_id'], 2);
+                    }
+
+                    if (self::checkBooster()) {
+                        $val['display_price'] = $val['display_price'] > $val['old_display_price'] && $val['old_display_price'] > 0 ? $val['old_display_price'] : $val['display_price'];
+                        /*
+                        if ($val['display_price'] > $val['obj']->get_price()) {
+                            $val['display_price'] = $val['obj']->get_price();
+                        }
+                        */
                     }
 
                     $v = array(
@@ -732,7 +765,6 @@ class Product
                         'size' => $attribute['size'],
                         'color' => $attribute['color']
                     );
-
 
                     if (empty($v['size'])) {
                         unset($v['size']);

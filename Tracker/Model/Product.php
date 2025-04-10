@@ -269,15 +269,19 @@ class Product
             return "N/A";
         }
 
-        foreach (Config::getBrandAttribute() as $v) {
-            $brand = self::$asset->get_attribute($v) ?: self::$asset->get_attribute('pa_' . $v);
+        foreach (Config::getBrandAttribute() as $attribute) {
+            $brand = self::$asset->get_attribute($attribute) ?: self::$asset->get_attribute('pa_' . $attribute);
             if (!empty($brand)) {
                 return $brand;
             }
         }
 
-        $brand = implode(",", wp_get_post_terms(self::$asset->get_id(), 'product_brand', ['fields' => 'names']));
-        return empty($brand) ? "N/A" : $brand;
+        $terms = wp_get_post_terms(self::$asset->get_id(), 'product_brand', ['fields' => 'names']);
+        if (is_wp_error($terms) || empty($terms)) {
+            return "N/A";
+        }
+
+        return implode(",", $terms);
     }
 
     public static function getPriceByPriority($price1 = 0, $price2 = 0) {

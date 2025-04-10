@@ -4,7 +4,7 @@ Tags: WooCommerce, theMarketer, Email marketing, Loyalty Program, Woocommerce em
 Requires at least: 4.6
 Tested up to: 6.7.1
 Requires PHP: 5.6
-Stable tag: 1.4.5
+Stable tag: 1.4.6
 Requires WooCommerce at least: 4.0.0
 Tested WooCommerce up to: 9.6.1
 License: GPLv2

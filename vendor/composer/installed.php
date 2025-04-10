@@ -2,7 +2,7 @@
     'root' => array(
         'name' => 'mktr/tracker',
         'pretty_version' => '1',
-        'version' => '1.4.5',
+        'version' => '1.4.6',
         'reference' => NULL,
         'type' => 'woocommerce-module',
         'install_path' => __DIR__ . '/../../',
@@ -12,7 +12,7 @@
     'versions' => array(
         'mktr/tracker' => array(
             'pretty_version' => '1',
-            'version' => '1.4.5',
+            'version' => '1.4.6',
             'reference' => NULL,
             'type' => 'woocommerce-module',
             'install_path' => __DIR__ . '/../../',

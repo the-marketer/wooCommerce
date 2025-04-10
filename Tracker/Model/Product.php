@@ -49,7 +49,7 @@ class Product
         // 'getName' => 'get_name',
         'getParentId' => 'get_parent_id',
         'getSku' => 'get_sku',
-        // 'getAvailableVariations' => 'get_available_variations',
+//         'getAvailableVariations' => 'get_available_variations',
         // 'getUrl' => 'get_permalink',
         'getImg' => 'get_image',
         'getStockQuantity' => 'get_stock_quantity',
@@ -253,7 +253,6 @@ class Product
         
         if (defined('ICL_LANGUAGE_CODE')) {
             if (ICL_LANGUAGE_CODE == 'en') {
-                //var_dump(ICL_LANGUAGE_CODE); die();
                 $en_content = get_post_meta(self::getId(), 'product_english_description', true);
                 if (!empty($en_content)) {
                     return $en_content;
@@ -269,22 +268,16 @@ class Product
         if (empty(self::$asset)) {
             return "N/A";
         }
-        $b = '';
-        foreach (Config::getBrandAttribute() as $v)
-        {
-            $b = self::$asset->get_attribute($v);
-            if (empty($b))
-            {
-                $b = self::$asset->get_attribute('pa_'.$v);
-                if (!empty($b))
-                {
-                    break;
-                }
-            } else {
-                break;
+
+        foreach (Config::getBrandAttribute() as $v) {
+            $brand = self::$asset->get_attribute($v) ?: self::$asset->get_attribute('pa_' . $v);
+            if (!empty($brand)) {
+                return $brand;
             }
         }
-        return empty($b) ? "N/A" : $b;
+
+        $brand = implode(",", wp_get_post_terms(self::$asset->get_id(), 'product_brand', ['fields' => 'names']));
+        return empty($brand) ? "N/A" : $brand;
     }
 
     public static function getPriceByPriority($price1 = 0, $price2 = 0) {
@@ -639,31 +632,18 @@ class Product
 
     public static function getAvailableVariations()
     {
-/* 
-        return self::$asset->get_available_variations();
-        self::$asset->get_available_variations();
-        $var = [
-            'variation_id' => $variation->get_id(),
-            'sku' => $variation->get_sku(),
-            'variation_is_visible' => $variation->variation_is_visible(),
-            'attributes' => $variation->get_variation_attributes(),
-            'display_price'         => wc_get_price_to_display( $variation ),
-            'display_regular_price' => wc_get_price_to_display( $variation, array( 'price' => $variation->get_regular_price() ) ),
-        ];
-*/
         $variation_ids        = self::$asset->get_children();
-		$available_variations = array();
-        
+        $available_variations = array();
+
         global $product;
-        
+
         $product = self::$asset;
 
-		foreach ( $variation_ids as $variation_id ) {
+        foreach ( $variation_ids as $variation_id ) {
             if (!empty($variation_id)) {
                 $variation = wc_get_product( $variation_id );
-                
+
                 if (! $variation && (! $variation->exists() || ! $variation->variation_is_visible())) {
-                    // || ! $variation->is_in_stock()
                     continue;
                 }
                 $newData = self::$asset->get_available_variation( $variation );

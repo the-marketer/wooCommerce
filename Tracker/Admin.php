@@ -317,7 +317,6 @@ class Admin
         if ($d[1] || self::rateActive()) {
             wp_enqueue_style('mktr-survey', Run::plug_url('/assets/deactivation.css'));
             wp_enqueue_script('mktr-survey', Run::plug_url('/assets/deactivation.js'));
-            wp_localize_script('mktr-survey', 'mktr_data', array( 'url' => Config::getBaseURL() ));
         }
         if ($d[0]) {
             wp_enqueue_style('mktr-admin', Run::plug_url('/assets/style.css'));

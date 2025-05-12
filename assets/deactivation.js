@@ -10,12 +10,12 @@ window.mktr.feedback_submit = '.mktr-modal-feedback-submit';
 window.mktr.feedback_activate = '.mktr-modal-feedback';
 window.mktr.feedback_deactivate = ".mktr-modal-feedback-deactivate";
 
-
 window.mktr.rating = '.mktr-rating span';
 window.mktr.rating_button = '.mktr-modal-rate-active';
 window.mktr.rating_close = '.mktr-modal-rate-close';
 window.mktr.rating_activate = '.mktr-modal-rate';
 window.mktr.rating_submit = '.mktr-modal-rate-submit';
+window.mktr.url = window.location.protocol + "//" + window.location.host;
 
 window.mktr.changeLocation = function () {
     if (window.mktr.deactivate) {
@@ -54,7 +54,7 @@ document.addEventListener("click", function(event){
 
                 formData.append('message', document.querySelector('#mktr_message').value);
 
-                fetch(mktr_data.url + '?mktr=FeedBack', { method: 'POST', body: formData })
+                fetch(window.mktr.url + '?mktr=FeedBack', { method: 'POST', body: formData })
                 .then(response => response.json())
                 .then(data => { window.mktr.send = true; window.mktr.changeLocation(); })
                 .catch((error) => { window.mktr.send = true; });
@@ -76,7 +76,7 @@ document.addEventListener("click", function(event){
                 formData.append('rating', document.querySelector('#mktr-rating-value').value);
                 formData.append('message', document.querySelector('#mktr-rating-message').value);
                 
-                fetch(mktr_data.url + '?mktr=FeedBack', { method: 'POST', body: formData })
+                fetch(window.mktr.url + '?mktr=FeedBack', { method: 'POST', body: formData })
                 .then(response => response.json())
                 .then(data => {
                     window.mktr.send = true; 
@@ -107,7 +107,7 @@ document.addEventListener("click", function(event){
 
                     formData.append('rating', document.querySelector('#mktr-rating-value').value);
                     
-                    fetch(mktr_data.url + '?mktr=FeedBack', { method: 'POST', body: formData })
+                    fetch(window.mktr.url + '?mktr=FeedBack', { method: 'POST', body: formData })
                     .then(response => response.json())
                     .then(data => {
                         window.mktr.send = true;

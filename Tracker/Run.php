@@ -125,6 +125,8 @@ class Run
         add_action('wp_ajax_nopriv_woodmart_add_to_wishlist', array($this, 'add_to_wishlist'));
         add_action('wp_ajax_woodmart_add_to_wishlist', array($this, 'add_to_wishlist'));
 
+        add_action('yith_wcwl_added_to_wishlist', array($this, 'add_to_wishlist_yith_v1'));
+
         add_action('wlfmc_added_to_wishlist', array($this, 'add_to_wishlist_wlfmc'));
         add_action('wlfmc_removed_from_wishlist', array($this, 'remove_from_wishlist_wlfmc'));
         add_action('wlfmc_before_delete_wishlist_item', array($this, 'delete_wishlist_item_wlfmc'));
@@ -257,6 +259,13 @@ class Run
     public function add_to_wishlist_yith()
     {
         $product_id = Config::REQUEST('add_to_wishlist');
+        if ($product_id !== null) {
+            Observer::addToWishlist($product_id, 0);
+        }
+    }
+    
+    public function add_to_wishlist_yith_v1($product_id = null)
+    {
         if ($product_id !== null) {
             Observer::addToWishlist($product_id, 0);
         }

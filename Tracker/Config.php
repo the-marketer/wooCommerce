@@ -121,7 +121,7 @@ class Config
         'allow_export_gravity_subscribe' => 0,
         'allow_export_gravity_tag' => '',
         'add_description' => 0,
-        'selectors' => '.single_add_to_cart_button,.remove_from_cart_button,.mailpoet_submit,.wc-block-cart-item__remove-link,.add_to_cart_button,.woocommerce-cart-form .product-remove > a,a.remove,.wd-wishlist-btn',
+        'selectors' => '.yith-wcwl-add-to-wishlist-button,.single_add_to_cart_button,.remove_from_cart_button,.mailpoet_submit,.wc-block-cart-item__remove-link,.add_to_cart_button,.woocommerce-cart-form .product-remove > a,a.remove,.wd-wishlist-btn',
         'brand' => 'brand',
         'color' => 'color',
         'size' => 'size',

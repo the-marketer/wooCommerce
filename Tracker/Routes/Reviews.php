@@ -39,7 +39,7 @@ class Reviews
 
     public static function execute()
     {
-        $t = Valid::getParam('start_date', date('Y-m-d'));
+        $t = Valid::getParam('start_date', gmdate('Y-m-d'));
         $o = Api::send("product_reviews", array(
             't' => strtotime($t)
         ), false);

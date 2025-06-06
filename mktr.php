@@ -59,7 +59,7 @@ require_once MKTR_DIR . '/vendor/autoload.php';
 
 function eDebug() {
     if (isset($_COOKIE['EAX_DEBUG'])) {
-        var_dump(func_get_args());
+//        var_dump(func_get_args());
         die();
     }
 }

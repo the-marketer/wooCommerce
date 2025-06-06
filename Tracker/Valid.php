@@ -72,7 +72,7 @@ class Valid
     /** @noinspection PhpUnused */
     public static function correctDate($date = null, $format = "Y-m-d H:i")
     {
-        return $date !== null ? date($format, strtotime($date)) : $date;
+        return $date !== null ? gmdate($format, strtotime($date)) : $date;
     }
 
     /**
@@ -118,7 +118,7 @@ class Valid
                                     self::$error = "Incorrect Start Date ".
                                         $k." - ".
                                         self::getParam($k) . " - Today is ".
-                                        date(Config::$dateFormat, \time());
+                                        gmdate(Config::$dateFormat, \time());
                                 }
                                 break;
                             case "Key":

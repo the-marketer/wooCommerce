@@ -49,14 +49,14 @@ class Array2XML
     protected static $labelValue = self::LABEL_VALUE;
 
     public static function init(
-        string $version = null,
-        string $encoding = null,
-        bool $standalone = null,
-        bool $format_output = null,
-        string $labelAttributes = null,
-        string $labelCData = null,
-        string $labelDocType = null,
-        string $labelValue = null
+        ?string $version = null,
+        ?string $encoding = null,
+        ?bool $standalone = null,
+        ?bool $format_output = null,
+        ?string $labelAttributes = null,
+        ?string $labelCData = null,
+        ?string $labelDocType = null,
+        ?string $labelValue = null
     ) {
         self::setDomVersion($version);
         self::setEncoding($encoding);
@@ -94,22 +94,22 @@ class Array2XML
         return self::$formatOutput;
     }
 
-    protected static function setDomVersion(string $domVersion = null)
+    protected static function setDomVersion(?string $domVersion = null)
     {
         self::$domVersion = $domVersion ?? self::DEFAULT_DOM_VERSION;
     }
 
-    protected static function setEncoding(string $encoding = null)
+    protected static function setEncoding(?string $encoding = null)
     {
         self::$encoding = $encoding ?? self::DEFAULT_ENCODING;
     }
 
-    protected static function setStandalone(bool $standalone = null)
+    protected static function setStandalone(?bool $standalone = null)
     {
         self::$standalone = $standalone ?? self::DEFAULT_STANDALONE;
     }
 
-    protected static function setFormatOutput(bool $formatOutput = null)
+    protected static function setFormatOutput(?bool $formatOutput = null)
     {
         self::$formatOutput = $formatOutput ?? self::DEFAULT_FORMAT_OUTPUT;
     }
@@ -138,22 +138,22 @@ class Array2XML
         return self::$labelValue;
     }
 
-    protected static function setLabelAttributes(string $labelAttributes = null)
+    protected static function setLabelAttributes(?string $labelAttributes = null)
     {
         self::$labelAttributes = $labelAttributes ?? self::LABEL_ATTRIBUTES;
     }
 
-    protected static function setLabelCData(string $labelCData = null)
+    protected static function setLabelCData(?string $labelCData = null)
     {
         self::$labelCData = $labelCData ?? self::LABEL_CDATA;
     }
 
-    protected static function setLabelDocType(string $labelDocType = null)
+    protected static function setLabelDocType(?string $labelDocType = null)
     {
         self::$labelDocType = $labelDocType ?? self::LABEL_DOCTYPE;
     }
 
-    protected static function setLabelValue(string $labelValue = null)
+    protected static function setLabelValue(?string $labelValue = null)
     {
         self::$labelValue = $labelValue ?? self::LABEL_VALUE;
     }
@@ -222,8 +222,7 @@ class Array2XML
                 foreach ($arr[self::$labelAttributes] as $key => $value) {
                     if (!self::isValidTagName($key)) {
                         /** @noinspection PhpUnhandledExceptionInspection */
-                        throw new Exception('[Array2XML] Illegal character in attribute name. attribute: '.$key.' in node: '.$node_name);
-                    }
+                        throw new Exception('[Array2XML] Illegal character in attribute name. attribute: ' . esc_html($key) . ' in node: ' . esc_html($node_name));                    }
                     $node->setAttribute($key, self::bool2str($value));
                 }
                 unset($arr[self::$labelAttributes]);
@@ -246,7 +245,7 @@ class Array2XML
             foreach ($arr as $key => $value) {
                 if (!self::isValidTagName($key)) {
                     /** @noinspection PhpUnhandledExceptionInspection */
-                    throw new Exception('[Array2XML] Illegal character in tag name. tag: '.$key.' in node: '.$node_name);
+                    throw new Exception('[Array2XML] Illegal character in tag name. tag: '. esc_html($key) . ' in node: ' . esc_html($node_name));
                 }
                 if (is_array($value) && is_numeric(key($value))) {
                     /** @noinspection PhpUnusedLocalVariableInspection */

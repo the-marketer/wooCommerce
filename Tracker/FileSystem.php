@@ -41,19 +41,17 @@ class FileSystem
     }
 
     /** @noinspection PhpUnused */
-    public static function writeFile($fName, $content, $mode = 'w+')
+    public static function writeFile($fName, $content)
     {
         self::$lastPath = self::getPath() . $fName;
 
-        $file = fopen(self::$lastPath, $mode);
-        fwrite($file, $content);
-        fclose($file);
+        $result = FileHelper::putContents(self::$lastPath, $content);
 
         self::$status[] = [
             'path' => self::getPath(),
             'fileName' => $fName,
             'fullPath' => self::getPath() . $fName,
-            'status' => true
+            'status' => (bool) $result
         ];
 
         return self::init();
@@ -64,15 +62,9 @@ class FileSystem
     {
         self::$lastPath = self::getPath() . $fName;
 
-        if(self::fileExists($fName) && filesize(self::$lastPath) > 0)
-        {
-            $file = fopen(self::$lastPath, $mode);
-
-            $contents = fread($file, filesize(self::$lastPath));
-
-            fclose($file);
-
-            return $contents;
+        if (self::fileExists($fName) && filesize(self::$lastPath) > 0) {
+            $contents = FileHelper::getContents(self::$lastPath);
+            return $contents !== false ? $contents : '';
         } else {
             return '';
         }
@@ -97,7 +89,7 @@ class FileSystem
 
         if(self::fileExists($fName))
         {
-            unlink(self::$lastPath);
+            wp_delete_file(self::$lastPath);
         }
         return true;
     }

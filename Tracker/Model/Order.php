@@ -136,7 +136,7 @@ class Order
 
     public static function getDate()
     {
-        return date(Config::$dateFormat, self::getDateAt()->getTimestamp());
+        return gmdate(Config::$dateFormat, self::getDateAt()->getTimestamp());
     }
 
     public static function getAddress(){

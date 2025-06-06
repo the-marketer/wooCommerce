@@ -129,7 +129,7 @@ class Route
 
             if (!Valid::status()) {
                 ob_start();
-                echo Valid::Output('status', Valid::error());
+                echo esc_html(Valid::Output('status', Valid::error()));
                 ob_end_flush();
             }
             exit();
@@ -193,17 +193,17 @@ class Route
 
             FileSystem::setWorkDirectory();
             if ($read !== null && FileSystem::fileExists($fileName)) {
-                echo Valid::Output(FileSystem::readFile($fileName));
+                echo esc_html(Valid::Output(FileSystem::readFile($fileName)));
             } else {
-                echo Valid::Output($run->get('fileName'), array( $run->get('secondName') => $run->execute()));
+                echo esc_html(Valid::Output($run->get('fileName'), array($run->get('secondName') => $run->execute())));
                 FileSystem::writeFile($fileName, Valid::getOutPut());
             }
         } else {
             if ($run->get('fileName') !== null) {
-                echo Valid::Output($run->get('fileName'), array( $run->get('secondName') => $run->execute()));
+                echo esc_html(Valid::Output($run->get('fileName'), array($run->get('secondName') => $run->execute())));
             } else {
-                echo Valid::Output($run->execute());
-            }  
+                echo esc_html(Valid::Output($run->execute()));
+            }
         }
         ob_end_flush();
         exit();

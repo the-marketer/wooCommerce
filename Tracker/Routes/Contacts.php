@@ -45,9 +45,7 @@ class Contacts
         $limit = $args['limit'];
 
         $offset = (($page - 1) * $limit);
-        
-		$customer = $wpdb->get_results($wpdb->prepare( "SELECT * FROM {$customer_lookup_table} LIMIT " . $limit . " OFFSET " . $offset ), ARRAY_A);
-
+        $customer = $wpdb->get_results($wpdb->prepare("SELECT * FROM {$customer_lookup_table} LIMIT %d OFFSET %d", $limit, $offset), ARRAY_A);
 		return $customer;
 	}
 
@@ -74,7 +72,7 @@ class Contacts
         do {
             $data = \WC_Data_Store::load( 'customer' )->query( $args );
             //$data = new \WC_Customer($args);
-			var_dump($data);
+//			var_dump($data);
             die();
             $pages = $stop ? 0 : count($data);
             foreach ($data as $v) {

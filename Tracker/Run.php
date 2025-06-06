@@ -385,7 +385,7 @@ class Run
             if (!$found) {
                 WC()->cart->add_to_cart($product_id, $quantity);
             } else {
-                wc_add_notice(__('The product is already in the cart.', 'woocommerce'), 'notice');
+                wc_add_notice(__('The product is already in the cart.', 'themarketer'), 'notice');
             }
 
             wp_redirect(wc_get_checkout_url());
@@ -400,13 +400,13 @@ class Run
                 if (!empty($code)) {
                     $applied_coupons = WC()->cart->get_applied_coupons();
                     if (!empty($applied_coupons) || isset($_SESSION['coupon_applied'])) {
-                        wc_add_notice(apply_filters('mktr_existing_coupon_message', __('A coupon is already applied. Please remove it before applying a new one.', 'woocommerce')), 'error');
+                        wc_add_notice(apply_filters('mktr_existing_coupon_message', __('A coupon is already applied. Please remove it before applying a new one.', 'themarketer')), 'error');
                         wp_redirect(wc_get_checkout_url());
                         exit;
                     }
 
                     if (WC()->cart->is_empty()) {
-                        wc_add_notice(apply_filters('mktr_empty_cart_message', __('Your cart is empty. Please add products to your cart before applying a discount code.', 'woocommerce')), 'error');
+                        wc_add_notice(apply_filters('mktr_empty_cart_message', __('Your cart is empty. Please add products to your cart before applying a discount code.', 'themarketer')), 'error');
                         wp_redirect(apply_filters('mktr_empty_cart_redirect_url', wc_get_checkout_url()));
                         exit;
                     } else {
@@ -419,19 +419,21 @@ class Run
                             wp_redirect(wc_get_checkout_url());
                             exit;
                         } else {
-                            wc_add_notice(apply_filters('mktr_invalid_coupon_message', __('Invalid discount code.', 'woocommerce')), 'error');
+                            wc_add_notice(apply_filters('mktr_invalid_coupon_message', __('Invalid discount code.', 'themarketer')), 'error');
                         }
                     }
                 }
             }
         } catch(Exception $e) {
-            echo 'Message: ' .$e->getMessage();
+            echo 'Message: ' . esc_html($e->getMessage());
         }
     }
 
     public function remove_all_coupons() {
         WC()->cart->remove_coupons();
-        unset($_SESSION['coupon_applied']);
+        if (isset($_SESSION['coupon_applied'])) {
+            unset($_SESSION['coupon_applied']);
+        }
     }
 
     public function cronAction() {
@@ -493,9 +495,7 @@ class Run
             "define('MKTR_MAILPOET_SEGMENT', ".$mailpoet_segment.");"
         ), $content);
 
-        $file = fopen($name, 'w+');
-        fwrite($file, $newContent);
-        fclose($file);
+        FileHelper::putContents($name, $newContent);
     }
 
     public function Install() {

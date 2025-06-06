@@ -93,7 +93,7 @@ class Session
             $uid = self::getUid();
             $table_name = Config::tableName();
             if (!empty(self::init()->data)) {
-                $data = [ 'data' => serialize(self::init()->data), 'expire' => date('Y-m-d H:i:s', strtotime('+2 day')) ];
+                $data = [ 'data' => serialize(self::init()->data), 'expire' => gmdate('Y-m-d H:i:s', strtotime('+2 day')) ];
                 if (self::init()->insert) {
                     $data['uid'] = $uid;
                     $del = Config::db()->prepare("DELETE FROM `" . $table_name . "` WHERE `uid` = %s", $uid);
@@ -141,7 +141,7 @@ class Session
     {
         $add = self::get($name);
         if ($key === null) { $n = '';
-            for ($i = 0; $i < 5; ++$i) { $n .= \rand(0, 9); }
+            for ($i = 0; $i < 5; ++$i) { $n .= wp_rand(0, 9); }
             $add[time() . $n] = $data;
         } else { $add[$key] = $data; }
         self::set($name, $add);

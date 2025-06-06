@@ -295,8 +295,8 @@ class Admin
                     )
                 )
             );
-    
-            echo '<div class="mktr-modal mktr-modal-feedback" style="display:none"><div class="mktr-modal-body">'. self::gForm($form, false) .'</div></div>';
+
+            echo '<div class="mktr-modal mktr-modal-feedback" style="display:none"><div class="mktr-modal-body">' . wp_kses_post(self::gForm($form, false)) . '</div></div>';
         }
     }
 
@@ -406,7 +406,7 @@ class Admin
                 $out[] = '<div class="' . implode(' ', $class) . '"><p>' . esc_html($value['message']) . '</p></div>';
             }
         }
-        echo implode(PHP_EOL, $out);
+        echo implode(PHP_EOL, array_map('wp_kses_post', $out));
     }
 
     public static function action_links($links)
@@ -741,8 +741,8 @@ class Admin
                 '<div class="mktr-content-right"><a href="'.\admin_url('admin.php?page=mktr_tracker&back').'" class="mktr-button none"><span class="icon mktr-arrow-right"></span>Back<span class="icon mktr-arrow-right"></span></a>&emsp;<button type="submit" class="mktr-button">Finish setup <span class="icon mktr-arrow-right"></span></button></div><br class="mktr-space"/>'
             )
         );
-        
-        echo self::gForm($forms[Config::getValue('onboarding')]);
+
+        echo wp_kses_post(self::gForm($forms[Config::getValue('onboarding')]));
     }
 
     public static function google()
@@ -775,7 +775,7 @@ class Admin
                 '<div class="mktr-content-right"><button type="submit" class="mktr-button">Save changes <span class="icon mktr-save"></span></button></div><br class="mktr-space"/>'
             )
         );
-        echo self::gForm($form);
+        echo wp_kses_post(self::gForm($form));
     }
 
     public static function tracker()
@@ -855,8 +855,8 @@ class Admin
                 '<div class="mktr-content-right"><button type="submit" class="mktr-button">Save changes <span class="icon mktr-save"></span></button></div><br class="mktr-space"/>'
             )
         );
-        
-        echo self::gForm($form);
+
+        echo wp_kses_post(self::gForm($form));
     }
 
     public static function gravity()
@@ -953,6 +953,6 @@ class Admin
                 '<div class="mktr-content-right"><button type="submit" class="mktr-button">Save changes <span class="icon mktr-save"></span></button></div><br class="mktr-space"/>'
             )
         );
-        echo self::gForm($form);
+        echo wp_kses_post(self::gForm($form));
     }
 }

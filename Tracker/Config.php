@@ -433,7 +433,7 @@ importScripts("https://t.themarketer.com/firebase.js");';
 
     public static function url_encode($url)
     {
-        $parsed_url = parse_url($url);
+        $parsed_url = wp_parse_url($url);
         if (isset($parsed_url['host'])) {
 			$is_encoded = preg_match('~%[0-9A-F]{2}~i', $parsed_url['path']);
 

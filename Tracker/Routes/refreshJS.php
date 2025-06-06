@@ -193,7 +193,7 @@ window.mktr.events = function () {
 
             $js_file = Config::getValue('js_file');
             if ($js_file !== null && file_exists(Config::getDir() . 'assets/mktr.' . $js_file . '.js')) {
-                unlink(Config::getDir() . 'assets/mktr.' . $js_file . '.js');
+                wp_delete_file(Config::getDir() . 'assets/mktr.' . $js_file . '.js');
             }
             $js_file = time();
             
@@ -204,7 +204,7 @@ window.mktr.events = function () {
         } else {
             $js_file = Config::getValue('js_file');
             if ($js_file !== null && file_exists(Config::getDir() . 'assets/mktr.' . $js_file . '.js')) {
-                unlink(Config::getDir() . 'assets/mktr.' . $js_file . '.js');
+                wp_delete_file(Config::getDir() . 'assets/mktr.' . $js_file . '.js');
             }
             Config::setValue('js_file', null);
         }

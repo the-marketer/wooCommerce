@@ -8,7 +8,7 @@
  * Requires PHP:            5.6
  * Author:                  themarketer.com
  * Author URI:              https://themarketer.com
- * Text Domain:             mktr
+ * Text Domain:             themarketer
  * License:                 GPL2
  * License URI:             https://www.gnu.org/licenses/gpl-2.0.html
  * WC requires at least:    4.0.0

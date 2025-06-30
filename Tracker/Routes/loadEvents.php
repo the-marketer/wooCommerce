@@ -75,7 +75,7 @@ class loadEvents
                 $wishList = '{}';
             }
             if ($wishList === null || $wishListC != $_COOKIE['woodmart_wishlist_count']) {
-                $wishList0 = (isset($_COOKIE['woodmart_wishlist_products']) ? $_COOKIE['woodmart_wishlist_products'] : '{}');
+                $wishList0 = isset($_COOKIE['woodmart_wishlist_products']) ? sanitize_text_field(wp_unslash($_COOKIE['woodmart_wishlist_products'])) : '{}';
                 if ($wishListC !== null && $wishListC != $_COOKIE['woodmart_wishlist_count']) {
                     $n = json_decode(stripslashes($wishList0), true); $o = json_decode(stripslashes($wishList), true);
                     
@@ -85,7 +85,7 @@ class loadEvents
                     foreach ($remove as $value) { \Mktr\Tracker\Observer::removeFromWishlist($value, 0); }
                 }
                 Config::session()->set("woodmart_wishlist_products", $wishList0);
-                Config::session()->set("woodmart_wishlist_count", $_COOKIE['woodmart_wishlist_count']);
+                Config::session()->set("woodmart_wishlist_count", sanitize_text_field(wp_unslash($_COOKIE['woodmart_wishlist_count'])));
             }
         }
 

@@ -10,6 +10,8 @@
 
 namespace Mktr\Tracker;
 
+use Mktr\Tracker\Helpers\Helper;
+
 class Admin
 {
     private static $init = null;
@@ -557,10 +559,11 @@ class Admin
                                 $name = $c['name'];
                             }
                             if ($c['type'] === 'checkbox') {
+                                $checked = ((int) $value === 1) ? 'checked' : '';
+                                $disabled = '';
                                 $inputData .= '<input type="hidden" id="' . $fid . '_value" name="'.Config::$name.'['.$name.']" value="' . (int) $value .'">';
                                 $inputData .= '<input id="' . $fid .'" class="mkcheck" type="checkbox" onchange="document.querySelector(\'#' . $fid .
-                                '_value\').value=this.checked ? 1 : 0; this.innerHTML = this.checked ? \'Active\':\'Inactive\'" ' . ((int) $value === 1 ? 'checked' : '') .
-                                '/><label class="mk-btn" for="' . $fid .'" ></label>';
+                                    '_value\').value=this.checked ? 1 : 0; this.innerHTML = this.checked ? \'Active\':\'Inactive\'" ' . $checked . ' ' . $disabled . '/><label class="mk-btn" for="' . $fid .'" ></label>';
                             } else if ($c['type'] === 'checkbox-optin') {
                                 $inputData .= '<input type="hidden" id="mk_check_' . $c['name'] . '_value" name="'.Config::$name.'['.$c['name'].']" value="' . (int) $value .'">';
                                 $inputData .= '<input id="mk_check_'. $c['name'] .'" class="mkcheck" type="checkbox" onchange="document.querySelector(\'#mk_check_' . $c['name'] .
@@ -742,7 +745,8 @@ class Admin
             )
         );
 
-        echo wp_kses_post(self::gForm($forms[Config::getValue('onboarding')]));
+        $html = self::gForm($forms[Config::getValue('onboarding')]);
+        echo wp_kses($html, Helper::shape_space_allowed_html());
     }
 
     public static function google()
@@ -775,13 +779,14 @@ class Admin
                 '<div class="mktr-content-right"><button type="submit" class="mktr-button">Save changes <span class="icon mktr-save"></span></button></div><br class="mktr-space"/>'
             )
         );
-        echo wp_kses_post(self::gForm($form));
+        $html = self::gForm($form);
+        echo wp_kses($html, Helper::shape_space_allowed_html());
     }
 
     public static function tracker()
     {
         $form = array();
-        
+
         if (!empty(self::$notice)) {
             $form[] = array(
                 "type" => "notice",
@@ -856,7 +861,8 @@ class Admin
             )
         );
 
-        echo wp_kses_post(self::gForm($form));
+        $html = self::gForm($form);
+        echo wp_kses($html, Helper::shape_space_allowed_html());
     }
 
     public static function gravity()
@@ -953,6 +959,7 @@ class Admin
                 '<div class="mktr-content-right"><button type="submit" class="mktr-button">Save changes <span class="icon mktr-save"></span></button></div><br class="mktr-space"/>'
             )
         );
-        echo wp_kses_post(self::gForm($form));
+        $html = self::gForm($form);
+        echo wp_kses($html, Helper::shape_space_allowed_html());
     }
 }

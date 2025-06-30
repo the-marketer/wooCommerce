@@ -129,7 +129,8 @@ class Route
 
             if (!Valid::status()) {
                 ob_start();
-                echo esc_html(Valid::Output('status', Valid::error()));
+                // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is XML/JSON, escaping not needed
+                echo Valid::Output('status', Valid::error());
                 ob_end_flush();
             }
             exit();
@@ -153,7 +154,7 @@ class Route
         $wp_query->is_feed = true;
         
         if (in_array($name,['Orders', 'Feed', 'Brands', 'Category'])) {
-            ini_set('memory_limit', '2G');
+            wp_raise_memory_limit('cron');
         }
         
         $run = self::$name();
@@ -161,6 +162,7 @@ class Route
         ob_clean();
         if (isset(self::$isStatic[$name]))
         {
+
             $script = '';
             $read = Valid::getParam('read');
             $file = Valid::getParam('file');
@@ -193,16 +195,20 @@ class Route
 
             FileSystem::setWorkDirectory();
             if ($read !== null && FileSystem::fileExists($fileName)) {
-                echo esc_html(Valid::Output(FileSystem::readFile($fileName)));
+                // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is XML/JSON, escaping not needed
+                echo Valid::Output(FileSystem::readFile($fileName));
             } else {
-                echo esc_html(Valid::Output($run->get('fileName'), array($run->get('secondName') => $run->execute())));
+                // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is XML/JSON, escaping not needed
+                echo Valid::Output($run->get('fileName'), array($run->get('secondName') => $run->execute()));
                 FileSystem::writeFile($fileName, Valid::getOutPut());
             }
         } else {
             if ($run->get('fileName') !== null) {
-                echo esc_html(Valid::Output($run->get('fileName'), array($run->get('secondName') => $run->execute())));
+                // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is XML/JSON, escaping not needed
+                echo Valid::Output($run->get('fileName'), array($run->get('secondName') => $run->execute()));
             } else {
-                echo esc_html(Valid::Output($run->execute()));
+                // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is XML/JSON, escaping not needed
+                echo Valid::Output($run->execute());
             }
         }
         ob_end_flush();

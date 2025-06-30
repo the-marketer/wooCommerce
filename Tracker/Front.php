@@ -134,7 +134,8 @@ class Front
     public function routeCheck()
     {
         if (isset($_COOKIE['mktr'])) {
-            Observer::emailAndPhone($_COOKIE['mktr']);
+            $mktr_cookie = sanitize_text_field(wp_unslash($_COOKIE['mktr']));
+            Observer::emailAndPhone($mktr_cookie);
             setcookie("mktr", '', 0, COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true);
             unset($_COOKIE['mktr']);
         }
@@ -143,7 +144,10 @@ class Front
 
         if (self::$Page === false) {
             $p = array();
-            $path = parse_url(sanitize_text_field($_SERVER['REQUEST_URI']), PHP_URL_PATH);
+            $path = '';
+            if (isset($_SERVER['REQUEST_URI'])) {
+                $path = parse_url(sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI'])), PHP_URL_PATH);
+            }
             preg_match("/([^\/]+)\/([^\/]+)\/([^\/]+)/i", $path, $p);
 
             $ch = array( Config::$name => false, 'api' => false );

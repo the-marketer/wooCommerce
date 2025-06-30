@@ -34,7 +34,7 @@ class Config
 {
     public static $name = 'mktr';
     public static $dateFormat = "Y-m-d H:i";
-    
+
     public static $MKTR_TABLE = null;
     public static $MKTR_DB = null;
     public static $product_cat = null;
@@ -342,7 +342,7 @@ importScripts("https://t.themarketer.com/firebase.js");';
     }
 
     public static function GET($key, $default = false) {
-        return in_array($key, self::$checkList) && array_key_exists($key, $_GET) ? sanitize_text_field($_GET[$key]) : $default;
+        return in_array($key, self::$checkList) && array_key_exists($key, $_GET) ? sanitize_text_field(wp_unslash($_GET[$key])) : $default;
     }
 
     public static function POST($key) {
@@ -372,12 +372,12 @@ importScripts("https://t.themarketer.com/firebase.js");';
         if (isset($_REQUEST[$key])) {
             if (is_array($_REQUEST[$key])) {
                 $list = [];
-                foreach ($_REQUEST[$key] as $k=>$v) {
+                foreach (wp_unslash($_REQUEST[$key]) as $k => $v) {
                     $list[$key][$k] = sanitize_text_field($v);
                 }
                 return $list[$key];
             } else {
-                return sanitize_text_field($_REQUEST[$key]);
+                return sanitize_text_field(wp_unslash($_REQUEST[$key]));
             }
         }
         return null;
@@ -411,7 +411,7 @@ importScripts("https://t.themarketer.com/firebase.js");';
     {
         if (Config::getTranslatePress() == 1) {
             $site_url = get_site_url();
-            $request_uri = $_SERVER['REQUEST_URI'];
+            $request_uri = isset($_SERVER['REQUEST_URI']) ? sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI'])) : '';
             $segments = explode('/', trim($request_uri, '/'));
             $first_segment = isset($segments[0]) ? $segments[0] : '';
             if (self::isValidLanguageCode($first_segment)) {
@@ -435,22 +435,22 @@ importScripts("https://t.themarketer.com/firebase.js");';
     {
         $parsed_url = wp_parse_url($url);
         if (isset($parsed_url['host'])) {
-			$is_encoded = preg_match('~%[0-9A-F]{2}~i', $parsed_url['path']);
+            $is_encoded = preg_match('~%[0-9A-F]{2}~i', $parsed_url['path']);
 
-			if ($is_encoded) {
-				$encoded_path = $parsed_url['path'];
-			} else {
-				$encoded_path = implode('/', array_map('rawurlencode', explode('/', $parsed_url['path'])));
-			}
-            
-			$query = isset($parsed_url['query']) ? '?' . $parsed_url['query'] : '';
-			$encoded_url = $parsed_url['scheme'] . '://' . $parsed_url['host'] . $encoded_path . $query;
-			
+            if ($is_encoded) {
+                $encoded_path = $parsed_url['path'];
+            } else {
+                $encoded_path = implode('/', array_map('rawurlencode', explode('/', $parsed_url['path'])));
+            }
+
+            $query = isset($parsed_url['query']) ? '?' . $parsed_url['query'] : '';
+            $encoded_url = $parsed_url['scheme'] . '://' . $parsed_url['host'] . $encoded_path . $query;
+
             return $encoded_url;
         }
         return false;
     }
-    
+
     /** @noinspection PhpUnused */
     public static function getDiscountRules($get = null)
     {

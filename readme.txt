@@ -1,8 +1,8 @@
 === theMarketer - Email marketing, Newsletters, Automation & Loyalty for Woocommerce ===
 Contributors: themarketer2023
-Tags: WooCommerce, theMarketer, Email marketing, Loyalty Program, Woocommerce emails, Newsletter, Popup, Subscription form, CRM, Analytics, Marketing, Marketing automation, Email workflows
+Tags: Email marketing, Loyalty Program, Newsletter, Marketing automation, Email workflows
 Requires at least: 4.6
-Tested up to: 6.7
+Tested up to: 6.8
 Requires PHP: 5.6
 Stable tag: 1.4.7
 Requires WooCommerce at least: 4.0.0

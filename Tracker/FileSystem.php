@@ -11,6 +11,8 @@
 
 namespace Mktr\Tracker;
 
+use Mktr\Tracker\Helpers\FileHelper;
+
 class FileSystem
 {
     private static $path = null;

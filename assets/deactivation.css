@@ -210,6 +210,7 @@ a.mktr-button
 {
     text-decoration: none;
     color: #FFFFFF;
+    cursor: pointer;
 }
 
 .icon {
@@ -367,18 +368,21 @@ a.mktr-button
     border-radius: 6px;
     color: #344054 !important;
     text-align: center;
+    cursor: pointer;
 }
 .mkcheck + .mk-btn:after {
     background: #ff3a19;
     background-color: #fff;
     content: "Disabled";
     display: block;
+    cursor: pointer;
 }
 .mkcheck:checked + .mk-btn:after {
     background: #2259FA !important;
     color: #FFFFFF !important;
     display: block;
     content: "Enabled";
+    cursor: pointer;
 }
 
 .mkcheck + .mk-btn-opt:after {
@@ -389,18 +393,21 @@ a.mktr-button
     border-radius: 6px;
     color: #344054 !important;
     text-align: center;
+    cursor: pointer;
 }
 .mkcheck + .mk-btn-opt:after {
     background: #ff3a19;
     background-color: #fff;
     content: "Your Website";
     display: block;
+    cursor: pointer;
 }
 .mkcheck:checked + .mk-btn-opt:after {
     background: #2259FA !important;
     color: #FFFFFF !important;
     display: block;
     content: "theMarketer";
+    cursor: pointer;
 }
 
 
@@ -412,18 +419,21 @@ a.mktr-button
     border-radius: 6px;
     color: #344054 !important;
     text-align: center;
+    cursor: pointer;
 }
 .mkcheck + .mk-btn-sub:after {
     background: #ff3a19;
     background-color: #fff;
     content: "Unsubscribed";
     display: block;
+    cursor: pointer;
 }
 .mkcheck:checked + .mk-btn-sub:after {
     background: #2259FA !important;
     color: #FFFFFF !important;
     display: block;
     content: "Subscribed";
+    cursor: pointer;
 }
 
 

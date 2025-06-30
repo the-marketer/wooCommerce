@@ -26,7 +26,7 @@ class Run
 
     public static function debug() {
         if (isset($_COOKIE['EAX_DEBUG'])) {
-            var_dump(func_get_args());
+//             var_dump(func_get_args());
             die();
         }
     }
@@ -241,6 +241,10 @@ class Run
         }
     }
     public function add_to_cart_ajax() {
+        if (empty($_REQUEST['_wpnonce']) || !wp_verify_nonce($_REQUEST['_wpnonce'], 'add_to_cart_ajax')) {
+            wp_die(__('Security check failed', 'themarketer'));
+        }
+
         if (self::$add === null) {
             $product_id = Config::REQUEST('product_id');
             if ($product_id !== null) {
@@ -281,12 +285,21 @@ class Run
 
     public function remove_from_wishlist_item()
     {
-        $product_id = null; $fragments = isset( $_REQUEST['fragments'] ) ? wc_clean( $_REQUEST['fragments'] ) : [];
-        foreach($fragments as $v) {
-            if(isset($v['product_id'])) { $product_id = $v['product_id']; break; }
+        if (empty($_REQUEST['_wpnonce']) || !wp_verify_nonce($_REQUEST['_wpnonce'], 'remove_wishlist_item')) {
+            wp_die(__('Security check failed', 'themarketer'));
         }
-       
-        if ($product_id !== null) { Observer::removeFromWishlist($product_id, 0); }
+
+        $fragments = [];
+        if (isset($_REQUEST['fragments']) && is_array($_REQUEST['fragments'])) {
+            $fragments = wc_clean(wp_unslash($_REQUEST['fragments']));
+        }
+
+        foreach ($fragments as $fragment) {
+            if (!empty($fragment['product_id'])) {
+                Observer::removeFromWishlist($fragment['product_id'], 0);
+                break;
+            }
+        }
     }
 
     public function remove_from_wishlist() {
@@ -325,6 +338,10 @@ class Run
     }
 
     public function add_to_cart() {
+        if (empty($_REQUEST['_wpnonce']) || !wp_verify_nonce(wp_unslash($_REQUEST['_wpnonce']), 'add_to_cart')) {
+            wp_die(__('Security check failed', 'themarketer'));
+        }
+
         if (self::$add === null) {
             $addToCart = Config::REQUEST('add-to-cart');
             if ($addToCart !== null) {
@@ -396,7 +413,7 @@ class Run
     public function mktr_auto_apply_discount_code() {
         try {
             if (isset($_GET['mktrAddDiscount']) && $_GET['mktrAddDiscount'] == 1 && isset($_GET['code'])) {
-                $code = sanitize_text_field($_GET['code']);
+                $code = sanitize_text_field(wp_unslash($_GET['code']));
                 if (!empty($code)) {
                     $applied_coupons = WC()->cart->get_applied_coupons();
                     if (!empty($applied_coupons) || isset($_SESSION['coupon_applied'])) {
@@ -495,7 +512,9 @@ class Run
             "define('MKTR_MAILPOET_SEGMENT', ".$mailpoet_segment.");"
         ), $content);
 
-        FileHelper::putContents($name, $newContent);
+        //FileHelper::putContents($name, $newContent);
+        FileSystem::setWorkDirectory();
+        FileSystem::writeFile($name, $newContent);
     }
 
     public function Install() {
@@ -503,7 +522,7 @@ class Run
         Config::setValue("redirect", 1);
         Config::setValue("onboarding", 0);
         Config::setValue("rated_install", time() + 1209600 );
-		
+
         \wp_remote_post('https://connector.themarketer.com/feedback/install', array(
             'method'      => 'POST',
             'timeout'     => 5,
@@ -519,7 +538,7 @@ class Run
     public function unInstall() {
         Session::down();
         \wp_clear_scheduled_hook('MKTR_CRON');
-        
+
         \wp_remote_post('https://connector.themarketer.com/feedback/install', array(
             'method'      => 'POST',
             'timeout'     => 5,

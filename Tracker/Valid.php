@@ -33,13 +33,15 @@ class Valid
         return self::$init;
     }
 
+
     public static function getParam($name = null, $def = null)
     {
         if (isset(self::$params[$name])) {
             
             return self::$params[$name];
-        } else if(isset($_GET[$name])) {
-            self::$params[$name] = sanitize_text_field($_GET[$name]);
+        } else if (isset($_GET[$name])) {
+
+            self::$params[$name] = sanitize_text_field(wp_unslash($_GET[$name]));
             return self::$params[$name];
         }
 
@@ -88,15 +90,20 @@ class Valid
 
     public static function check($checkParam = null)
     {
+
         if ($checkParam === null) {
             return null;
         }
 
         self::$error = null;
 
+
+
         foreach ($checkParam as $k=>$v) {
             if ($v !== null) {
+
                 $check = explode("|", $v);
+                //var_dump($check);
                 foreach ($check as $do) {
                     if (self::$error === null) {
                         switch ($do) {

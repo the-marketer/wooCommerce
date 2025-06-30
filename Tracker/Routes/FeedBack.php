@@ -46,11 +46,11 @@ class FeedBack
             );
 
             if (isset($_POST['message'])) {
-                $body['message'] = $_POST['message']; 
+                $body['message'] = sanitize_text_field(wp_unslash($_POST['message']));
             }
             
             if (isset($_POST['rating'])) {
-                $body['rating'] = $_POST['rating'];
+                $body['rating'] = absint(wp_unslash($_POST['rating']));
                 \Mktr\Tracker\Config::setValue("rated", 1);
             }
             

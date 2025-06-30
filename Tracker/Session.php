@@ -48,7 +48,7 @@ class Session
                     self::$saveCookie = true;
                 }
             } else {
-                self::$uid = sanitize_text_field($_COOKIE['__sm__uid']);
+                self::$uid = sanitize_text_field(wp_unslash($_COOKIE['__sm__uid']));
             }
         }
         return self::$uid;
@@ -121,7 +121,7 @@ class Session
     public static function clearIfExipire()
     {
         $table_name = Config::tableName();
-        $expire_at = date('Y-m-d H:i:s', time());
+        $expire_at = gmdate('Y-m-d H:i:s', time());
         $prep = Config::db()->prepare("DELETE FROM `". $table_name ."` WHERE `expire` < %s", $expire_at);
         Config::db()->query($prep);
     }

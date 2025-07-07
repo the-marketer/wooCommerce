@@ -183,9 +183,10 @@ class Events
         if ($mktr_data['isWoodMart']) {
             $wishList = Config::session()->get("woodmart_wishlist_products");
             if ($wishList === null) {
-                $wishList = (isset($_COOKIE['woodmart_wishlist_products']) ? $_COOKIE['woodmart_wishlist_products'] : '{}');
+                $wishList = isset($_COOKIE['woodmart_wishlist_products']) ? sanitize_text_field($_COOKIE['woodmart_wishlist_products']) : '{}';
                 Config::session()->set("woodmart_wishlist_products", $wishList);
-                Config::session()->set("woodmart_wishlist_count", (isset($_COOKIE['woodmart_wishlist_count']) ? $_COOKIE['woodmart_wishlist_count'] : 0));
+                $wishListCount = isset($_COOKIE['woodmart_wishlist_count']) ? intval($_COOKIE['woodmart_wishlist_count']) : 0;
+                Config::session()->set("woodmart_wishlist_count", $wishListCount);
             }
             $mktr_data['wishList'] = $wishList;
         }
@@ -268,7 +269,7 @@ class Events
                 }
                 $content .= '</script><script async src="'.Run::plug_url('/assets/mktr.'.$js_file.'.js').'" ></script>';
                 $content .= "<!-- Mktr Script END -->";
-                echo $content;
+                echo wp_kses_post($content);
             }
         }
     }

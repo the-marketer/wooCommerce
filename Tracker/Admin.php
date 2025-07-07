@@ -345,7 +345,8 @@ class Admin
                 Config::setValue("rated_install", time()+1209600);
             }
             Config::setValue("redirect", 0);
-            \wp_redirect(\admin_url('admin.php?page=mktr_tracker'));
+            wp_safe_redirect(admin_url('admin.php?page=mktr_tracker'));
+            exit;
         }
         $out = array();
         if (Config::getStatus() == 1 && empty(Config::getKey()) || Config::getOnboarding() !== 2) {
@@ -643,7 +644,8 @@ class Admin
     public static function onboarding(){
         if (isset($_GET['back'])) {
             Config::setValue('onboarding', 0);
-            \wp_redirect(\admin_url('admin.php?page=mktr_tracker'));
+            \wp_safe_redirect(\admin_url('admin.php?page=mktr_tracker'));
+            exit;
         }
         $forms = array(array(),array());
         if (!empty(self::$notice)) {

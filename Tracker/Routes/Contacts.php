@@ -79,9 +79,9 @@ class Contacts
 
         do {
             $data = \WC_Data_Store::load( 'customer' )->query( $args );
-            //$data = new \WC_Customer($args);
-            var_dump($data);
-            die();
+//            $data = new \WC_Customer($args);
+//            var_dump($data);
+//            die();
             $pages = $stop ? 0 : count($data);
             foreach ($data as $v) {
                 

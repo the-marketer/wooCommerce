@@ -241,8 +241,9 @@ class Run
         }
     }
     public function add_to_cart_ajax() {
-        if (empty($_REQUEST['_wpnonce']) || !wp_verify_nonce($_REQUEST['_wpnonce'], 'add_to_cart_ajax')) {
-            wp_die(__('Security check failed', 'themarketer'));
+        $wpnonce = isset($_REQUEST['_wpnonce']) ? sanitize_text_field(wp_unslash($_REQUEST['_wpnonce'])) : '';
+        if (empty($wpnonce) || !wp_verify_nonce($wpnonce, 'add_to_cart_ajax')) {
+            wp_die(esc_html(__('Security check failed', 'themarketer')));
         }
 
         if (self::$add === null) {
@@ -285,8 +286,9 @@ class Run
 
     public function remove_from_wishlist_item()
     {
-        if (empty($_REQUEST['_wpnonce']) || !wp_verify_nonce($_REQUEST['_wpnonce'], 'remove_wishlist_item')) {
-            wp_die(__('Security check failed', 'themarketer'));
+        $wpnonce = isset($_REQUEST['_wpnonce']) ? sanitize_text_field(wp_unslash($_REQUEST['_wpnonce'])) : '';
+        if (empty($wpnonce) || !wp_verify_nonce($wpnonce, 'remove_wishlist_item')) {
+            wp_die(esc_html(__('Security check failed', 'themarketer')));
         }
 
         $fragments = [];
@@ -338,8 +340,9 @@ class Run
     }
 
     public function add_to_cart() {
-        if (empty($_REQUEST['_wpnonce']) || !wp_verify_nonce(wp_unslash($_REQUEST['_wpnonce']), 'add_to_cart')) {
-            wp_die(__('Security check failed', 'themarketer'));
+        $wpnonce = isset($_REQUEST['_wpnonce']) ? sanitize_text_field(wp_unslash($_REQUEST['_wpnonce'])) : '';
+        if (empty($wpnonce) || !wp_verify_nonce($wpnonce, 'add_to_cart')) {
+            wp_die(esc_html(__('Security check failed', 'themarketer')));
         }
 
         if (self::$add === null) {
@@ -405,7 +408,7 @@ class Run
                 wc_add_notice(__('The product is already in the cart.', 'themarketer'), 'notice');
             }
 
-            wp_redirect(wc_get_checkout_url());
+            wp_safe_redirect(wc_get_checkout_url());
             exit;
         }
     }
@@ -418,13 +421,13 @@ class Run
                     $applied_coupons = WC()->cart->get_applied_coupons();
                     if (!empty($applied_coupons) || isset($_SESSION['coupon_applied'])) {
                         wc_add_notice(apply_filters('mktr_existing_coupon_message', __('A coupon is already applied. Please remove it before applying a new one.', 'themarketer')), 'error');
-                        wp_redirect(wc_get_checkout_url());
+                        wp_safe_redirect(wc_get_checkout_url());
                         exit;
                     }
 
                     if (WC()->cart->is_empty()) {
                         wc_add_notice(apply_filters('mktr_empty_cart_message', __('Your cart is empty. Please add products to your cart before applying a discount code.', 'themarketer')), 'error');
-                        wp_redirect(apply_filters('mktr_empty_cart_redirect_url', wc_get_checkout_url()));
+                        wp_safe_redirect(apply_filters('mktr_empty_cart_redirect_url', wc_get_checkout_url()));
                         exit;
                     } else {
                         $coupon_id = wc_get_coupon_id_by_code($code);
@@ -433,7 +436,7 @@ class Run
                             WC()->cart->calculate_totals();
                             WC()->cart->set_session();
                             $_SESSION['coupon_applied'] = true;
-                            wp_redirect(wc_get_checkout_url());
+                            wp_safe_redirect(wc_get_checkout_url());
                             exit;
                         } else {
                             wc_add_notice(apply_filters('mktr_invalid_coupon_message', __('Invalid discount code.', 'themarketer')), 'error');

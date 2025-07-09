@@ -7,7 +7,8 @@ Requires PHP: 5.6
 Stable tag: 1.4.7
 Requires WooCommerce at least: 4.0.0
 Tested WooCommerce up to: 9.6.1
-License: GPLv2
+License: GNU General Public License v2 or later
+License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
 Collect subscribers. Send newsletters. Create 1:1 personalised emails using dynamic blocks. Activate one of almost 30 predefined workflows.
 
@@ -88,6 +89,10 @@ You can reach out to our support team in two ways:
 Click the support icon in the lower right corner of your dashboard when logged in.
 
 Email us at iam[at]themarketer.com. We’re always here to help!
+
+= How can I report security bugs? =
+
+You can report security bugs through the Patchstack Vulnerability Disclosure Program. The Patchstack team helps validate, triage and handle any security vulnerabilities. [Report a security vulnerability.]( https://patchstack.com/database/vdp/546bd576-2c1e-4367-85cb-368663d4f85f )
 
 == Changelog ==
 = 1.4.7 =

@@ -369,8 +369,11 @@ importScripts("https://t.themarketer.com/firebase.js");';
     }
 
     public static function REQUEST($key) {
-        if (isset($_REQUEST[$key]) && array_key_exists($key, $_REQUEST)) {
-            $value = wp_unslash($_REQUEST[$key]);
+
+        $checkKey =  ( isset( $_REQUEST[$key] ) ? wc_clean( wp_unslash( $_REQUEST[$key] ) ) : '' );
+
+        if ($checkKey) {
+            $value = wc_clean(wp_unslash($_REQUEST[$key]));
             if (is_array($value)) {
                 $list = [];
                 foreach ($value as $k => $v) {

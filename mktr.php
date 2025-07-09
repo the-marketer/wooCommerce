@@ -9,8 +9,8 @@
  * Author:                  themarketer.com
  * Author URI:              https://themarketer.com
  * Text Domain:             themarketer
- * License:                 GPL2
- * License URI:             https://www.gnu.org/licenses/gpl-2.0.html
+ * License: GNU General Public License v2 or later
+ * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * WC requires at least:    4.0.0
  * WC tested up to:         8.4.0
  *

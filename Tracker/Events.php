@@ -260,16 +260,28 @@ class Events
             $js_file = Config::getValue('js_file');
             
             if ( $js_file !== null ) {
-                $mktr_data = self::mktr_data();
+                wp_register_script(
+                    'mktr-loader',
+                    Run::plug_url('/assets/mktr.' . $js_file . '.js'),
+                    array(),
+                    false,
+                    array('strategy' => 'async')
+                );
+                wp_enqueue_script('mktr-loader');
 
-                $content = "<!-- Mktr Script Start -->";
-                $content .= '<script type="text/javascript" async>';
-                if (!empty($mktr_data)) {
-                    $content .= 'window.mktr_data = '. json_encode($mktr_data, true) .';';
-                }
-                $content .= '</script><script async src="'.Run::plug_url('/assets/mktr.'.$js_file.'.js').'" ></script>';
-                $content .= "<!-- Mktr Script END -->";
-                echo wp_kses_post($content);
+                $mktr_data = self::mktr_data();
+                wp_localize_script('mktr-loader', 'mktr_data', $mktr_data);
+
+                wp_add_inline_script(
+                    'mktr-loader',
+                    "\n<!-- Mktr Script Start -->\n",
+                    'before'
+                );
+                wp_add_inline_script(
+                    'mktr-loader',
+                    "\n<!-- Mktr Script END -->\n",
+                    'after'
+                );
             }
         }
     }

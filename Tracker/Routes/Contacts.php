@@ -50,8 +50,8 @@ class Contacts
 
         $customers = wp_cache_get($cache_key, 'mktr_customers');
         if ($customers === false) {
-            $sql = "SELECT * FROM `{$customer_lookup_table}` LIMIT %d OFFSET %d";
-            $customers = $wpdb->get_results($wpdb->prepare($sql, $limit, $offset), ARRAY_A);
+            $sql = $wpdb->prepare("SELECT * FROM `{$customer_lookup_table}` LIMIT %d OFFSET %d", $limit, $offset);
+            $customers = $wpdb->get_results($sql, ARRAY_A);
             wp_cache_set($cache_key, $customers, 'mktr_customers', 300);
         }
         return $customers;

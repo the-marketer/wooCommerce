@@ -369,15 +369,16 @@ importScripts("https://t.themarketer.com/firebase.js");';
     }
 
     public static function REQUEST($key) {
-        if (isset($_REQUEST[$key])) {
-            if (is_array($_REQUEST[$key])) {
+        if (isset($_REQUEST[$key]) && array_key_exists($key, $_REQUEST)) {
+            $value = wp_unslash($_REQUEST[$key]);
+            if (is_array($value)) {
                 $list = [];
-                foreach (wp_unslash($_REQUEST[$key]) as $k => $v) {
+                foreach ($value as $k => $v) {
                     $list[$key][$k] = sanitize_text_field($v);
                 }
                 return $list[$key];
             } else {
-                return sanitize_text_field(wp_unslash($_REQUEST[$key]));
+                return sanitize_text_field($value);
             }
         }
         return null;

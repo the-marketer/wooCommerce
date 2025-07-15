@@ -643,9 +643,13 @@ class Admin
     }
     public static function onboarding(){
         if (isset($_GET['back'])) {
-            Config::setValue('onboarding', 0);
-            \wp_safe_redirect(\admin_url('admin.php?page=mktr_tracker'));
-            exit;
+            if (!wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])))) {
+                return;
+            } else {
+                Config::setValue('onboarding', 0);
+                \wp_safe_redirect(\admin_url('admin.php?page=mktr_tracker'));
+                exit;
+            }
         }
         $forms = array(array(),array());
         if (!empty(self::$notice)) {
@@ -739,11 +743,14 @@ class Admin
             "type" => "hidden",
             "content" => self::$inputs['onboarding']
         );
+
+        $backUrl = wp_nonce_url(admin_url('admin.php?page=mktr_tracker&back'));
+
         $forms[1][] = array(
             "type" => "footer",
             "content" => array(
                 '<div class="mktr-content-left">Need help? <a href="https://themarketer.com/integrations/woocommerce" target="_blank"> Visit our help article <span class="icon mktr-export-2"></span></a></div>',
-                '<div class="mktr-content-right"><a href="'.\admin_url('admin.php?page=mktr_tracker&back').'" class="mktr-button none"><span class="icon mktr-arrow-right"></span>Back<span class="icon mktr-arrow-right"></span></a>&emsp;<button type="submit" class="mktr-button">Finish setup <span class="icon mktr-arrow-right"></span></button></div><br class="mktr-space"/>'
+                '<div class="mktr-content-right"><a href="'.$backUrl.'" class="mktr-button none"><span class="icon mktr-arrow-right"></span>Back<span class="icon mktr-arrow-right"></span></a>&emsp;<button type="submit" class="mktr-button">Finish setup <span class="icon mktr-arrow-right"></span></button></div><br class="mktr-space"/>'
             )
         );
 

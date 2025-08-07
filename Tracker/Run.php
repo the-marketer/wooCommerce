@@ -147,6 +147,8 @@ class Run
 
         // add_action('wp_ajax_woodmart_ajax_add_to_cart', array(self::init(), 'test'));
         // add_action('woocommerce_loaded', function (){  });
+        // add_action('woocommerce_paypal_payments_before_capture_order', function ($order){ $order->status()->is(\WooCommerce\PayPalCommerce\ApiClient\Entity\OrderStatus::COMPLETED) });
+        
         add_action('MKTR_CRON', array($this, "cronAction"));
         add_action('template_redirect', array($this, 'mktr_auto_add_to_cart_checkout'));
         add_action('template_redirect', array($this, 'mktr_auto_apply_discount_code'));

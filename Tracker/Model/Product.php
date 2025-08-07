@@ -429,7 +429,7 @@ class Product
         $out = 0;
         
         if (self::checkWooDiscountRules()) {
-            $out = apply_filters('advanced_woo_discount_rules_get_product_discount_price', self::getRegularPrice(true), self::$asset, 2);
+            $out = apply_filters('advanced_woo_discount_rules_get_product_discount_price', ($check === true || $p > 0 ? $p : self::getRegularPrice(true)), self::$asset, 2);
         } else if (self::cOverWrite()) {
             $out = ($check === true || $p > 0 ? $p : self::getRegularPrice(true));
         } else {

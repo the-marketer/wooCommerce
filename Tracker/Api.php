@@ -91,7 +91,7 @@ class Api
             }
 
             if (self::$timeOut == null) {
-                self::$timeOut = 10;
+                self::$timeOut = 3;
             }
 
             self::$params = array_merge([

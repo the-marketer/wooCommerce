@@ -221,13 +221,6 @@ class Admin
 
     public static function loadAdmin()
     {
-        Form::initProcess();
-
-        if (Config::getOnboarding() === 2 && Config::getStatus() === 1 && (Config::getCronFeed() === 1 || Config::getCronReview() === 1)) {
-            if (!wp_next_scheduled('MKTR_CRON')) {
-                wp_schedule_event(time(), 'hourly', 'MKTR_CRON');
-            }
-        }
         add_filter('plugin_action_links_'.Config::getPluginBase(), array(self::init(), 'action_links'));
         add_filter('plugin_row_meta', array(self::init(), 'extra_links'), 10, 2);
         add_action('admin_menu', array(self::init(), 'menu'));
@@ -238,6 +231,17 @@ class Admin
         add_action('woocommerce_order_edit_status', array(Observer::init(), 'orderUp'), 10, 2);
         add_action('admin_footer', array(self::init(), 'feedback'));
         add_action('admin_enqueue_scripts', array(self::init(), 'scripts'));
+
+        //CSRF FIX
+        add_action('admin_init', array(Form::init(), 'initProcess'));
+
+        Form::initProcess();
+
+        if (Config::getOnboarding() === 2 && Config::getStatus() === 1 && (Config::getCronFeed() === 1 || Config::getCronReview() === 1)) {
+            if (!wp_next_scheduled('MKTR_CRON')) {
+                wp_schedule_event(time(), 'hourly', 'MKTR_CRON');
+            }
+        }
     }
     public static function gform_menu($setting_tabs, $form_id)
     {
@@ -504,7 +508,7 @@ class Admin
             */
         }
     }
-    
+
     public static function gForm($fields = array(), $getv = true){
         $content = '<form method="POST" action="" enctype="multipart/form-data">';
         $content .= '<div class="mktr-head"><img src="'.Run::plug_url('/assets/logo.png').'"></div>';
@@ -593,7 +597,7 @@ class Admin
                                 '" name="'.Config::$name.'['.$name.']" placeholder="'.(isset($c['placeholder']) ? $c['placeholder'] : $c['label']).
                                 '" '.( empty($value) ? "" : ' value="'.$value.'"' ).'/>';
                             }
-                            // '.Config::$name.'_'.$c['name'].' 
+                            // '.Config::$name.'_'.$c['name'].'
                             $content .= '<div class="mktr-content-field">';
                             $content .= '<label for="'.$fid.'" class="mktr-content-label">'.$c['label'].'</label>';
                             $content .= '<div class="mktr-content-input">';
@@ -636,12 +640,17 @@ class Admin
                 $content .= implode(PHP_EOL, $v['content']);
                 $content .= '</div>';
             }
+            //CSRF FIX
+            else if ($v['type'] === 'nonce') {
+                $content .='<input type="hidden" name="mktr[_wpnonce]" value="'.$v['content'].'"/>';
+            }
         }
 
         $content .= '</div><input type="hidden" id="'.Config::$name.'" name="'.Config::$name.'[valid]" value="'.Config::$name.'_valid" /></form>';
         return $content;
     }
     public static function onboarding(){
+
         if (isset($_GET['back'])) {
             if (!wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])))) {
                 return;
@@ -651,6 +660,7 @@ class Admin
                 exit;
             }
         }
+
         $forms = array(array(),array());
         if (!empty(self::$notice)) {
             $bk = self::$notice;
@@ -699,6 +709,13 @@ class Admin
             "type" => "hidden",
             "content" => self::$inputs['onboarding']
         );
+
+        //CSRF FIX
+        $forms[0][] = array(
+            "type" => "nonce",
+            "content" => wp_create_nonce('save-config')
+        );
+
         $forms[0][] = array(
             "type" => "footer",
             "content" => array(
@@ -706,6 +723,7 @@ class Admin
                 '<div class="mktr-content-right"><button type="submit" class="mktr-button">Continue <span class="icon mktr-arrow-right"></span></button></div><br class="mktr-space"/>'
             )
         );
+
 
         $forms[1][] = array(
             "type" => "head",
@@ -728,7 +746,7 @@ class Admin
             $c[] = self::$inputs['allow_export_gravity'];
         }
 
-        if (!$active && Config::getAllowExportGravity()) { 
+        if (!$active && Config::getAllowExportGravity()) {
             Config::setValue('allow_export_gravity', 0);
         }
         */
@@ -742,6 +760,12 @@ class Admin
         $forms[1][] = array(
             "type" => "hidden",
             "content" => self::$inputs['onboarding']
+        );
+
+        //CSRF FIX
+        $forms[1][] = array(
+            "type" => "nonce",
+            "content" => wp_create_nonce('save-config')
         );
 
         $backUrl = wp_nonce_url(admin_url('admin.php?page=mktr_tracker&back'));
@@ -840,7 +864,7 @@ class Admin
             $c[] = self::$inputs['allow_export_gravity'];
         }
 
-        if (!$active && Config::getAllowExportGravity()) { 
+        if (!$active && Config::getAllowExportGravity()) {
             Config::setValue('allow_export_gravity', 0);
         }
         */
@@ -862,6 +886,13 @@ class Admin
             "type" => "hidden",
             "content" => self::$inputs['onboarding']
         );
+
+        //CSRF FIX
+        $form[] = array(
+            "type" => "nonce",
+            "content" => wp_create_nonce('save-config')
+        );
+
         $form[] = array(
             "type" => "footer",
             "content" => array(

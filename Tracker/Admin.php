@@ -228,6 +228,8 @@ class Admin
                 wp_schedule_event(time(), 'hourly', 'MKTR_CRON');
             }
         }
+        //CSRF FIX
+        add_action('init', array(Form::init(), 'initProcess'));
         add_filter('plugin_action_links_'.Config::getPluginBase(), array(self::init(), 'action_links'));
         add_filter('plugin_row_meta', array(self::init(), 'extra_links'), 10, 2);
         add_action('admin_menu', array(self::init(), 'menu'));
@@ -631,7 +633,12 @@ class Admin
                 $c = $v['content'];
                 $value = Config::getValue($c['name']);
                 $content .= '<'.$c['tag'].' type="'.$c['type'].'" type="hidden" name="'.Config::$name.'['.$c['name'].']" value="'.$value.'"/>';
-            } else if ($v['type'] === 'footer') {
+            } //CSRF FIX
+            else if ($v['type'] === 'nonce') {
+                $content .='<input type="hidden" name="'.Config::$name.'[_wpnonce]" value="'.$v['content'].'"/>';
+            }
+
+            else if ($v['type'] === 'footer') {
                 $content .= '<div class="mktr-content-footer">';
                 $content .= implode(PHP_EOL, $v['content']);
                 $content .= '</div>';
@@ -699,6 +706,13 @@ class Admin
             "type" => "hidden",
             "content" => self::$inputs['onboarding']
         );
+
+        //CSRF FIX
+        $forms[0][] = array(
+            "type" => "nonce",
+            "content" => wp_create_nonce('save-config')
+        );
+
         $forms[0][] = array(
             "type" => "footer",
             "content" => array(
@@ -744,6 +758,12 @@ class Admin
             "content" => self::$inputs['onboarding']
         );
 
+        //CSRF FIX
+        $forms[1][] = array(
+            "type" => "nonce",
+            "content" => wp_create_nonce('save-config')
+        );
+
         $backUrl = wp_nonce_url(admin_url('admin.php?page=mktr_tracker&back'));
 
         $forms[1][] = array(
@@ -781,6 +801,13 @@ class Admin
             "type" => "hidden",
             "content" => self::$inputs['onboarding']
         );
+
+        //CSRF FIX
+        $form[] = array(
+            "type" => "nonce",
+            "content" => wp_create_nonce('save-config')
+        );
+
         $form[] = array(
             "type" => "footer",
             "content" => array(
@@ -858,10 +885,18 @@ class Admin
                 self::$inputs['size']
             )
         );
+
         $form[] = array(
             "type" => "hidden",
             "content" => self::$inputs['onboarding']
         );
+
+        //CSRF FIX
+        $form[] = array(
+            "type" => "nonce",
+            "content" => wp_create_nonce('save-config')
+        );
+
         $form[] = array(
             "type" => "footer",
             "content" => array(
@@ -959,6 +994,12 @@ class Admin
         $form[] = array(
             "type" => "hidden",
             "content" => self::$inputs['onboarding']
+        );
+
+        //CSRF FIX
+        $form[] = array(
+            "type" => "nonce",
+            "content" => wp_create_nonce('save-config')
         );
 
         $form[] = array(

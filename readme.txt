@@ -4,7 +4,7 @@ Tags: Email marketing, Loyalty Program, Newsletter, Marketing automation, Email 
 Requires at least: 4.6
 Tested up to: 6.8
 Requires PHP: 5.6
-Stable tag: 1.4.7
+Stable tag: 1.4.8
 Requires WooCommerce at least: 4.0.0
 Tested WooCommerce up to: 9.6.1
 License: GNU General Public License v2 or later
@@ -95,9 +95,13 @@ Email us at iam[at]themarketer.com. We’re always here to help!
 You can report security bugs through the Patchstack Vulnerability Disclosure Program. The Patchstack team helps validate, triage and handle any security vulnerabilities. [Report a security vulnerability.]( https://patchstack.com/database/vdp/546bd576-2c1e-4367-85cb-368663d4f85f )
 
 == Changelog ==
+= 1.4.8 =
+* Improved plugin's security, stability and performance
+
 = 1.4.7 =
 * Added functionality for automatically adding products to the shopping cart
 * Added functionality for automatically applying discount codes in the checkout
+
 = 1.4.0 =
 * Redesigned plugin admin interface
 

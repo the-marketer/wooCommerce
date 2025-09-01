@@ -3,7 +3,7 @@
  * Plugin Name:             theMarketer - Email marketing, Newsletters, Automation & Loyalty for Woocommerce
  * Plugin URI:              https://themarketer.com/integrations/woocommerce
  * Description:             Automate and transform the way you communicate with WooCommerce customers and cultivate lasting loyalty using your store’s real-time data.
- * Version:                 1.4.7
+ * Version:                 1.4.8
  * Requires at least:       4.6
  * Requires PHP:            5.6
  * Author:                  themarketer.com

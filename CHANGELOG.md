@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project are documented in this file.
 
+## 1.4.8
+Improved plugin's security, stability and performance
+
 ## 1.4.7
 Added functionality for automatically adding products to the shopping cart
 Added functionality for automatically applying discount codes in the checkout

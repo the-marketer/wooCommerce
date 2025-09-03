@@ -199,7 +199,7 @@ window.mktr.events = function () {
             
             Config::setValue('js_file', $js_file);
 
-            \Mktr\Tracker\FileSystem::setWorkDirectory('assets');
+            \Mktr\Tracker\FileSystem::setWorkDirectory('assets/');
             \Mktr\Tracker\FileSystem::writeFile('mktr.' . $js_file . '.js', implode(PHP_EOL, $js));
         } else {
             $js_file = Config::getValue('js_file');

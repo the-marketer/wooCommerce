@@ -1,6 +1,12 @@
 # Changelog
 All notable changes to this project are documented in this file.
 
+## 1.4.9
+Normalized file path handling and working directory usage across the plugin
+Ensured data and log saves set the correct working directory
+Fixed JS refresh to write assets to the proper folder
+Refactored to use FileSystem for reading/writing plugin bootstrap
+
 ## 1.4.8
 Improved plugin's security, stability and performance
 

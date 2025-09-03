@@ -25,7 +25,7 @@ class Data
     public function __construct()
     {
         FileSystem::setWorkDirectory();
-        $data = FileSystem::rFile("data.json");
+        $data = FileSystem::readFile("data.json");
         if ($data !== '')
         {
             self::$data = json_decode($data, true);
@@ -81,6 +81,7 @@ class Data
 
     public static function save()
     {
+        FileSystem::setWorkDirectory();
         FileSystem::writeFile("data.json", Valid::toJson(self::$data));
     }
 }

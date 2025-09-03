@@ -40,7 +40,7 @@ class Cron
         $upReview = $data->update_review;
         $data->cron_start = time();
         $data->save();
-        
+        FileSystem::setWorkDirectory();
         if (Config::getStatus() != 0) {
 
             if (Config::getCronFeed() != 0 && $upFeed < time()) {

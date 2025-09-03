@@ -17,7 +17,7 @@ class Logs
     public function __construct() {
         FileSystem::setWorkDirectory();
 
-        $data = FileSystem::rFile('logs.json');
+        $data = FileSystem::readFile('logs.json');
         if ($data !== '') {
             self::$data = json_decode($data, true);
         } else {
@@ -69,6 +69,7 @@ class Logs
     }
 
     public static function save() {
+        FileSystem::setWorkDirectory();
         FileSystem::writeFile('logs.json', Valid::toJson(self::$data));
     }
 }

@@ -30,11 +30,11 @@ class FileSystem
     }
 
     /** @noinspection PhpUnused */
-    public static function setWorkDirectory($name = 'Storage')
+    public static function setWorkDirectory($name = 'Storage/')
     {
         if ($name != 'base' && !self::$useRoot)
         {
-            self::$path = Config::getDir() . $name . "/";
+            self::$path = Config::getDir() . $name;
         } else {
             self::$path = ABSPATH;
         }

@@ -480,9 +480,10 @@ class Run
         \Mktr\Tracker\Routes\refreshJS::execute(false);
         \Mktr\Tracker\Observer::pushStatus();
         
-        $name = MKTR_DIR . '/mktr.php';
-        $content = file_get_contents($name);
-
+        $name = 'mktr.php';
+        FileSystem::setWorkDirectory('');
+        $content = FileSystem::readFile($name);
+        
         if (Config::getValue('lems') == 1) {
             $lems = 'true';
         } else {
@@ -517,8 +518,7 @@ class Run
             "define('MKTR_MAILPOET_SEGMENT', ".$mailpoet_segment.");"
         ), $content);
 
-        //FileHelper::putContents($name, $newContent);
-        FileSystem::setWorkDirectory();
+        FileSystem::setWorkDirectory('');
         FileSystem::writeFile($name, $newContent);
     }
 

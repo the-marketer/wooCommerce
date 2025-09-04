@@ -179,6 +179,10 @@ class Events
             'js' => array()/* ,
             'evData' => \Mktr\Tracker\Routes\loadEvents::execute(false) */
         );
+        
+        if (defined('MKTR_DEBUG') && MKTR_DEBUG) {
+            $mktr_data['debug'] = array(WC()->session->get_customer_id(), WC()->cart->get_cart_hash());
+        }
 
         if ($mktr_data['isWoodMart']) {
             $wishList = Config::session()->get("woodmart_wishlist_products");
@@ -244,11 +248,9 @@ class Events
         if (self::$load_js) {
             self::$load_js = false;
             $js_file = Config::getValue('js_file');
-
             if ( $js_file !== null ) {
-                wp_enqueue_script('mktr-loader', Run::plug_url('/assets/mktr.'.$js_file.'.js'), array(), false, array('strategy'  => 'async'));
-                $mktr_data = self::mktr_data();
-                wp_localize_script('mktr-loader', 'mktr_data', $mktr_data);
+                wp_enqueue_script('mktr-loader', Run::plug_url('/assets/mktr.' . $js_file . '.js'), array(), false, array('strategy' => 'async'));
+                wp_localize_script('mktr-loader', 'mktr_data', self::mktr_data());
             }
         }
     }
@@ -258,30 +260,9 @@ class Events
         if (self::$load_js) {
             self::$load_js = false;
             $js_file = Config::getValue('js_file');
-            
             if ( $js_file !== null ) {
-                wp_register_script(
-                    'mktr-loader',
-                    Run::plug_url('/assets/mktr.' . $js_file . '.js'),
-                    array(),
-                    false,
-                    array('strategy' => 'async')
-                );
-                wp_enqueue_script('mktr-loader');
-
-                $mktr_data = self::mktr_data();
-                wp_localize_script('mktr-loader', 'mktr_data', $mktr_data);
-
-                wp_add_inline_script(
-                    'mktr-loader',
-                    "\n<!-- Mktr Script Start -->\n",
-                    'before'
-                );
-                wp_add_inline_script(
-                    'mktr-loader',
-                    "\n<!-- Mktr Script END -->\n",
-                    'after'
-                );
+                wp_enqueue_script('mktr-loader', Run::plug_url('/assets/mktr.' . $js_file . '.js'), array(), false, array('strategy' => 'async'));
+                wp_localize_script('mktr-loader', 'mktr_data', self::mktr_data());
             }
         }
     }

@@ -67,8 +67,11 @@ class refreshJS
             $js[] = 'window.mktr.version = "' . \Mktr\Tracker\Run::$version . '"';
             $js[] = 'window.mktr.debug = function () { if (typeof dataLayer != "undefined") { for (let i of dataLayer) { console.log("Mktr","Google",i); } } };';
             $js[] = '';
-            $js[] = '(function(d, s, i) { var f = d.getElementsByTagName(s)[0], j = d.createElement(s); j.async = true; j.src = "https://t.themarketer.com/t/j/" + i; f.parentNode.insertBefore(j, f); })(document, "script", "'. Config::getKey() .'");';
+            $js[] = '(function(d, s, i) { var f = d.getElementsByTagName(s)[0], j = d.createElement(s); j.async = true; j.src = "https://t.themarketer.com/t/j/" + i; f.parentNode.insertBefore(j, f); })(document, "script", "' . Config::getKey() . '");';
             $js[] = '';
+            if (defined('MKTR_DEBUG') && MKTR_DEBUG) {
+                $js[] = 'console.log("EAX", mktr_data.debug);';
+            }
             $js[] = 'window.mktr.addToDataLayer = function(push = []) {
     if (typeof dataLayer != "undefined") {
         for (let dataEvent of push) { dataLayer.push(dataEvent); }
@@ -83,8 +86,8 @@ window.mktr.LoadEventsFunc = function() {
     if (window.mktr.LoadEventsBool) {
         window.mktr.LoadEventsBool = false;
         try {
-            setTimeout(window.mktr.events, 2000);
-			// window.mktr.events();
+            // setTimeout(window.mktr.events, 2000);
+			window.mktr.events();
         } catch (error) {
             console.error("An error occurred while executing setTimeout:", error);
         }
@@ -99,6 +102,7 @@ window.addEventListener("beforeunload", function(event) {
         window.mktr.Load = true;
     }
 });
+
 window.mktr.xhrFetch = function(url, callback) {
     var xhr = new XMLHttpRequest();
     xhr.onreadystatechange = function() {
@@ -118,12 +122,22 @@ window.mktr.xhrFetch = function(url, callback) {
 
 window.mktr.events = function () {
     /*
-    window.mktr.xhrFetch(window.mktr.url + "?mktr=loadEvents&mktr_time=" + (new Date()).getTime(), function(data) {
-        window.mktr.addToDataLayer(data);
-    });
+    window.mktr.xhrFetch(window.mktr.url + "?mktr=loadEvents&mktr_time=" + (new Date()).getTime(), function(data) { window.mktr.addToDataLayer(data); });
     */
     if ( window.mktr.Load === true) {
-        fetch(window.mktr.url + "?mktr=loadEvents&mktr_time="+(new Date()).getTime(), { method: "GET" }).then(response => response.json()).then(data => { window.mktr.addToDataLayer(data); window.mktr.LoadEventsBool = true; }).catch((error) => {  });    
+        if (typeof jQuery === "function") {
+            jQuery.ajax({ url: window.mktr.url, data: { mktr: "loadEvents", mktr_time: (new Date()).getTime() }, method: "GET", cache: false, dataType: "json" })
+            .done(function(data) {
+                window.mktr.addToDataLayer(data);
+                window.mktr.LoadEventsBool = true;
+            }).fail(function(xhr, status, error) {
+                console.error("AJAX error:", error);
+            });
+        } else {
+            fetch(window.mktr.url + "?mktr=loadEvents&mktr_time="+(new Date()).getTime(), { method: "GET" })
+            .then(response => response.json())
+            .then(data => { window.mktr.addToDataLayer(data); window.mktr.LoadEventsBool = true; }).catch((error) => {  });
+        }
     }
 };';
             $js[] = '';
@@ -138,7 +152,7 @@ window.mktr.events = function () {
             $js[] = 'window.mktr.LoadOn();';
             $js[] = '';
             $js[] = 'document.addEventListener("click", function(event){ if (window.mktr.selectors !== "" && (event.target.matches(window.mktr.selectors) || event.target.closest(window.mktr.selectors))) { window.mktr.LoadEventsFunc(); } });';
-            $js[] = 'window.mktr.LoadEventsFunc();';
+            $js[] = 'window.addEventListener("load", function() { window.mktr.LoadEventsFunc(); });';
             $js[] = '/* window.mktr.addToDataLayer(mktr_data.evData); */';
             $js[] = '';
             $js[] = 'if (mktr_data.uuid !== null) { window.mktr.setSM("__sm__uid", mktr_data.uuid); }';

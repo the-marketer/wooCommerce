@@ -41,7 +41,7 @@ class Session
     public static function getUid() {
         if (self::$uid === null) {
             if (!isset($_COOKIE['__sm__uid'])) {
-                self::$uid = uniqid();
+                self::$uid = sanitize_text_field(wp_unslash(uniqid()));
                 if (!headers_sent()) {
                     setcookie('__sm__uid', self::$uid, strtotime('+365 days'), COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true);
                 } else {

@@ -6,6 +6,10 @@ Normalized file path handling and working directory usage across the plugin
 Ensured data and log saves set the correct working directory
 Fixed JS refresh to write assets to the proper folder
 Refactored to use FileSystem for reading/writing plugin bootstrap
+Enhanced debug data in Events and Logs, including customer and cart info.
+Improved JS event loading with jQuery fallback and better event triggers.
+Updated order status handling and error logging during initialization.
+Changed JSON output to be pretty-printed and bumped version to v1.4.9.
 
 ## 1.4.8
 Improved plugin's security, stability and performance

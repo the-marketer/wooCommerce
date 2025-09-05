@@ -43,8 +43,7 @@ class refreshJS
 
         if (Config::getOnboarding() === 2 && Config::getStatus() === 1 && !empty(Config::getKey())) {
             $js = array(
-'
-"use strict";
+'"use strict";
 /**
  * @copyright   Copyright (c) 2023 TheMarketer.com
  * @project     TheMarketer.com
@@ -63,7 +62,8 @@ class refreshJS
             $js[] = 'window.mktr.try = 0;';
             $js[] = 'window.mktr.tryLoadEventsFunc = 0;';
             $js[] = 'window.mktr.selectors = "'.Config::getSelectors().'";';
-            $js[] = 'window.mktr.url = window.location.protocol + "//" + window.location.host;';
+            // $js[] = 'window.mktr.url = window.location.protocol + "//" + window.location.host + "/en";';
+            $js[] = 'window.mktr.url = mktr_data.base_url;';
             $js[] = 'window.mktr.version = "' . \Mktr\Tracker\Run::$version . '"';
             $js[] = 'window.mktr.debug = function () { if (typeof dataLayer != "undefined") { for (let i of dataLayer) { console.log("Mktr","Google",i); } } };';
             $js[] = '';
@@ -86,8 +86,7 @@ window.mktr.LoadEventsFunc = function() {
     if (window.mktr.LoadEventsBool) {
         window.mktr.LoadEventsBool = false;
         try {
-            // setTimeout(window.mktr.events, 2000);
-			window.mktr.events();
+            setTimeout(window.mktr.events, 2000);
         } catch (error) {
             console.error("An error occurred while executing setTimeout:", error);
         }
@@ -126,7 +125,7 @@ window.mktr.events = function () {
     */
     if ( window.mktr.Load === true) {
         if (typeof jQuery === "function") {
-            jQuery.ajax({ url: window.mktr.url, data: { mktr: "loadEvents", mktr_time: (new Date()).getTime() }, method: "GET", cache: false, dataType: "json" })
+            jQuery.ajax({ url: window.mktr.url, data: { mktr: "loadEvents", mktr_time: (new Date()).getTime() }, method: "GET", dataType: "json" })
             .done(function(data) {
                 window.mktr.addToDataLayer(data);
                 window.mktr.LoadEventsBool = true;

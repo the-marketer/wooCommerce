@@ -104,6 +104,8 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 * Improved JS event loading with jQuery fallback and better event triggers.
 * Updated order status handling and error logging during initialization.
 * Changed JSON output to be pretty-printed and bumped version to v1.4.9.
+* Added support for multiple language plugins in Config and improved detection logic by introducing a checkLanguages method.
+* Expanded supported language codes, included base_url in event data, and updated JS to use the dynamic base_url.
 
 = 1.4.8 =
 * Improved plugin's security, stability and performance

@@ -176,6 +176,7 @@ class Events
             'clear' => 0,
             'isWoodMart' => (int) self::$isWoodMart,
             'push' => array(),
+            'base_url' => Config::getBaseURL(),
             'js' => array()/* ,
             'evData' => \Mktr\Tracker\Routes\loadEvents::execute(false) */
         );

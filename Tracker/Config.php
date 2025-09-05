@@ -45,6 +45,11 @@ class Config
     const Google = true;
     const defMime = 'xml';
 
+    public static $languagePlugin = [
+        'translatepress-multilingual/index.php',
+        'polylang-pro/polylang.php',
+        'polylang-wc/polylang-wc.php'
+    ];
     /*
     const discountRules = [
         0 => "fixedValue",
@@ -430,7 +435,7 @@ importScripts("https://t.themarketer.com/firebase.js");';
     
     public static function isValidLanguageCode($code)
     {
-        $supported_languages = array('en-ch', 'fr-ch', 'de-ch', 'it-ch'); // Adjust this list to your site’s languages
+        $supported_languages = array('en-ch', 'fr-ch', 'de-ch', 'it-ch', 'en', 'sr'); // Adjust this list to your site’s languages
         
         return in_array($code, $supported_languages);
     }

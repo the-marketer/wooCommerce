@@ -147,7 +147,7 @@ class Observer
 
     public static function orderUp($oID = null, $status = null)
     {
-        if ($oID !== null && $status !== null && self::$OrderUP === false) {
+        if ($oID !== null && $status !== null && self::$OrderUP === false && $status !== 'checkout-draft') {
             self::$OrderUP = true;
             $send = array(
                 'order_number' => $oID,
@@ -239,7 +239,7 @@ class Observer
             $send = array( 'order_number' => $oID, 'order_status' => $order->get_status() );
 
             Api::send("update_order_status", $send, false);
-            Logs::debug($send, 'update_order_status');
+            Logs::debug($send, 'update_order_status_api');
         }
     }
 

@@ -186,11 +186,8 @@ class Form
                     if ($push_status) {
                         Observer::pushStatus();
                     }
-                    if (!function_exists('is_plugin_active')) {
-                        require_once(ABSPATH . '/wp-admin/includes/plugin.php');
-                    }
-                    $active = \is_plugin_active('translatepress-multilingual/index.php');
-                    if ($active) {
+
+                    if (self::checkLanguages()) {
                         Config::setValue('translate_press', 1);
                     } else {
                         Config::setValue('translate_press', 0);
@@ -230,7 +227,16 @@ class Form
             }
         }
     }
-
+    public static function checkLanguages() {
+        $active = false;
+        foreach (get_option('active_plugins') as $plugin) {
+            if (in_array($plugin, Config::$languagePlugin)) {
+                $active = true;
+                break;
+            }
+        }
+        return $active;
+    }
     public static function clean()
     {
         self::$form_fields = array();

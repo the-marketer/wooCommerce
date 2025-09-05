@@ -216,6 +216,6 @@ class Valid
 
     public static function toJson($data = null)
     {
-        return json_encode(($data === null ? array() : $data), JSON_UNESCAPED_SLASHES);
+        return json_encode(($data === null ? array() : $data), JSON_UNESCAPED_SLASHES|JSON_PRETTY_PRINT);
     }
 }

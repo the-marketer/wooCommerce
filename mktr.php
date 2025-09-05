@@ -52,7 +52,7 @@ if (!defined('MKTR_MAILPOET_SEGMENT')) {
 }
 
 if (!defined('MKTR_VERSION')) {
-    define('MKTR_VERSION', 'v1.4.7');
+    define('MKTR_VERSION', 'v1.4.9');
 }
 
 require_once MKTR_DIR . '/vendor/autoload.php';
@@ -65,4 +65,14 @@ function eDebug() {
 }
 
 /** @noinspection PhpFullyQualifiedNameUsageInspection */
-\Mktr\Tracker\Run::init();
+try {
+    \Mktr\Tracker\Run::init();
+} catch (\Exception $e) {
+    if (defined('MKTR_DEBUG') && MKTR_DEBUG) {
+        if (class_exists('\\Mktr\\Tracker\\Logs')) {
+            \Mktr\Tracker\Logs::debug([ 'message' => $e->getMessage(), 'trace' => $e->getTraceAsString() ], 'init_error');
+        } else {
+            error_log('[theMarketer] Init error: ' . $e->getMessage());
+        }
+    }
+}

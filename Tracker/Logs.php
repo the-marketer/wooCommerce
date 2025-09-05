@@ -13,6 +13,7 @@ namespace Mktr\Tracker;
 class Logs
 {
     private static $init = null;
+    private static $c = 0;
     private static $data;
     public function __construct() {
         FileSystem::setWorkDirectory();
@@ -27,8 +28,9 @@ class Logs
 
     public static function debug($data, $name = 'log') {
         if (MKTR_DEBUG) {
+            self::$c++;
             $d = self::init();
-            $d->addTo($name, [ $data, Api::getInfo(), time()]);
+            $d->addTo($name, [self::$c, $data, Api::getInfo(), date("Y-m-d H:i:s"), WC()->session->get_customer_id(), WC()->cart->get_cart_hash()]);
             $d->save();
         }
     }

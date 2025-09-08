@@ -1,5 +1,7 @@
 # Changelog
 All notable changes to this project are documented in this file.
+## 1.5.0
+Remove Composer AutoLoad
 
 ## 1.4.9
 Normalized file path handling and working directory usage across the plugin

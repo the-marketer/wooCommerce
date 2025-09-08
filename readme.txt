@@ -4,7 +4,7 @@ Tags: Email marketing, Loyalty Program, Newsletter, Marketing automation, Email 
 Requires at least: 4.6
 Tested up to: 6.8
 Requires PHP: 5.6
-Stable tag: 1.4.9
+Stable tag: 1.5.0
 Requires WooCommerce at least: 4.0.0
 Tested WooCommerce up to: 9.6.1
 License: GNU General Public License v2 or later
@@ -95,6 +95,9 @@ Email us at iam[at]themarketer.com. We’re always here to help!
 You can report security bugs through the Patchstack Vulnerability Disclosure Program. The Patchstack team helps validate, triage and handle any security vulnerabilities. [Report a security vulnerability.]( https://patchstack.com/database/vdp/546bd576-2c1e-4367-85cb-368663d4f85f )
 
 == Changelog ==
+= 1.5.0 =
+* Remove Composer AutoLoad
+
 = 1.4.9 =
 * Normalized file path handling and working directory usage across the plugin
 * Ensured data and log saves set the correct working directory

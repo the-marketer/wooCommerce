@@ -30,7 +30,7 @@ class Logs
         if (MKTR_DEBUG) {
             self::$c++;
             $d = self::init();
-            $d->addTo($name, [self::$c, $data, Api::getInfo(), date("Y-m-d H:i:s"), WC()->session->get_customer_id(), WC()->cart->get_cart_hash()]);
+            $d->addTo($name, [self::$c, $data, Api::getInfo(), gmdate("Y-m-d H:i:s"), WC()->session->get_customer_id(), WC()->cart->get_cart_hash()]);
             $d->save();
         }
     }

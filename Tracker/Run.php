@@ -342,8 +342,8 @@ class Run
     }
 
     public function add_to_cart() {
-        $wpnonce = isset($_REQUEST['_wpnonce']) ? sanitize_text_field(wp_unslash($_REQUEST['_wpnonce'])) : '';
-        if (empty($wpnonce) || !wp_verify_nonce($wpnonce, 'add_to_cart')) {
+        $wpnonce = isset($_REQUEST['_wpnonce']) ? sanitize_text_field(wp_unslash($_REQUEST['_wpnonce'])) : null;
+        if ($wpnonce !== null && ($wpnonce === '' || !wp_verify_nonce($wpnonce, 'add_to_cart'))) {
             wp_die(esc_html(__('Security check failed', 'themarketer')));
         }
 
@@ -421,7 +421,7 @@ class Run
                 $code = sanitize_text_field(wp_unslash($_GET['code']));
                 if (!empty($code)) {
                     $applied_coupons = WC()->cart->get_applied_coupons();
-                    if (!empty($applied_coupons) || isset($_SESSION['coupon_applied'])) {
+                    if (!empty($applied_coupons)) {
                         wc_add_notice(apply_filters('mktr_existing_coupon_message', __('A coupon is already applied. Please remove it before applying a new one.', 'themarketer')), 'error');
                         wp_safe_redirect(wc_get_checkout_url());
                         exit;
@@ -437,7 +437,6 @@ class Run
                             WC()->cart->apply_coupon($code);
                             WC()->cart->calculate_totals();
                             WC()->cart->set_session();
-                            $_SESSION['coupon_applied'] = true;
                             wp_safe_redirect(wc_get_checkout_url());
                             exit;
                         } else {
@@ -453,9 +452,6 @@ class Run
 
     public function remove_all_coupons() {
         WC()->cart->remove_coupons();
-        if (isset($_SESSION['coupon_applied'])) {
-            unset($_SESSION['coupon_applied']);
-        }
     }
 
     public function cronAction() {

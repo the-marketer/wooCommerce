@@ -361,7 +361,7 @@ class Admin
         <div class="mktr-content">
             <div class="mktr-content-body">
                 <div class="mktr-content-text">
-                    <h2>How would you rate your experience so far with theMarketing?</h2>
+                    <h2>How would you rate your experience so far with theMarketer?</h2>
                     <div class="mktr-content-field">
                         <label class="mktr-content-label">On a scale from 1 to 5</label>
                         <div class="mktr-content-input">
@@ -417,10 +417,7 @@ class Admin
     public static function action_links($links)
     {
         $link = array();
-        $link['settings'] = '<a href="'. admin_url('admin.php?page=mktr_tracker') . '" target="_blank"> Settings</a>';
-        if (Config::getOnboarding() !== 2) {
-            $link['onboarding'] = '<a href="'. admin_url('admin.php?page=mktr_tracker') . '"> Start Onboarding</a>';
-        }
+        $link['settings'] = '<a href="' . admin_url('admin.php?page=mktr_tracker') . '"> Settings</a>';
         return array_merge($link, $links);
     }
 
@@ -679,7 +676,7 @@ class Admin
             "title" => "Let's get started",
             "content" => array(
                 "Please create an account or log in if you have one already.",
-                '<a class="mktr-button" href="https://app.themarketer.com/register?utm_campaign=woo_plugin" target="_blank">Create account <span class="icon mktr-arrow-right"></span></a>'
+                '<a class="mktr-button" href="https://app.themarketer.com/register-account?utm_campaign=woo_plugin" target="_blank">Create account <span class="icon mktr-arrow-right"></span></a>'
             )
         );
         $forms[0][] = array(

@@ -4,7 +4,7 @@ Tags: Email marketing, Loyalty Program, Newsletter, Marketing automation, Email 
 Requires at least: 4.6
 Tested up to: 6.8
 Requires PHP: 5.6
-Stable tag: 1.5.0
+Stable tag: 1.5.1
 Requires WooCommerce at least: 4.0.0
 Tested WooCommerce up to: 9.6.1
 License: GNU General Public License v2 or later

@@ -6,6 +6,7 @@
  * Version:                 1.5.1
  * Requires at least:       4.6
  * Requires PHP:            5.6
+ * Requires Plugins: woocommerce
  * Author:                  themarketer.com
  * Author URI:              https://themarketer.com
  * Text Domain:             themarketer

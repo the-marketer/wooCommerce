@@ -41,6 +41,7 @@ class Product
     private static $tax = null;
     private static $woo_discount_rules = null;
     private static $booster = null;
+    private static $wpcbundles = null;
     private static $stock = 0;
     private static $nameConvert = null;
 
@@ -107,6 +108,12 @@ class Product
     {
         if (self::$booster === null){ self::$booster = \is_plugin_active('booster-plus-for-woocommerce/booster-plus-for-woocommerce.php'); }
         return self::$booster;
+    }
+
+    public static function checkWPCBundles()
+    {
+        if (self::$wpcbundles === null){ self::$wpcbundles = \is_plugin_active('woo-product-bundle/wpc-product-bundles.php'); }
+        return self::$wpcbundles;
     }
 
     public static function __callStatic($name, $arguments)
@@ -440,6 +447,13 @@ class Product
             $out = $out > $p && $p > 0 ? $p : $out;
             if ($out > self::$asset->get_price()) {
                 $out = self::$asset->get_price();
+            }
+        }
+
+        if (self::checkWPCBundles()) {
+            $out = $out > $p && $p > 0 ? $p : $out;
+            if ($out > self::$asset->get_sale_price()) {
+                $out = self::$asset->get_sale_price();
             }
         }
 

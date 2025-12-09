@@ -451,11 +451,12 @@ class Run
     }
 
     public function remove_all_coupons() {
+        if (!function_exists('WC') || !WC()->cart) {
+            return;
+        }
+
         if (WC()->cart->is_empty()) {
             WC()->cart->remove_coupons();
-        }
-        if ( function_exists( 'WC' ) ) {
-            return WC()->cart->is_empty();
         }
     }
 

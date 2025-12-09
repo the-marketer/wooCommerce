@@ -451,7 +451,12 @@ class Run
     }
 
     public function remove_all_coupons() {
-        WC()->cart->remove_coupons();
+        if (WC()->cart->is_empty()) {
+            WC()->cart->remove_coupons();
+        }
+        if ( function_exists( 'WC' ) ) {
+            return WC()->cart->is_empty();
+        }
     }
 
     public function cronAction() {

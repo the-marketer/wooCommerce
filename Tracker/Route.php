@@ -156,7 +156,18 @@ class Route
         if (in_array($name,['Orders', 'Feed', 'Brands', 'Category'])) {
             wp_raise_memory_limit('cron');
         }
-        
+
+        $forceCountry = Valid::getParam('country');
+        if ($forceCountry !== null && strlen($forceCountry) === 2) {
+            add_filter('wcml_geolocation_get_user_country', function($country, $all) use ($forceCountry) {
+                return strtoupper($forceCountry);
+            }, 999, 2);
+
+            add_filter('wcml_client_currency', function($currency) {
+                return get_option('woocommerce_currency');
+            }, 999);
+        }
+
         $run = self::$name();
         ob_start();
         ob_clean();

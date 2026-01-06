@@ -190,6 +190,39 @@ window.mktr.events = function () {
             $js[] = '';
             $js[] = 'window.mktr.LoadEvents();';
             $js[] = '';
+            $js[] = '/* -- Email Capture in Checkout START -- */';
+            $js[] = 'if (mktr_data.email_capture_checkout === "1") {
+            
+    window.mktr.lastCapturedEmail = null;
+    window.mktr.captureEmail = function(email) {
+        if (email && email.indexOf("@") > -1 && email !== window.mktr.lastCapturedEmail) {
+            window.mktr.lastCapturedEmail = email;
+            window.dataLayer = window.dataLayer || [];
+            window.dataLayer.push({ "event": "__sm__set_email", "email_address": email });
+        }
+    };
+    window.mktr.attachEmailCapture = function() {
+        var selectors = "#billing_email, input[name=\\"billing_email\\"], .wc-block-components-text-input input[type=\\"email\\"], input#email";
+        var emailFields = document.querySelectorAll(selectors);
+        emailFields.forEach(function(field) {
+            if (!field.dataset.mktrEmailCapture) {
+                field.dataset.mktrEmailCapture = "1";
+                field.addEventListener("blur", function() {
+                    window.mktr.captureEmail(this.value.trim());
+                });
+            }
+        });
+    };
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", window.mktr.attachEmailCapture);
+    } else {
+        window.mktr.attachEmailCapture();
+    }
+    window.addEventListener("load", window.mktr.attachEmailCapture);
+    setInterval(window.mktr.attachEmailCapture, 2000);
+}';
+            $js[] = '/* -- Email Capture in Checkout END -- */';
+            $js[] = '';
             $js[] = '/* -- Mktr Script END -- */';
             if (Config::getValue('google_status')) {
                 $key = Config::getValue('google_tagCode');

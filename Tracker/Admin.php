@@ -92,6 +92,14 @@ class Admin
             'name' => 'opt_in',
             'placeholder' => null
         ),
+        'email_capture_checkout' => array(
+            'label' => 'Capture emails in checkout',
+            'tag' => 'input',
+            'type' => 'checkbox',
+            'description' => 'Choose if email addresses filled in during the checkout processes should be captured automatically.',
+            'name' => 'email_capture_checkout',
+            'placeholder' => null
+        ),
         'push_status' => array(
             'label' => 'Push Notification',
             'tag' => 'input',
@@ -850,6 +858,7 @@ class Admin
         );
         $c = array(
             self::$inputs['opt_in'],
+            self::$inputs['email_capture_checkout'],
             self::$inputs['add_description'],
             self::$inputs['push_status'],
             self::$inputs['allow_export'],

@@ -244,7 +244,7 @@ class Product
     }
 
     public static function getName() {
-        $name = (self::nameConvert() ? self::qTranslate(self::getVarValue('getName', self::$asset), ) : self::getVarValue('getName', self::$asset));
+        $name = (self::nameConvert() ? self::qTranslate(self::getVarValue('getName', self::$asset)) : self::getVarValue('getName', self::$asset));
         $nameFilter = apply_filters( 'woocommerce_product_title', $name, self::$asset );
         if (empty($nameFilter)) {
             return $name;
@@ -450,7 +450,7 @@ class Product
             }
         }
 
-        if (self::checkWPCBundles()) {
+        if (self::checkWPCBundles() && self::$asset->is_type('woosb')) {
             $out = $out > $p && $p > 0 ? $p : $out;
             if ($out > self::$asset->get_sale_price()) {
                 $out = self::$asset->get_sale_price();

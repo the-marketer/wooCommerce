@@ -79,6 +79,14 @@ class Front
         add_action('wp_head', array(Events::init(), 'loader'));
         add_action('wp_enqueue_scripts', array(Events::init(), 'initEvents') );
 
+        if (Config::getOptinCheckout() === 1) {
+            $position = Config::getOptinPosition();
+            if (!empty($position)) {
+                add_action($position, array(self::init(), 'displayOptinCheckbox'));
+            }
+            add_action('woocommerce_checkout_update_order_meta', array(self::init(), 'saveOptinCheckbox'));
+        }
+
         // add_filter('woocommerce_create_order', array(self::init(), 'saveOrder1'), 10, 2 );
 
         // AddToCart events
@@ -168,6 +176,62 @@ class Front
 
         if (self::$Page !== false) {
             Route::checkPage(self::$Page);
+        }
+    }
+
+    public static function displayOptinCheckbox()
+    {
+        $message = Config::getOptinMessage();
+        if (empty($message)) {
+            $message = 'I would like to receive exclusive emails with discounts and product information';
+        }
+
+        woocommerce_form_field('mktr_optin_subscribe', array(
+            'type'  => 'checkbox',
+            'class' => array('mktr-optin-checkbox form-row-wide'),
+            'label' => esc_html($message),
+        ), false);
+    }
+
+    public static function saveOptinCheckbox($order_id)
+    {
+        $optin_value = isset($_POST['mktr_optin_subscribe']) ? 1 : 0;
+        update_post_meta($order_id, '_mktr_optin_subscribe', $optin_value);
+
+        $order = wc_get_order($order_id);
+        if ($order) {
+            $user_id = $order->get_user_id();
+            if ($user_id > 0) {
+                update_user_meta($user_id, '_mktr_optin_subscribe', $optin_value);
+            }
+
+            if ($optin_value === 1) {
+                $email = $order->get_billing_email();
+                $first_name = $order->get_billing_first_name();
+                $last_name = $order->get_billing_last_name();
+                $phone = $order->get_billing_phone();
+
+                if (!empty($email)) {
+                    $name = array();
+                    if (!empty($first_name)) {
+                        $name[] = $first_name;
+                    }
+                    if (!empty($last_name)) {
+                        $name[] = $last_name;
+                    }
+
+                    $info = array(
+                        "email" => $email,
+                        "name" => !empty($name) ? implode(" ", $name) : explode("@", $email)[0],
+                    );
+
+                    if (!empty($phone)) {
+                        $info["phone"] = $phone;
+                    }
+
+                    Api::send("add_subscriber", $info);
+                }
+            }
         }
     }
 }

@@ -196,6 +196,38 @@ class Admin
             'description' => 'use "|" to separate Example: brand|manufacturer',
             'placeholder' => null
         ),
+        /* Opt-in Settings */
+        'optin_checkout' => array(
+            'label' => 'Opt-in on checkout',
+            'tag' => 'input',
+            'type' => 'checkbox',
+            'description' => 'Display a subscription checkbox on the checkout page',
+            'name' => 'optin_checkout',
+            'placeholder' => null
+        ),
+        'optin_message' => array(
+            'label' => 'Checkbox opt-in message',
+            'tag' => 'input',
+            'type' => 'text',
+            'description' => 'This is the checkbox message your customers will see on your WooCommerce checkout page',
+            'name' => 'optin_message',
+            'placeholder' => 'I would like to receive exclusive emails with discounts and product information'
+        ),
+        'optin_position' => array(
+            'label' => 'Checkbox opt-in position',
+            'tag' => 'select',
+            'type' => 'select',
+            'description' => 'Select where the marketing opt-in checkbox appears on the checkout page',
+            'name' => 'optin_position',
+            'options' => array(
+                array('value' => 'woocommerce_after_checkout_billing_form', 'label' => 'After billing info'),
+                array('value' => 'woocommerce_after_order_notes', 'label' => 'After order notes'),
+                array('value' => 'woocommerce_checkout_after_terms_and_conditions', 'label' => 'After terms and conditions'),
+                array('value' => 'woocommerce_review_order_before_payment', 'label' => 'Before payment methods'),
+                array('value' => 'woocommerce_review_order_before_submit', 'label' => 'Before terms and conditions')
+            ),
+            'placeholder' => null
+        ),
         /* Google */
         'google_status' => array(
             'label' => 'Google Tag Manager',
@@ -854,6 +886,15 @@ class Admin
                 self::$inputs['update_feed'],
                 self::$inputs['cron_review'],
                 self::$inputs['update_review']
+            )
+        );
+        $form[] = array(
+            "type" => "body",
+            "title" => "Opt-in Settings",
+            "content" => array(
+                self::$inputs['optin_checkout'],
+                self::$inputs['optin_message'],
+                self::$inputs['optin_position']
             )
         );
         $c = array(

@@ -100,7 +100,10 @@ class Config
         'rated_install' => 'mktr_tracker/tracker/rated_install',
         'translate_press' => 'mktr_tracker/tracker/translate_press',
         'lems' => 'mktr_tracker/tracker/lems',
-        'mailpoet_segment' => 'mktr_tracker/tracker/mailpoet_segment'
+        'mailpoet_segment' => 'mktr_tracker/tracker/mailpoet_segment',
+        'optin_checkout' => 'mktr_tracker/tracker/optin_checkout',
+        'optin_message' => 'mktr_tracker/tracker/optin_message',
+        'optin_position' => 'mktr_tracker/tracker/optin_position'
     );
 
     const configDefaults = array(
@@ -139,7 +142,10 @@ class Config
         'rated_install' => 0,
         'translate_press' => 0,
         'lems' => 0,
-        'mailpoet_segment' => 0
+        'mailpoet_segment' => 0,
+        'optin_checkout' => 0,
+        'optin_message' => 'I would like to receive exclusive emails with discounts and product information',
+        'optin_position' => 'woocommerce_review_order_before_submit'
     );
 
     const funcNames = array(
@@ -171,7 +177,10 @@ class Config
         'getRatedInstall' => array('rated_install', 'int'),
         'getTranslatePress' => array('translate_press', 'int'),
         'getLems' => array('lems', 'int'),
-        'getMailpoetSegment' => array('mailpoet_segment', 'int')
+        'getMailpoetSegment' => array('mailpoet_segment', 'int'),
+        'getOptinCheckout' => array('optin_checkout', 'int'),
+        'getOptinMessage' => array('optin_message', false),
+        'getOptinPosition' => array('optin_position', false)
     );
 
     public static $checkList = ['key', 'start_date', 'end_date', 'page', 'customerId','expiration_date', 'value','type', 'mime-type', 'read','file'];

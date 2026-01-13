@@ -96,6 +96,7 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 
 == Changelog ==
 = 1.5.4 =
+* Add subscription checkbox on checkout page
 * Add email capture feature for checkout page
 
 = 1.5.3 =

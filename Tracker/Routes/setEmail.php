@@ -112,9 +112,6 @@ class setEmail
 
                     Api::send("add_subscriber", $info);
                     \Mktr\Tracker\Logs::debug($info, 'set_email_add_subscriber');
-                } else {
-                    Api::send("remove_subscriber", $info);
-                    \Mktr\Tracker\Logs::debug($info, 'set_email_remove_subscriber');
                 }
 
                 $check[$s->email] = $time;
@@ -181,9 +178,6 @@ class setEmail
                     if ($status) {
                         Api::send("add_subscriber", $info);
                         \Mktr\Tracker\Logs::debug($info, 'set_email_add_subscriber_gravity');
-                    } else {
-                        Api::send("remove_subscriber", $info);
-                        \Mktr\Tracker\Logs::debug($info, 'set_email_remove_subscriber_gravity');
                     }
                     $check[$info['email']] = $time;
                     if (Api::getStatus() != 200) {

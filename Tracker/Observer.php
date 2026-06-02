@@ -19,7 +19,7 @@ class Observer
     private static $lastKey = null;
     private static $eventData = [];
 
-    private static $OrderUP = false;
+    private static $OrderUP = [];
     private static $mStatusChange = false;
 
     private static $addToCart = false;
@@ -147,8 +147,8 @@ class Observer
 
     public static function orderUp($oID = null, $status = null)
     {
-        if ($oID !== null && $status !== null && self::$OrderUP === false && $status !== 'checkout-draft') {
-            self::$OrderUP = true;
+        if ($oID !== null && $status !== null && !in_array($oID, self::$OrderUP) && $status !== 'checkout-draft') {
+            self::$OrderUP[] = $oID;
             $send = array(
                 'order_number' => $oID,
                 'order_status' => $status
@@ -231,10 +231,8 @@ class Observer
 
     public static function orderUpApi($oID = null, $order = null)
     {
-        if (self::$OrderUP === false && $oID !== null && $order !== null && $order->get_status() !== 'checkout-draft') {
-            // FileSystem::setWorkDirectory('base');
-            // FileSystem::writeFile("baseTest.js",'baseLinkUpdate');
-            self::$OrderUP = true;
+        if ($oID !== null && $order !== null && !in_array($oID, self::$OrderUP) && $order->get_status() !== 'checkout-draft') {
+            self::$OrderUP[] = $oID;
 
             $send = array( 'order_number' => $oID, 'order_status' => $order->get_status() );
 

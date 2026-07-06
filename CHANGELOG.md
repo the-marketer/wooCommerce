@@ -1,5 +1,13 @@
 # Changelog
 All notable changes to this project are documented in this file.
+
+## 1.5.7
+Fix: product feed always uses the shop base currency when generated server-side or via cron, instead of converting prices based on the server IP (multi-currency / GeoIP plugins).
+Fix: product feed sale_price now reflects the single-unit price for Woo Discount Rules (quantity 1), preventing bulk/quantity rules from appearing as a product discount when no sale price is set.
+
+## 1.5.6
+Update: bulk order status changes.
+
 ## 1.5.0
 Remove Composer AutoLoad
 

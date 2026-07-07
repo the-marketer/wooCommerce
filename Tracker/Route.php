@@ -157,15 +157,82 @@ class Route
             wp_raise_memory_limit('cron');
         }
 
-        $forceCountry = Valid::getParam('country');
-        if ($forceCountry !== null && strlen($forceCountry) === 2) {
-            add_filter('wcml_geolocation_get_user_country', function($country, $all) use ($forceCountry) {
-                return strtoupper($forceCountry);
-            }, 999, 2);
+        if (in_array($name, ['Orders', 'Feed', 'Brands', 'Category'])) {
+            $baseCurrency = get_option('woocommerce_currency');
 
-            add_filter('wcml_client_currency', function($currency) {
-                return get_option('woocommerce_currency');
-            }, 999);
+            $baseCountry = Valid::getParam('country');
+            if ($baseCountry !== null && strlen($baseCountry) === 2) {
+                $baseCountry = strtoupper($baseCountry);
+            } else {
+                $base = function_exists('wc_get_base_location') ? wc_get_base_location() : array();
+                $baseCountry = isset($base['country']) && !empty($base['country'])
+                    ? $base['country']
+                    : substr((string) get_option('woocommerce_default_country'), 0, 2);
+            }
+
+            if (!empty($baseCountry)) {
+                add_filter('woocommerce_geolocate_ip', function () use ($baseCountry) {
+                    return $baseCountry;
+                }, 9999);
+                add_filter('woocommerce_geolocation_ip_country', function () use ($baseCountry) {
+                    return $baseCountry;
+                }, 9999);
+                add_filter('woocommerce_customer_default_location', function () use ($baseCountry) {
+                    return $baseCountry;
+                }, 9999);
+                add_filter('wcml_geolocation_get_user_country', function ($country, $all) use ($baseCountry) {
+                    return $baseCountry;
+                }, 9999, 2);
+            }
+
+            add_filter('woocommerce_currency', function () use ($baseCurrency) {
+                return $baseCurrency;
+            }, 9999);
+
+            // WPML / WooCommerce Multilingual & Multicurrency (WCML)
+            add_filter('wcml_client_currency', function () use ($baseCurrency) {
+                return $baseCurrency;
+            }, 9999);
+
+            // Aelia Currency Switcher
+            add_filter('wc_aelia_cs_selected_currency', function () use ($baseCurrency) {
+                return $baseCurrency;
+            }, 9999);
+
+            // CURCY - Multi Currency for WooCommerce (VillaTheme)
+            add_filter('wmc_get_current_currency', function () use ($baseCurrency) {
+                return $baseCurrency;
+            }, 9999);
+            add_filter('woocommerce_multicurrency_forced_currency', function () use ($baseCurrency) {
+                return $baseCurrency;
+            }, 9999);
+
+            // FOX / WOOCS - Currency Switcher Professional for WooCommerce
+            if (isset($GLOBALS['WOOCS']) && is_object($GLOBALS['WOOCS'])) {
+                if (method_exists($GLOBALS['WOOCS'], 'set_currency')) {
+                    $GLOBALS['WOOCS']->set_currency($baseCurrency);
+                }
+                $GLOBALS['WOOCS']->current_currency = $baseCurrency;
+                $GLOBALS['WOOCS']->default_currency = $baseCurrency;
+                $GLOBALS['WOOCS']->is_multiple_allowed = false;
+            }
+
+            $priceHooks = array(
+                'woocommerce_product_get_price',
+                'woocommerce_product_get_regular_price',
+                'woocommerce_product_get_sale_price',
+                'woocommerce_product_variation_get_price',
+                'woocommerce_product_variation_get_regular_price',
+                'woocommerce_product_variation_get_sale_price',
+                'woocommerce_variation_prices_price',
+                'woocommerce_variation_prices_regular_price',
+                'woocommerce_variation_prices_sale_price',
+                'woocommerce_get_variation_prices_hash',
+                'raw_woocommerce_price',
+            );
+            foreach ($priceHooks as $priceHook) {
+                remove_all_filters($priceHook);
+            }
         }
 
         $run = self::$name();

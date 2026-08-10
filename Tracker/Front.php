@@ -85,6 +85,10 @@ class Front
                 add_action($position, array(self::init(), 'displayOptinCheckbox'));
             }
             add_action('woocommerce_checkout_update_order_meta', array(self::init(), 'saveOptinCheckbox'));
+
+            /* The block checkout runs none of the hooks above, so it needs its own field. */
+            self::registerBlockOptin();
+            add_action('woocommerce_store_api_checkout_order_processed', array(self::init(), 'saveBlockOptin'));
         }
 
         // add_filter('woocommerce_create_order', array(self::init(), 'saveOrder1'), 10, 2 );
@@ -190,12 +194,34 @@ class Front
             'type'  => 'checkbox',
             'class' => array('mktr-optin-checkbox form-row-wide'),
             'label' => esc_html($message),
-        ), false);
+        ), self::optinChecked());
+    }
+
+    /**
+     * update_order_review redraws the payment fragment, so the field has to restore
+     * itself or the customer's tick is silently lost. There the posted values arrive
+     * serialised in post_data, not as normal fields.
+     */
+    public static function optinChecked()
+    {
+        if (isset($_POST['mktr_optin_subscribe'])) {
+            return 1;
+        }
+
+        if (isset($_POST['post_data'])) {
+            /* Not sanitized as a whole: that strips percent encoding and corrupts the
+               query string. Only the presence of our own key is read out of it. */
+            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+            parse_str(wp_unslash($_POST['post_data']), $posted);
+            return isset($posted['mktr_optin_subscribe']) ? 1 : 0;
+        }
+
+        return 0;
     }
 
     public static function saveOptinCheckbox($order_id)
     {
-        $optin_value = isset($_POST['mktr_optin_subscribe']) ? 1 : 0;
+        $optin_value = self::optinChecked();
         update_post_meta($order_id, '_mktr_optin_subscribe', $optin_value);
 
         $order = wc_get_order($order_id);
@@ -206,32 +232,75 @@ class Front
             }
 
             if ($optin_value === 1) {
-                $email = $order->get_billing_email();
-                $first_name = $order->get_billing_first_name();
-                $last_name = $order->get_billing_last_name();
-                $phone = $order->get_billing_phone();
-
-                if (!empty($email)) {
-                    $name = array();
-                    if (!empty($first_name)) {
-                        $name[] = $first_name;
-                    }
-                    if (!empty($last_name)) {
-                        $name[] = $last_name;
-                    }
-
-                    $info = array(
-                        "email" => $email,
-                        "name" => !empty($name) ? implode(" ", $name) : explode("@", $email)[0],
-                    );
-
-                    if (!empty($phone)) {
-                        $info["phone"] = $phone;
-                    }
-
-                    Api::send("add_subscriber", $info);
-                }
+                self::subscribeFromOrder($order);
             }
         }
+    }
+
+    /** Block checkout field. The API needs a namespaced id and defers itself if called early. */
+    public static function registerBlockOptin()
+    {
+        if (!function_exists('woocommerce_register_additional_checkout_field')) {
+            return;
+        }
+
+        $message = Config::getOptinMessage();
+        if (empty($message)) {
+            $message = 'I would like to receive exclusive emails with discounts and product information';
+        }
+
+        woocommerce_register_additional_checkout_field(array(
+            'id'       => 'mktr/optin-subscribe',
+            'label'    => $message,
+            'location' => 'order',
+            'type'     => 'checkbox',
+        ));
+    }
+
+    public static function saveBlockOptin($order = null)
+    {
+        if (!is_object($order) || !$order->get_meta('_wc_other/mktr/optin-subscribe')) {
+            return;
+        }
+
+        $order->update_meta_data('_mktr_optin_subscribe', 1);
+        $order->save_meta_data();
+
+        $user_id = $order->get_user_id();
+        if ($user_id > 0) {
+            update_user_meta($user_id, '_mktr_optin_subscribe', 1);
+        }
+
+        self::subscribeFromOrder($order);
+    }
+
+    private static function subscribeFromOrder($order)
+    {
+        $email = $order->get_billing_email();
+
+        if (empty($email)) {
+            return;
+        }
+
+        $name = array();
+        if (!empty($order->get_billing_first_name())) {
+            $name[] = $order->get_billing_first_name();
+        }
+        if (!empty($order->get_billing_last_name())) {
+            $name[] = $order->get_billing_last_name();
+        }
+
+        $info = array(
+            "email" => $email,
+            "name" => !empty($name) ? implode(" ", $name) : explode("@", $email)[0],
+        );
+
+        $phone = $order->get_billing_phone();
+        if (!empty($phone)) {
+            $info["phone"] = $phone;
+        }
+
+        Api::send("add_subscriber", $info);
+        Logs::debug($info, 'optin_add_subscriber');
     }
 }

@@ -150,6 +150,16 @@ class Run
         // add_action('woocommerce_paypal_payments_before_capture_order', function ($order){ $order->status()->is(\WooCommerce\PayPalCommerce\ApiClient\Entity\OrderStatus::COMPLETED) });
         
         add_action('MKTR_CRON', array($this, "cronAction"));
+
+        /* Outside the is_admin() split above: orders are also created by gateway
+           webhooks, the Store API, the admin and WP-CLI, where the tracker never runs. */
+        add_action('woocommerce_checkout_order_processed', array($this, 'orderSyncSchedule'), 20, 1);
+        add_action('woocommerce_store_api_checkout_order_processed', array($this, 'orderSyncScheduleOrder'), 20, 1);
+        add_action('woocommerce_new_order', array($this, 'orderSyncSchedule'), 20, 1);
+        add_action('woocommerce_payment_complete', array($this, 'orderSyncSchedule'), 20, 1);
+        /* Catches orders that were still empty when created, typically from the admin. */
+        add_action('woocommerce_order_status_changed', array($this, 'orderSyncSchedule'), 20, 1);
+
         add_action('template_redirect', array($this, 'mktr_auto_add_to_cart_checkout'));
         add_action('template_redirect', array($this, 'mktr_auto_apply_discount_code'));
         add_action('woocommerce_cart_emptied', array($this, 'remove_all_coupons'));
@@ -464,6 +474,17 @@ class Run
         \Mktr\Tracker\Model\Cron::cronAction();
     }
 
+    public function orderSyncSchedule($orderId = null) {
+        \Mktr\Tracker\Model\OrderSync::schedule($orderId);
+    }
+
+    /** The Store API (block checkout) hands over the order object, not its id. */
+    public function orderSyncScheduleOrder($order = null) {
+        if (is_object($order) && method_exists($order, 'get_id')) {
+            \Mktr\Tracker\Model\OrderSync::schedule($order->get_id());
+        }
+    }
+
     public function addRoute() {
         if (MKTR_INSTALL) { self::Update(); }
 
@@ -545,6 +566,8 @@ class Run
     public function unInstall() {
         Session::down();
         \wp_clear_scheduled_hook('MKTR_CRON');
+
+        \delete_option(\Mktr\Tracker\Model\OrderSync::PENDING_OPTION);
 
         \wp_remote_post('https://connector.themarketer.com/feedback/install', array(
             'method'      => 'POST',

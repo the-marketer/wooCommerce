@@ -60,24 +60,32 @@ class saveOrder
 
             if ($check === null) { $check = []; }
 
-            foreach ($Order as $sOrder1)
+            $keep = array();
+
+            foreach ($Order as $key => $sOrder1)
             {
                 Order::getById($sOrder1);
 
                 $sOrder = Order::toArray();
 
-                if (!empty($sOrder['products']) && (!empty($sOrder['email_address']) || !empty($sOrder['phone'])) ) {
-					Api::send("save_order", $sOrder);
-                    \Mktr\Tracker\Logs::debug($sOrder, 'save_order');
-                
-					if (Api::getStatus() != 200) {
-						$allGood = false;
-					}
-				} else {
-					$allGood = false;
-				}
+                $sendable = !empty($sOrder['products']) && (!empty($sOrder['email_address']) || !empty($sOrder['phone']));
 
-                if ( $allGood && $active && !empty($sOrder['email_address']) )
+                if ($sendable) {
+                    /* Through the shared sender, so a failure lands in the retry queue. */
+                    $sent = \Mktr\Tracker\Model\OrderSync::push($sOrder1);
+                    \Mktr\Tracker\Logs::debug($sOrder, 'save_order');
+
+                    if (!$sent) {
+                        $keep[$key] = $sOrder1;
+                        $allGood = false;
+                    }
+                } else {
+                    /* Without products, or without email and phone, it can never be sent. */
+                    $sent = false;
+                    $allGood = false;
+                }
+
+                if ( $sent && $active && !empty($sOrder['email_address']) )
                 {
                     $val = Observer::getEmail($sOrder['email_address']);
 
@@ -113,15 +121,16 @@ class saveOrder
                             } else {
                                 $info["name"] = implode(" ", $name);
                             }
+                            /* Guest checkout has no user account. */
                             $user = get_user_by('email', $val['email_address']);
-                            $phone = get_user_meta($user->ID, 'billing_phone', true);
+                            $phone = $user ? get_user_meta($user->ID, 'billing_phone', true) : '';
 
                             if (!empty($phone)) { $info["phone"] = $phone; }
 
                             Api::send("add_subscriber", $info);
                             \Mktr\Tracker\Logs::debug($info, 'save_order_add_subscriber');
 
-                            $check[$s->email] = $time;
+                            $check[$sOrder['email_address']] = $time;
                         }
 
                         if (Api::getStatus() != 200) {
@@ -132,11 +141,10 @@ class saveOrder
             }
 
             Config::session()->set('emailSend', $check);
-            
-            if ($allGood)
-            {
-                Config::session()->set('saveOrder', array());
-            }
+
+            /* Only orders worth retrying stay queued; before, one stuck order made
+               every later page load resend the whole batch. */
+            Config::session()->set('saveOrder', $keep);
         }
         // return '/* TheMaketer */ console.log('.(int) $allGood.','.json_encode(Api::getInfo(), true).');';
         //return '/* TheMaketer */ console.log('.(int) $allGood.','.json_encode([ Api::getInfo() ], true).');';

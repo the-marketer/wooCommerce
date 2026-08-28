@@ -12,6 +12,9 @@ namespace Mktr\Tracker;
 
 class Run
 {
+    const ORDER_SYNC_CRON_HOOK = 'MKTR_ORDER_SYNC_CRON';
+    const ORDER_SYNC_CRON_SCHEDULE = 'mktr_order_sync_every_five_minutes';
+
     private static $add = null;
     private static $ajax = null;
     private static $init = null;
@@ -73,6 +76,9 @@ class Run
 	    add_action( 'deactivate_' . MKTR_BASE, [$this, 'unInstall']);
 
         add_action( 'init', array($this, 'addRoute'), 0 );
+        add_filter('cron_schedules', array($this, 'addOrderSyncCronSchedule'));
+        add_action('init', array($this, 'scheduleOrderSyncCron'));
+        add_action(self::ORDER_SYNC_CRON_HOOK, array($this, 'orderSyncCronAction'));
 
         add_filter( 'gform_after_submission', array($this, 'gform_observer'), 10, 2 );
         
@@ -474,6 +480,35 @@ class Run
         \Mktr\Tracker\Model\Cron::cronAction();
     }
 
+    /** Retry failed order syncs even when no external cPanel cron is configured. */
+    public function orderSyncCronAction() {
+        \Mktr\Tracker\Model\OrderSync::retry();
+    }
+
+    /** WP-Cron has no built-in interval shorter than hourly. */
+    public function addOrderSyncCronSchedule($schedules) {
+        if (!isset($schedules[self::ORDER_SYNC_CRON_SCHEDULE])) {
+            $schedules[self::ORDER_SYNC_CRON_SCHEDULE] = array(
+                'interval' => 5 * MINUTE_IN_SECONDS,
+                'display' => 'Every five minutes'
+            );
+        }
+
+        return $schedules;
+    }
+
+    /** Keep a single recurring retry job while the integration is active. */
+    public function scheduleOrderSyncCron() {
+        if (!\Mktr\Tracker\Model\OrderSync::isEnabled()) {
+            \wp_clear_scheduled_hook(self::ORDER_SYNC_CRON_HOOK);
+            return;
+        }
+
+        if (!\wp_next_scheduled(self::ORDER_SYNC_CRON_HOOK)) {
+            \wp_schedule_event(time() + (5 * MINUTE_IN_SECONDS), self::ORDER_SYNC_CRON_SCHEDULE, self::ORDER_SYNC_CRON_HOOK);
+        }
+    }
+
     public function orderSyncSchedule($orderId = null) {
         \Mktr\Tracker\Model\OrderSync::schedule($orderId);
     }
@@ -566,6 +601,7 @@ class Run
     public function unInstall() {
         Session::down();
         \wp_clear_scheduled_hook('MKTR_CRON');
+        \wp_clear_scheduled_hook(self::ORDER_SYNC_CRON_HOOK);
 
         \delete_option(\Mktr\Tracker\Model\OrderSync::PENDING_OPTION);
 

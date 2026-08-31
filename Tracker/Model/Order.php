@@ -3,7 +3,7 @@
  * @copyright   Copyright (c) 2023 TheMarketer.com
  * @project     TheMarketer.com
  * @website     https://themarketer.com/
- * @author      Alexandru Buzica (EAX LEX S.R.L.) <b.alex@eax.ro>
+ * @author      theMarketer
  * @license     https://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
  * @docs        https://themarketer.com/resources/api
  */
@@ -180,7 +180,7 @@ class Order
             /* theMarketer rejects the order with 422 when lastname is empty, which
                happens whenever the name has no second part: "Ion", or an address
                like ion@shop.ro with nothing to split on. */
-            if (empty($nn[1])) { $nn[1] = $nn[0]; }
+            if (!isset($nn[1]) || $nn[1] === '') { $nn[1] = $nn[0]; }
 
             self::$names = array(
                 'firstname' => $nn[0],

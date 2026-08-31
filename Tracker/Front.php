@@ -3,7 +3,7 @@
  * @copyright   Copyright (c) 2023 TheMarketer.com
  * @project     TheMarketer.com
  * @website     https://themarketer.com/
- * @author      Alexandru Buzica (EAX LEX S.R.L.) <b.alex@eax.ro>
+ * @author      theMarketer
  * @license     https://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
  * @docs        https://themarketer.com/resources/api
  */
@@ -86,8 +86,10 @@ class Front
             }
             add_action('woocommerce_checkout_update_order_meta', array(self::init(), 'saveOptinCheckbox'));
 
-            /* The block checkout runs none of the hooks above, so it needs its own field. */
-            self::registerBlockOptin();
+            /* The block checkout runs none of the hooks above, so it needs its own
+               field, and the API that registers it only accepts fields on
+               woocommerce_init. */
+            add_action('woocommerce_init', array(self::init(), 'registerBlockOptin'));
             add_action('woocommerce_store_api_checkout_order_processed', array(self::init(), 'saveBlockOptin'));
         }
 
@@ -208,7 +210,7 @@ class Front
             return 1;
         }
 
-        if (isset($_POST['post_data'])) {
+        if (isset($_POST['post_data']) && is_string($_POST['post_data'])) {
             /* Not sanitized as a whole: that strips percent encoding and corrupts the
                query string. Only the presence of our own key is read out of it. */
             // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
@@ -221,23 +223,30 @@ class Front
 
     public static function saveOptinCheckbox($order_id)
     {
-        $optin_value = self::optinChecked();
-        update_post_meta($order_id, '_mktr_optin_subscribe', $optin_value);
-
         $order = wc_get_order($order_id);
-        if ($order) {
-            $user_id = $order->get_user_id();
-            if ($user_id > 0) {
-                update_user_meta($user_id, '_mktr_optin_subscribe', $optin_value);
-            }
 
-            if ($optin_value === 1) {
-                self::subscribeFromOrder($order);
-            }
+        if (!$order) {
+            return;
+        }
+
+        $optin_value = self::optinChecked();
+
+        /* Not update_post_meta: with HPOS the order does not live in wp_posts, and
+           the plugin declares itself compatible with it. */
+        $order->update_meta_data('_mktr_optin_subscribe', $optin_value);
+        $order->save_meta_data();
+
+        $user_id = $order->get_user_id();
+        if ($user_id > 0) {
+            update_user_meta($user_id, '_mktr_optin_subscribe', $optin_value);
+        }
+
+        if ($optin_value === 1) {
+            self::subscribeFromOrder($order);
         }
     }
 
-    /** Block checkout field. The API needs a namespaced id and defers itself if called early. */
+    /** Block checkout field. The API needs a namespaced id. */
     public static function registerBlockOptin()
     {
         if (!function_exists('woocommerce_register_additional_checkout_field')) {
@@ -259,19 +268,24 @@ class Front
 
     public static function saveBlockOptin($order = null)
     {
-        if (!is_object($order) || !$order->get_meta('_wc_other/mktr/optin-subscribe')) {
+        if (!is_object($order) || !method_exists($order, 'get_meta')) {
             return;
         }
 
-        $order->update_meta_data('_mktr_optin_subscribe', 1);
+        /* 0 as well as 1, so the meta means the same thing on both checkouts. */
+        $optin_value = $order->get_meta('_wc_other/mktr/optin-subscribe') ? 1 : 0;
+
+        $order->update_meta_data('_mktr_optin_subscribe', $optin_value);
         $order->save_meta_data();
 
         $user_id = $order->get_user_id();
         if ($user_id > 0) {
-            update_user_meta($user_id, '_mktr_optin_subscribe', 1);
+            update_user_meta($user_id, '_mktr_optin_subscribe', $optin_value);
         }
 
-        self::subscribeFromOrder($order);
+        if ($optin_value === 1) {
+            self::subscribeFromOrder($order);
+        }
     }
 
     private static function subscribeFromOrder($order)
@@ -300,7 +314,8 @@ class Front
             $info["phone"] = $phone;
         }
 
-        Api::send("add_subscriber", $info);
-        Logs::debug($info, 'optin_add_subscriber');
+        /* Both callers run while the customer is waiting for the checkout to finish,
+           and Api::send blocks for up to 3 seconds. */
+        Defer::api("add_subscriber", $info, 'optin_add_subscriber');
     }
 }

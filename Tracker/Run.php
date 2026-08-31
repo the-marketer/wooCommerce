@@ -3,7 +3,7 @@
  * @copyright   Copyright (c) 2023 TheMarketer.com
  * @project     TheMarketer.com
  * @website     https://themarketer.com/
- * @author      Alexandru Buzica (EAX LEX S.R.L.) <b.alex@eax.ro>
+ * @author      theMarketer
  * @license     https://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
  * @docs        https://themarketer.com/resources/api
  */
@@ -523,6 +523,10 @@ class Run
     public function addRoute() {
         if (MKTR_INSTALL) { self::Update(); }
 
+        /* An update does not run the activation hook, so the order sync table is
+           created from here the first time its version moves. */
+        \Mktr\Tracker\Model\OrderSync::checkDb();
+
         add_rewrite_tag('%'.Config::$name.'%', '([^&]+)');
 
         /* Todo: AddToActivate */
@@ -582,6 +586,7 @@ class Run
 
     public function Install() {
         Session::up();
+        \Mktr\Tracker\Model\OrderSync::up();
         Config::setValue("redirect", 1);
         Config::setValue("onboarding", 0);
         Config::setValue("rated_install", time() + 1209600 );
@@ -603,7 +608,7 @@ class Run
         \wp_clear_scheduled_hook('MKTR_CRON');
         \wp_clear_scheduled_hook(self::ORDER_SYNC_CRON_HOOK);
 
-        \delete_option(\Mktr\Tracker\Model\OrderSync::PENDING_OPTION);
+        \Mktr\Tracker\Model\OrderSync::down();
 
         \wp_remote_post('https://connector.themarketer.com/feedback/install', array(
             'method'      => 'POST',

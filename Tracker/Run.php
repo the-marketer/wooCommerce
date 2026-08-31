@@ -480,12 +480,10 @@ class Run
         \Mktr\Tracker\Model\Cron::cronAction();
     }
 
-    /** Retry failed order syncs even when no external cPanel cron is configured. */
     public function orderSyncCronAction() {
         \Mktr\Tracker\Model\OrderSync::retry();
     }
 
-    /** WP-Cron has no built-in interval shorter than hourly. */
     public function addOrderSyncCronSchedule($schedules) {
         if (!isset($schedules[self::ORDER_SYNC_CRON_SCHEDULE])) {
             $schedules[self::ORDER_SYNC_CRON_SCHEDULE] = array(
@@ -497,7 +495,6 @@ class Run
         return $schedules;
     }
 
-    /** Keep a single recurring retry job while the integration is active. */
     public function scheduleOrderSyncCron() {
         if (!\Mktr\Tracker\Model\OrderSync::isEnabled()) {
             \wp_clear_scheduled_hook(self::ORDER_SYNC_CRON_HOOK);
@@ -513,7 +510,6 @@ class Run
         \Mktr\Tracker\Model\OrderSync::schedule($orderId);
     }
 
-    /** The Store API (block checkout) hands over the order object, not its id. */
     public function orderSyncScheduleOrder($order = null) {
         if (is_object($order) && method_exists($order, 'get_id')) {
             \Mktr\Tracker\Model\OrderSync::schedule($order->get_id());
@@ -523,8 +519,6 @@ class Run
     public function addRoute() {
         if (MKTR_INSTALL) { self::Update(); }
 
-        /* An update does not run the activation hook, so the order sync table is
-           created from here the first time its version moves. */
         \Mktr\Tracker\Model\OrderSync::checkDb();
 
         add_rewrite_tag('%'.Config::$name.'%', '([^&]+)');

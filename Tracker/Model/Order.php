@@ -177,9 +177,6 @@ class Order
                 $nn = explode(' ', str_replace('_', ' ', $em[0]), 2);
             }
 
-            /* theMarketer rejects the order with 422 when lastname is empty, which
-               happens whenever the name has no second part: "Ion", or an address
-               like ion@shop.ro with nothing to split on. */
             if (!isset($nn[1]) || $nn[1] === '') { $nn[1] = $nn[0]; }
 
             self::$names = array(

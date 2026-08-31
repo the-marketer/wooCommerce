@@ -10,10 +10,6 @@
 
 namespace Mktr\Tracker\Routes;
 
-/**
- * Cron endpoint for order delivery: /mktr/api/OrderSync/?key=<REST key>
- * Kept apart from the Cron route, which rebuilds the feed and is too heavy to run often.
- */
 class OrderSync
 {
     private static $init = null;

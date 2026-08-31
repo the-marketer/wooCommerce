@@ -10,13 +10,6 @@
 
 namespace Mktr\Tracker;
 
-/**
- * Work that has to happen, but that the customer should not be made to wait for.
- *
- * Api::send is a blocking call with a 3 second timeout. Anything queued here runs on
- * shutdown, after fastcgi_finish_request has released the browser, so a slow or
- * unreachable API costs the shop nothing at checkout.
- */
 class Defer
 {
     private static $tasks = array();
@@ -37,7 +30,6 @@ class Defer
         }
     }
 
-    /** The common case: one API call, logged with the status it came back with. */
     public static function api($name, $data, $log = null)
     {
         self::add(function () use ($name, $data, $log) {
@@ -51,7 +43,6 @@ class Defer
 
     public static function run()
     {
-        /* A task is allowed to queue another one; keep draining until nothing is left. */
         while (!empty(self::$tasks)) {
             $tasks = self::$tasks;
             self::$tasks = array();
@@ -59,7 +50,6 @@ class Defer
             self::closeConnection();
 
             foreach ($tasks as $task) {
-                /* One failing task must not take the rest of the shutdown with it. */
                 try {
                     call_user_func($task);
                 } catch (\Exception $e) {
@@ -71,10 +61,6 @@ class Defer
         }
     }
 
-    /**
-     * Without fastcgi_finish_request (mod_php, some LiteSpeed setups) shutdown still
-     * runs after the output has been sent, so the work happens either way.
-     */
     private static function closeConnection()
     {
         if (self::$closed) {

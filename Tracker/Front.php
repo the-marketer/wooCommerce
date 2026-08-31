@@ -86,9 +86,6 @@ class Front
             }
             add_action('woocommerce_checkout_update_order_meta', array(self::init(), 'saveOptinCheckbox'));
 
-            /* The block checkout runs none of the hooks above, so it needs its own
-               field, and the API that registers it only accepts fields on
-               woocommerce_init. */
             add_action('woocommerce_init', array(self::init(), 'registerBlockOptin'));
             add_action('woocommerce_store_api_checkout_order_processed', array(self::init(), 'saveBlockOptin'));
         }
@@ -199,11 +196,6 @@ class Front
         ), self::optinChecked());
     }
 
-    /**
-     * update_order_review redraws the payment fragment, so the field has to restore
-     * itself or the customer's tick is silently lost. There the posted values arrive
-     * serialised in post_data, not as normal fields.
-     */
     public static function optinChecked()
     {
         if (isset($_POST['mktr_optin_subscribe'])) {
@@ -211,9 +203,6 @@ class Front
         }
 
         if (isset($_POST['post_data']) && is_string($_POST['post_data'])) {
-            /* Not sanitized as a whole: that strips percent encoding and corrupts the
-               query string. Only the presence of our own key is read out of it. */
-            // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
             parse_str(wp_unslash($_POST['post_data']), $posted);
             return isset($posted['mktr_optin_subscribe']) ? 1 : 0;
         }
@@ -231,8 +220,6 @@ class Front
 
         $optin_value = self::optinChecked();
 
-        /* Not update_post_meta: with HPOS the order does not live in wp_posts, and
-           the plugin declares itself compatible with it. */
         $order->update_meta_data('_mktr_optin_subscribe', $optin_value);
         $order->save_meta_data();
 
@@ -246,7 +233,6 @@ class Front
         }
     }
 
-    /** Block checkout field. The API needs a namespaced id. */
     public static function registerBlockOptin()
     {
         if (!function_exists('woocommerce_register_additional_checkout_field')) {
@@ -272,7 +258,6 @@ class Front
             return;
         }
 
-        /* 0 as well as 1, so the meta means the same thing on both checkouts. */
         $optin_value = $order->get_meta('_wc_other/mktr/optin-subscribe') ? 1 : 0;
 
         $order->update_meta_data('_mktr_optin_subscribe', $optin_value);
@@ -314,8 +299,6 @@ class Front
             $info["phone"] = $phone;
         }
 
-        /* Both callers run while the customer is waiting for the checkout to finish,
-           and Api::send blocks for up to 3 seconds. */
         Defer::api("add_subscriber", $info, 'optin_add_subscriber');
     }
 }

@@ -3,7 +3,7 @@
  * @copyright   Copyright (c) 2023 TheMarketer.com
  * @project     TheMarketer.com
  * @website     https://themarketer.com/
- * @author      Alexandru Buzica (EAX LEX S.R.L.) <b.alex@eax.ro>
+ * @author      theMarketer
  * @license     https://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
  * @docs        https://themarketer.com/resources/api
  */
@@ -85,6 +85,9 @@ class Front
                 add_action($position, array(self::init(), 'displayOptinCheckbox'));
             }
             add_action('woocommerce_checkout_update_order_meta', array(self::init(), 'saveOptinCheckbox'));
+
+            add_action('woocommerce_init', array(self::init(), 'registerBlockOptin'));
+            add_action('woocommerce_store_api_checkout_order_processed', array(self::init(), 'saveBlockOptin'));
         }
 
         // add_filter('woocommerce_create_order', array(self::init(), 'saveOrder1'), 10, 2 );
@@ -190,48 +193,112 @@ class Front
             'type'  => 'checkbox',
             'class' => array('mktr-optin-checkbox form-row-wide'),
             'label' => esc_html($message),
-        ), false);
+        ), self::optinChecked());
+    }
+
+    public static function optinChecked()
+    {
+        if (isset($_POST['mktr_optin_subscribe'])) {
+            return 1;
+        }
+
+        if (isset($_POST['post_data']) && is_string($_POST['post_data'])) {
+            parse_str(wp_unslash($_POST['post_data']), $posted);
+            return isset($posted['mktr_optin_subscribe']) ? 1 : 0;
+        }
+
+        return 0;
     }
 
     public static function saveOptinCheckbox($order_id)
     {
-        $optin_value = isset($_POST['mktr_optin_subscribe']) ? 1 : 0;
-        update_post_meta($order_id, '_mktr_optin_subscribe', $optin_value);
-
         $order = wc_get_order($order_id);
-        if ($order) {
-            $user_id = $order->get_user_id();
-            if ($user_id > 0) {
-                update_user_meta($user_id, '_mktr_optin_subscribe', $optin_value);
-            }
 
-            if ($optin_value === 1) {
-                $email = $order->get_billing_email();
-                $first_name = $order->get_billing_first_name();
-                $last_name = $order->get_billing_last_name();
-                $phone = $order->get_billing_phone();
-
-                if (!empty($email)) {
-                    $name = array();
-                    if (!empty($first_name)) {
-                        $name[] = $first_name;
-                    }
-                    if (!empty($last_name)) {
-                        $name[] = $last_name;
-                    }
-
-                    $info = array(
-                        "email" => $email,
-                        "name" => !empty($name) ? implode(" ", $name) : explode("@", $email)[0],
-                    );
-
-                    if (!empty($phone)) {
-                        $info["phone"] = $phone;
-                    }
-
-                    Api::send("add_subscriber", $info);
-                }
-            }
+        if (!$order) {
+            return;
         }
+
+        $optin_value = self::optinChecked();
+
+        $order->update_meta_data('_mktr_optin_subscribe', $optin_value);
+        $order->save_meta_data();
+
+        $user_id = $order->get_user_id();
+        if ($user_id > 0) {
+            update_user_meta($user_id, '_mktr_optin_subscribe', $optin_value);
+        }
+
+        if ($optin_value === 1) {
+            self::subscribeFromOrder($order);
+        }
+    }
+
+    public static function registerBlockOptin()
+    {
+        if (!function_exists('woocommerce_register_additional_checkout_field')) {
+            return;
+        }
+
+        $message = Config::getOptinMessage();
+        if (empty($message)) {
+            $message = 'I would like to receive exclusive emails with discounts and product information';
+        }
+
+        woocommerce_register_additional_checkout_field(array(
+            'id'       => 'mktr/optin-subscribe',
+            'label'    => $message,
+            'location' => 'order',
+            'type'     => 'checkbox',
+        ));
+    }
+
+    public static function saveBlockOptin($order = null)
+    {
+        if (!is_object($order) || !method_exists($order, 'get_meta')) {
+            return;
+        }
+
+        $optin_value = $order->get_meta('_wc_other/mktr/optin-subscribe') ? 1 : 0;
+
+        $order->update_meta_data('_mktr_optin_subscribe', $optin_value);
+        $order->save_meta_data();
+
+        $user_id = $order->get_user_id();
+        if ($user_id > 0) {
+            update_user_meta($user_id, '_mktr_optin_subscribe', $optin_value);
+        }
+
+        if ($optin_value === 1) {
+            self::subscribeFromOrder($order);
+        }
+    }
+
+    private static function subscribeFromOrder($order)
+    {
+        $email = $order->get_billing_email();
+
+        if (empty($email)) {
+            return;
+        }
+
+        $name = array();
+        if (!empty($order->get_billing_first_name())) {
+            $name[] = $order->get_billing_first_name();
+        }
+        if (!empty($order->get_billing_last_name())) {
+            $name[] = $order->get_billing_last_name();
+        }
+
+        $info = array(
+            "email" => $email,
+            "name" => !empty($name) ? implode(" ", $name) : explode("@", $email)[0],
+        );
+
+        $phone = $order->get_billing_phone();
+        if (!empty($phone)) {
+            $info["phone"] = $phone;
+        }
+
+        Defer::api("add_subscriber", $info, 'optin_add_subscriber');
     }
 }

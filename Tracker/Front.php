@@ -31,7 +31,7 @@ class Front
     public static function loadFront()
     {
         if (Config::getOnboarding() === 2 && Config::getStatus() === 1 && !empty(Config::getKey())) {
-            add_action('template_redirect', array(self::init(), 'routeCheck'));
+            add_action('template_redirect', array(self::init(), 'routeCheck'), -10000);
             add_action('wp_login', array(self::init(), 'registerOrLogIn'), 10, 2);
             add_action('user_register', array(self::init(), 'registerOrLogIn'), 10, 2);
 
@@ -40,7 +40,7 @@ class Front
             add_action('woocommerce_loaded', array(self::init(), 'loadModule'));
             add_action('woocommerce_update_order', array(Observer::init(), 'orderUpApi'), 10, 2);
         } else {
-            add_action('template_redirect', array(self::init(), 'routeCheck'));
+            add_action('template_redirect', array(self::init(), 'routeCheck'), -10000);
         }
 
         //add_action('shutdown', array($this, 'sd'), 0);

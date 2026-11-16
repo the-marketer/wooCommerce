@@ -38,20 +38,75 @@ class Session
         return $this;
     }
 
+    /* Cache compatible mode: the visitor id is created in the browser, the server only
+       writes the cookie itself when it has to store something and the browser had none. */
+    private static $cookiePending = false;
+    private static $hintSent = false;
+
+    /** Off while syncEvents runs, so the endpoint does not tell the browser to call it again. */
+    public static $syncHint = true;
+
+    const UID_COOKIE = '__sm__uid';
+    const SYNC_COOKIE = '__mktr_sync';
+
+    public static function cacheMode() {
+        return Config::getCacheMode() === 1;
+    }
+
+    /** Only ids we could have issued: no long or odd values used as a table key. */
+    public static function isValidUid($uid) {
+        return is_string($uid) && preg_match('/^[A-Za-z0-9-]{8,50}$/', $uid) === 1;
+    }
+
     public static function getUid() {
         if (self::$uid === null) {
-            if (!isset($_COOKIE['__sm__uid'])) {
-                self::$uid = uniqid();
-                if (!headers_sent()) {
-                    setcookie('__sm__uid', self::$uid, strtotime('+365 days'), COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true);
+            $cookie = isset($_COOKIE[self::UID_COOKIE]) ? sanitize_text_field(wp_unslash($_COOKIE[self::UID_COOKIE])) : '';
+
+            if (self::isValidUid($cookie)) {
+                self::$uid = $cookie;
+            } else {
+                /* uniqid() is a timestamp, so ids were guessable; the session holds order and email events. */
+                self::$uid = wp_generate_uuid4();
+
+                if (self::cacheMode()) {
+                    /* No Set-Cookie on page views: full-page caches skip any response that has one. */
+                    self::$cookiePending = true;
+                } else if (!headers_sent()) {
+                    setcookie(self::UID_COOKIE, self::$uid, strtotime('+365 days'), COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true);
                 } else {
                     self::$saveCookie = true;
                 }
-            } else {
-                self::$uid = sanitize_text_field(wp_unslash($_COOKIE['__sm__uid']));
             }
         }
         return self::$uid;
+    }
+
+    /** Cache mode: the browser had no id yet, but this request stores events for it. */
+    private static function persistUid() {
+        if (self::$cookiePending && !headers_sent()) {
+            self::$cookiePending = false;
+            setcookie(self::UID_COOKIE, self::getUid(), strtotime('+365 days'), COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true);
+        }
+    }
+
+    /**
+     * Cache mode: a short cookie the page script can read, telling it that events are
+     * waiting, so it calls syncEvents only then instead of on every page view.
+     */
+    private static function hintSync($key, $value) {
+        if (!self::$syncHint || self::$hintSent || empty($value) || !isset(Events::observerGetEvents[$key])) {
+            return;
+        }
+        if (!headers_sent()) {
+            self::$hintSent = true;
+            setcookie(self::SYNC_COOKIE, '1', 0, COOKIEPATH, COOKIE_DOMAIN, is_ssl(), false);
+        }
+    }
+
+    public static function clearSyncHint() {
+        if (isset($_COOKIE[self::SYNC_COOKIE]) && !headers_sent()) {
+            setcookie(self::SYNC_COOKIE, '', time() - 3600, COOKIEPATH, COOKIE_DOMAIN, is_ssl(), false);
+        }
     }
 
     public function __construct() {
@@ -72,6 +127,10 @@ class Session
     }
 
     public static function set($key, $value = null) {
+        if (self::cacheMode()) {
+            self::persistUid();
+            self::hintSync($key, $value);
+        }
         if ($value === null) {
             self::init()->remove($key);
         } else {

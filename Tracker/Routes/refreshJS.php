@@ -34,6 +34,31 @@ class refreshJS
         return self::$init;
     }
 
+    /** How long a replaced mktr.<time>.js stays on disk for pages still cached with it. */
+    const KEEP_OLD_FILES = 30 * DAY_IN_SECONDS;
+
+    /** Removes generated scripts older than $maxAge seconds, never the one in $keep. */
+    public static function pruneFiles($keep = null, $maxAge = 0)
+    {
+        $files = glob(Config::getDir() . 'assets/mktr.*.js');
+
+        if (empty($files)) {
+            return;
+        }
+
+        foreach ($files as $file) {
+            if (!preg_match('/^mktr\.(\d+)\.js$/', basename($file), $m)) {
+                continue;
+            }
+            if ($keep !== null && (string) $m[1] === (string) $keep) {
+                continue;
+            }
+            if (time() - (int) $m[1] >= $maxAge) {
+                wp_delete_file($file);
+            }
+        }
+    }
+
     public static function execute( $mime = true )
     {
         if ($mime) {
@@ -82,6 +107,65 @@ window.mktr.setSM = function(name, value, daysToExpire = 365) {
     const cookieValue = encodeURIComponent(value) + (daysToExpire ? `; expires=${expirationDate.toUTCString()}` : "");
     document.cookie = `${name}=${cookieValue}; path=/`;
 };
+/* Cache compatible mode: the HTML is the same for every visitor, so the visitor id is made
+   here and events are fetched only when the server or the cart says something changed. */
+window.mktr.cacheMode = mktr_data.cache_mode === "1";
+window.mktr.getCookie = function(name) {
+    var parts = document.cookie ? document.cookie.split(";") : [];
+    for (var i = 0; i < parts.length; i++) {
+        var part = parts[i].trim();
+        if (part.indexOf(name + "=") === 0) {
+            try { return decodeURIComponent(part.substring(name.length + 1)); } catch (e) { return part.substring(name.length + 1); }
+        }
+    }
+    return null;
+};
+window.mktr.setCookie = function(name, value, maxAge) {
+    var cookie = name + "=" + encodeURIComponent(value) + "; path=" + (mktr_data.cookie_path || "/") + "; max-age=" + maxAge + "; SameSite=Lax";
+    if (mktr_data.cookie_domain) { cookie += "; domain=" + mktr_data.cookie_domain; }
+    if (window.location.protocol === "https:") { cookie += "; Secure"; }
+    document.cookie = cookie;
+};
+window.mktr.newUid = function() {
+    if (window.crypto && typeof window.crypto.randomUUID === "function") { return window.crypto.randomUUID(); }
+    var b = new Uint8Array(16), h = "", i;
+    if (window.crypto && window.crypto.getRandomValues) { window.crypto.getRandomValues(b); } else { for (i = 0; i < 16; i++) { b[i] = Math.floor(Math.random() * 256); } }
+    b[6] = (b[6] & 15) | 64; b[8] = (b[8] & 63) | 128;
+    for (i = 0; i < 16; i++) { h += (b[i] + 256).toString(16).substring(1); }
+    return h.substring(0, 8) + "-" + h.substring(8, 12) + "-" + h.substring(12, 16) + "-" + h.substring(16, 20) + "-" + h.substring(20);
+};
+/* An id the server set as HttpOnly is invisible here; the browser then ignores this write. */
+window.mktr.ensureUid = function() {
+    if (window.mktr.getCookie("__sm__uid") === null) { window.mktr.setCookie("__sm__uid", window.mktr.newUid(), 31536000); }
+};
+window.mktr.cartHash = function() { return window.mktr.getCookie("woocommerce_cart_hash") || ""; };
+window.mktr.rememberCart = function() { try { window.localStorage.setItem("mktr_cart_hash", window.mktr.cartHash()); } catch (e) {} };
+window.mktr.cartChanged = function() {
+    var last = null;
+    try { last = window.localStorage.getItem("mktr_cart_hash"); } catch (e) { return false; }
+    return last === null ? window.mktr.cartHash() !== "" : last !== window.mktr.cartHash();
+};
+window.mktr.needsSync = function() {
+    return mktr_data.sync === "1" || window.mktr.getCookie("__mktr_sync") !== null || window.mktr.cartChanged();
+};
+window.mktr.syncEvents = function() {
+    var done = function(data) {
+        if (Array.isArray(data)) { window.mktr.addToDataLayer(data); }
+        /* The response clears it too; this covers a proxy that drops Set-Cookie. */
+        if (window.mktr.getCookie("__mktr_sync") !== null) { window.mktr.setCookie("__mktr_sync", "", 0); }
+        window.mktr.rememberCart();
+        window.mktr.LoadEventsBool = true;
+    };
+    var url = window.mktr.url + "?mktr=syncEvents";
+    if (typeof fetch === "function") {
+        fetch(url, { method: "POST", credentials: "same-origin", cache: "no-store" })
+        .then(function(response) { return response.json(); })
+        .then(done).catch(function() { window.mktr.LoadEventsBool = true; });
+    } else if (typeof jQuery === "function") {
+        jQuery.ajax({ url: url, method: "POST", dataType: "json", cache: false })
+        .done(done).fail(function() { window.mktr.LoadEventsBool = true; });
+    }
+};
 window.mktr.LoadEventsFunc = function() {
     if (window.mktr.LoadEventsBool) {
         window.mktr.LoadEventsBool = false;
@@ -123,7 +207,9 @@ window.mktr.events = function () {
     /*
     window.mktr.xhrFetch(window.mktr.url + "?mktr=loadEvents&mktr_time=" + (new Date()).getTime(), function(data) { window.mktr.addToDataLayer(data); });
     */
-    if ( window.mktr.Load === true) {
+    if ( window.mktr.Load === true && window.mktr.cacheMode) {
+        window.mktr.syncEvents();
+    } else if ( window.mktr.Load === true) {
         if (typeof jQuery === "function") {
             jQuery.ajax({ url: window.mktr.url, data: { mktr: "loadEvents", mktr_time: (new Date()).getTime() }, method: "GET", dataType: "json" })
             .done(function(data) {
@@ -151,10 +237,10 @@ window.mktr.events = function () {
             $js[] = 'window.mktr.LoadOn();';
             $js[] = '';
             $js[] = 'document.addEventListener("click", function(event){ if (window.mktr.selectors !== "" && (event.target.matches(window.mktr.selectors) || event.target.closest(window.mktr.selectors))) { window.mktr.LoadEventsFunc(); } });';
-            $js[] = 'window.addEventListener("load", function() { window.mktr.LoadEventsFunc(); });';
+            $js[] = 'window.addEventListener("load", function() { if (!window.mktr.cacheMode || window.mktr.needsSync()) { window.mktr.LoadEventsFunc(); } });';
             $js[] = '/* window.mktr.addToDataLayer(mktr_data.evData); */';
             $js[] = '';
-            $js[] = 'if (mktr_data.uuid !== null) { window.mktr.setSM("__sm__uid", mktr_data.uuid); }';
+            $js[] = 'if (window.mktr.cacheMode) { window.mktr.ensureUid(); } else if (mktr_data.uuid !== null) { window.mktr.setSM("__sm__uid", mktr_data.uuid); }';
             $js[] = '';
             $js[] = 'if (mktr_data.isWoodMart === "1") {
     mktr.checkAdded = function(n, o) { return Object.keys(n).filter(i => !o[i]); }
@@ -169,7 +255,7 @@ window.mktr.events = function () {
     }
 
     mktr.storage = {
-        _wishlist: mktr_data.wishList,
+        _wishlist: mktr_data.wishList !== undefined ? mktr_data.wishList : mktr.jsonDecode(mktr.cookie("woodmart_wishlist_products")),
         get wishlist() { return this._wishlist; },
         set wishlist(value) {
             let add = mktr.checkAdded(value, this._wishlist); let remove = mktr.checkAdded(this._wishlist, value);
@@ -237,21 +323,19 @@ window.mktr.events = function () {
                 }
             }
 
-            $js_file = Config::getValue('js_file');
-            if ($js_file !== null && file_exists(Config::getDir() . 'assets/mktr.' . $js_file . '.js')) {
-                wp_delete_file(Config::getDir() . 'assets/mktr.' . $js_file . '.js');
-            }
             $js_file = time();
             
             Config::setValue('js_file', $js_file);
 
             \Mktr\Tracker\FileSystem::setWorkDirectory('assets/');
             \Mktr\Tracker\FileSystem::writeFile('mktr.' . $js_file . '.js', implode(PHP_EOL, $js));
+
+            /* Pages already in a full-page cache still load the file they were rendered with,
+               so earlier versions stay until such a cache has surely expired. */
+            self::pruneFiles($js_file, self::KEEP_OLD_FILES);
         } else {
-            $js_file = Config::getValue('js_file');
-            if ($js_file !== null && file_exists(Config::getDir() . 'assets/mktr.' . $js_file . '.js')) {
-                wp_delete_file(Config::getDir() . 'assets/mktr.' . $js_file . '.js');
-            }
+            /* Tracking was turned off: cached pages must stop tracking too. */
+            self::pruneFiles(null, 0);
             Config::setValue('js_file', null);
         }
 

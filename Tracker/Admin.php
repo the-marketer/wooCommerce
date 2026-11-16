@@ -100,6 +100,14 @@ class Admin
             'name' => 'email_capture_checkout',
             'placeholder' => null
         ),
+        'cache_mode' => array(
+            'label' => 'Cache compatible mode',
+            'tag' => 'input',
+            'type' => 'checkbox',
+            'description' => 'Enable when the store uses a full-page cache (FlyingPress, WP Rocket, LiteSpeed Cache, Varnish, host cache). Pages no longer set cookies or print visitor data, the visitor id is created in the browser and cart / wishlist / order events are fetched only when something changed. Purge the page cache after changing this setting.',
+            'name' => 'cache_mode',
+            'placeholder' => null
+        ),
         'push_status' => array(
             'label' => 'Push Notification',
             'tag' => 'input',
@@ -900,6 +908,7 @@ class Admin
         $c = array(
             self::$inputs['opt_in'],
             self::$inputs['email_capture_checkout'],
+            self::$inputs['cache_mode'],
             self::$inputs['add_description'],
             self::$inputs['push_status'],
             self::$inputs['allow_export'],

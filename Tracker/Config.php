@@ -29,6 +29,7 @@ namespace Mktr\Tracker;
  * @method static getCronReview()
  * @method static getUpdateReview()
  * @method static getSelectors()
+ * @method static getCacheMode()
  */
 class Config
 {
@@ -78,6 +79,7 @@ class Config
         'update_review' => 'mktr_tracker/tracker/update_review',
         'opt_in' => 'mktr_tracker/tracker/opt_in',
         'email_capture_checkout' => 'mktr_tracker/tracker/email_capture_checkout',
+        'cache_mode' => 'mktr_tracker/tracker/cache_mode',
         'opt_in_oldmail' => 'mktr_tracker/tracker/opt_in_oldmail',
         'mailpoet_id_list' => 'mktr_tracker/tracker/mailpoet_id_list',
         'push_status' => 'mktr_tracker/tracker/push_status',
@@ -120,6 +122,7 @@ class Config
         'update_review' => 4,
         'opt_in' => 0,
         'email_capture_checkout' => 0,
+        'cache_mode' => 0,
         'opt_in_oldmail' => null,
         'mailpoet_id_list' => null,
         'push_status' => 0,
@@ -157,6 +160,7 @@ class Config
         'getCustomerId' => array('customer_id', false),
         'getOptIn' => array('opt_in', 'int'),
         'getEmailCaptureCheckout' => array('email_capture_checkout', 'int'),
+        'getCacheMode' => array('cache_mode', 'int'),
         'getPushStatus' => array('push_status', 'int'),
         'getSelectors' => array('selectors', false),
         'getDefaultStock' => array('default_stock', 'int'),

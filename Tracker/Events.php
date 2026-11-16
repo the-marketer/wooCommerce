@@ -169,9 +169,55 @@ class Events
         return self::$init;
     }
 
-    public static function mktr_data()
+    /**
+     * Cache compatible mode: only what is the same for every visitor of this URL, since a
+     * page cache serves this HTML to everyone. No visitor id, no session read, no queued
+     * events (those can hold another customer's email or order); syncEvents returns them.
+     */
+    public static function cacheData()
     {
         $mktr_data = array(
+            'cache_mode' => 1,
+            'uuid' => null,
+            'clear' => 0,
+            'isWoodMart' => (int) self::$isWoodMart,
+            'push' => array(),
+            'base_url' => Config::getBaseURL(),
+            'js' => array(),
+            'email_capture_checkout' => (string) Config::getValue('email_capture_checkout'),
+            /* WooCommerce never caches cart, checkout or account pages, so these always sync:
+               that is where order events land, also when the browser missed the hint cookie. */
+            'sync' => (int) (is_cart() || is_checkout() || is_account_page()),
+            'cookie_path' => COOKIEPATH,
+            'cookie_domain' => COOKIE_DOMAIN ? COOKIE_DOMAIN : ''
+        );
+
+        $orderReceived = function_exists('is_order_received_page') && is_order_received_page();
+
+        foreach (self::actions as $key => $value) {
+            if ($key === 'is_checkout' && $orderReceived) {
+                continue;
+            }
+            if ($key() || $key === 'is_home' && is_front_page()) {
+                $ev = self::getEvent($value);
+                if ($ev !== false) {
+                    $mktr_data['push'][] = $ev->toArray();
+                }
+                break;
+            }
+        }
+
+        return $mktr_data;
+    }
+
+    public static function mktr_data()
+    {
+        if (Session::cacheMode()) {
+            return self::cacheData();
+        }
+
+        $mktr_data = array(
+            'cache_mode' => 0,
             'uuid'=> null,
             'clear' => 0,
             'isWoodMart' => (int) self::$isWoodMart,

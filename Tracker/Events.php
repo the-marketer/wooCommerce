@@ -169,12 +169,7 @@ class Events
         return self::$init;
     }
 
-    /**
-     * Cache compatible mode: only what is the same for every visitor of this URL, since a
-     * page cache serves this HTML to everyone. No visitor id, no session read, no queued
-     * events (those can hold another customer's email or order); syncEvents returns them.
-     */
-    public static function cacheData()
+    public static function visitorNeutralData()
     {
         $mktr_data = array(
             'cache_mode' => 1,
@@ -185,9 +180,7 @@ class Events
             'base_url' => Config::getBaseURL(),
             'js' => array(),
             'email_capture_checkout' => (string) Config::getValue('email_capture_checkout'),
-            /* WooCommerce never caches cart, checkout or account pages, so these always sync:
-               that is where order events land, also when the browser missed the hint cookie. */
-            'sync' => (int) (is_cart() || is_checkout() || is_account_page()),
+            'sync' => (int) self::isNeverCachedPage(),
             'cookie_path' => COOKIEPATH,
             'cookie_domain' => COOKIE_DOMAIN ? COOKIE_DOMAIN : ''
         );
@@ -210,10 +203,15 @@ class Events
         return $mktr_data;
     }
 
+    private static function isNeverCachedPage()
+    {
+        return is_cart() || is_checkout() || is_account_page();
+    }
+
     public static function mktr_data()
     {
         if (Session::cacheMode()) {
-            return self::cacheData();
+            return self::visitorNeutralData();
         }
 
         $mktr_data = array(
@@ -295,11 +293,7 @@ class Events
     public function initEvents() {
         if (self::$load_js) {
             self::$load_js = false;
-            $js_file = Config::getValue('js_file');
-            if ( $js_file !== null ) {
-                wp_enqueue_script('mktr-loader', Run::plug_url('/assets/mktr.' . $js_file . '.js'), array(), false, array('strategy' => 'async'));
-                wp_localize_script('mktr-loader', 'mktr_data', self::mktr_data());
-            }
+            self::enqueueLoader();
         }
     }
 
@@ -307,11 +301,16 @@ class Events
     {
         if (self::$load_js) {
             self::$load_js = false;
-            $js_file = Config::getValue('js_file');
-            if ( $js_file !== null ) {
-                wp_enqueue_script('mktr-loader', Run::plug_url('/assets/mktr.' . $js_file . '.js'), array(), false, array('strategy' => 'async'));
-                wp_localize_script('mktr-loader', 'mktr_data', self::mktr_data());
-            }
+            self::enqueueLoader();
+        }
+    }
+
+    private static function enqueueLoader()
+    {
+        $version = Config::getValue('js_file');
+        if ($version !== null) {
+            wp_enqueue_script('mktr-loader', Run::plug_url('/assets/' . \Mktr\Tracker\Routes\refreshJS::FILE), array(), $version, array('strategy' => 'async'));
+            wp_localize_script('mktr-loader', 'mktr_data', self::mktr_data());
         }
     }
 

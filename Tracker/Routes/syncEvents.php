@@ -14,20 +14,23 @@ use Mktr\Tracker\Config;
 use Mktr\Tracker\Events;
 use Mktr\Tracker\Session;
 
-/**
- * Cache compatible mode endpoint. The page script calls it only when something may be
- * waiting (hint cookie, changed cart hash, cart / wishlist actions, cart and checkout
- * pages), never on a plain page view. One request returns every queued dataLayer event
- * and runs the order / email delivery the legacy script did with separate requests.
- */
 class syncEvents
 {
-    const ACTION = 'syncEvents';
+    const SYNC = 'syncEvents';
+    const DELIVER = 'deliverEvents';
+    const MAX_DELIVERY_ATTEMPTS = 3;
+    const DELIVERY_ATTEMPTS = 'mktrDeliveryAttempts';
+    const PUSHED_EMAILS = 'mktrPushedEmails';
 
-    /** Answered on wp_loaded: the cart is loaded by then, and the main query and theme never run. */
     public static function maybeHandle()
     {
-        if (!isset($_GET[Config::$name]) || sanitize_text_field(wp_unslash($_GET[Config::$name])) !== self::ACTION) {
+        if (!Session::cacheMode()) {
+            return;
+        }
+
+        $action = self::requestedAction();
+
+        if ($action === null || !self::isScriptPost()) {
             return;
         }
 
@@ -36,54 +39,241 @@ class syncEvents
         }
         nocache_headers();
 
-        wp_send_json(self::execute());
+        wp_send_json($action === self::SYNC ? self::execute() : self::deliver(self::postedKeys('orders'), self::postedKeys('emails')));
+    }
+
+    private static function requestedAction()
+    {
+        if (!isset($_GET[Config::$name])) {
+            return null;
+        }
+
+        $action = sanitize_text_field(wp_unslash($_GET[Config::$name]));
+
+        return in_array($action, array(self::SYNC, self::DELIVER), true) ? $action : null;
+    }
+
+    private static function isScriptPost()
+    {
+        $method = isset($_SERVER['REQUEST_METHOD']) ? strtoupper(sanitize_text_field(wp_unslash($_SERVER['REQUEST_METHOD']))) : '';
+        $requestedWith = isset($_SERVER['HTTP_X_REQUESTED_WITH']) ? sanitize_text_field(wp_unslash($_SERVER['HTTP_X_REQUESTED_WITH'])) : '';
+
+        return $method === 'POST' && $requestedWith === 'XMLHttpRequest';
+    }
+
+    private static function postedKeys($field)
+    {
+        if (!isset($_POST[$field])) {
+            return array();
+        }
+
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+        $keys = json_decode(wp_unslash($_POST[$field]), true);
+
+        if (!is_array($keys)) {
+            return array();
+        }
+
+        return array_values(array_filter($keys, function ($key) {
+            return is_string($key) || is_int($key);
+        }));
     }
 
     public static function execute()
     {
-        /* Plugin notices would corrupt the JSON, and this answer reaches every visitor. */
         ob_start();
-
         Session::$syncHint = false;
         $events = array();
+        $deliver = array('orders' => array(), 'emails' => array());
 
         try {
+            self::rememberWishlistBaseline();
             $events = loadEvents::execute(false);
 
-            $pending = array();
-            foreach (array('saveOrder', 'setEmail') as $event) {
-                $eventData = Config::session()->get($event);
-                if (empty($eventData)) {
-                    continue;
-                }
-                $pending[$event] = true;
-                foreach ($eventData as $value) {
-                    $ev = Events::getEvent(Events::observerGetEvents[$event][1], $value);
-                    if ($ev !== false) {
-                        $events[] = $ev->toArray();
-                    }
+            foreach (self::deliverableOrders() as $orderId) {
+                $event = Events::getEvent('__sm__order', $orderId);
+                if ($event !== false) {
+                    $events[] = $event->toArray();
+                    $deliver['orders'][] = $orderId;
                 }
             }
 
-            /* The same delivery the legacy script triggered via ?mktr=saveOrder / ?mktr=setEmail;
-               each one clears what it delivered from the session. */
-            if (isset($pending['saveOrder'])) {
-                saveOrder::execute();
+            $pushed = Config::session()->get(self::PUSHED_EMAILS, array());
+            foreach (self::pendingEmails() as $key => $email) {
+                if (!isset($pushed[$key])) {
+                    $event = Events::getEvent('__sm__set_email', $email);
+                    if ($event === false) {
+                        continue;
+                    }
+                    $events[] = $event->toArray();
+                }
+                $deliver['emails'][] = $key;
             }
-            if (isset($pending['setEmail'])) {
-                setEmail::execute();
-            }
+
         } catch (\Throwable $e) {
-            if (defined('MKTR_DEBUG') && MKTR_DEBUG) {
-                \Mktr\Tracker\Logs::debug(array($e->getMessage(), $e->getTraceAsString()), 'sync_events_error');
-            }
+            self::logError($e);
         }
 
-        Session::clearSyncHint();
         Session::save();
-
         ob_end_clean();
 
-        return array_values($events);
+        return array(
+            'events' => array_values($events),
+            'deliver' => empty($deliver['orders']) && empty($deliver['emails']) ? false : $deliver
+        );
+    }
+
+    public static function deliver($orderIds, $emailKeys)
+    {
+        ob_start();
+        Session::$syncHint = false;
+        $retry = false;
+
+        try {
+            self::markEmailsPushed($emailKeys);
+
+            foreach (array_keys(self::deliverableOrders(array_flip($orderIds))) as $orderId) {
+                $retry = self::deliverItem('saveOrder', 'order', $orderId, function () {
+                    saveOrder::execute();
+                }) || $retry;
+            }
+
+            foreach (array_keys(array_intersect_key(self::pendingEmails(), array_flip($emailKeys))) as $key) {
+                $retry = self::deliverItem('setEmail', 'email', $key, function () {
+                    setEmail::execute();
+                }) || $retry;
+            }
+        } catch (\Throwable $e) {
+            self::logError($e);
+        }
+
+        self::forgetDeliveredEmails();
+        self::forgetSettledAttempts();
+
+        if ($retry) {
+            Session::armSyncHint();
+        }
+
+        Session::save();
+        ob_end_clean();
+
+        return array();
+    }
+
+    private static function deliverItem($sessionKey, $type, $key, $send)
+    {
+        $attempt = self::countAttempt(self::attemptKey($type, $key));
+        $all = Config::session()->get($sessionKey);
+        $item = array($key => $all[$key]);
+        $rest = array_diff_key($all, $item);
+        $stillPending = true;
+
+        Config::session()->set($sessionKey, $item);
+
+        try {
+            $send();
+        } finally {
+            $left = Config::session()->get($sessionKey);
+            $stillPending = is_array($left) && isset($left[$key]);
+            $exhausted = $stillPending && $attempt >= self::MAX_DELIVERY_ATTEMPTS;
+
+            Config::session()->set($sessionKey, $exhausted || !$stillPending ? $rest : $rest + $left);
+        }
+
+        return $stillPending && $attempt < self::MAX_DELIVERY_ATTEMPTS;
+    }
+
+    private static function deliverableOrders($only = null)
+    {
+        $orders = Config::session()->get('saveOrder');
+
+        if (empty($orders)) {
+            return array();
+        }
+
+        if ($only !== null) {
+            $orders = array_intersect_key($orders, $only);
+        }
+
+        return array_filter($orders, function ($orderId) {
+            return !self::isCheckoutDraft($orderId);
+        });
+    }
+
+    private static function isCheckoutDraft($orderId)
+    {
+        $order = wc_get_order($orderId);
+
+        return $order && $order->get_status() === 'checkout-draft';
+    }
+
+    private static function pendingEmails()
+    {
+        $emails = Config::session()->get('setEmail');
+
+        return is_array($emails) ? $emails : array();
+    }
+
+    private static function markEmailsPushed($keys)
+    {
+        $pushed = Config::session()->get(self::PUSHED_EMAILS, array());
+        $known = array_intersect_key(array_fill_keys($keys, true), self::pendingEmails());
+
+        Config::session()->set(self::PUSHED_EMAILS, $pushed + $known);
+    }
+
+    private static function forgetDeliveredEmails()
+    {
+        $pushed = Config::session()->get(self::PUSHED_EMAILS, array());
+
+        Config::session()->set(self::PUSHED_EMAILS, array_intersect_key($pushed, self::pendingEmails()));
+    }
+
+    private static function attemptKey($type, $key)
+    {
+        return $type . ':' . $key;
+    }
+
+    private static function countAttempt($attemptKey)
+    {
+        $attempts = Config::session()->get(self::DELIVERY_ATTEMPTS, array());
+        $attempts[$attemptKey] = (isset($attempts[$attemptKey]) ? $attempts[$attemptKey] : 0) + 1;
+        Config::session()->set(self::DELIVERY_ATTEMPTS, $attempts);
+
+        return $attempts[$attemptKey];
+    }
+
+    private static function forgetSettledAttempts()
+    {
+        $pending = array();
+
+        foreach (self::deliverableOrders() as $orderId) {
+            $pending[self::attemptKey('order', $orderId)] = true;
+        }
+        foreach (self::pendingEmails() as $key => $email) {
+            $pending[self::attemptKey('email', $key)] = true;
+        }
+
+        $attempts = array_intersect_key(Config::session()->get(self::DELIVERY_ATTEMPTS, array()), $pending);
+        Config::session()->set(self::DELIVERY_ATTEMPTS, empty($attempts) ? null : $attempts);
+    }
+
+    private static function rememberWishlistBaseline()
+    {
+        if (Config::session()->get('woodmart_wishlist_count') !== null || !isset($_COOKIE['woodmart_wishlist_count'])) {
+            return;
+        }
+
+        $products = isset($_COOKIE['woodmart_wishlist_products']) ? sanitize_text_field(wp_unslash($_COOKIE['woodmart_wishlist_products'])) : '{}';
+
+        Config::session()->set('woodmart_wishlist_products', $products);
+        Config::session()->set('woodmart_wishlist_count', sanitize_text_field(wp_unslash($_COOKIE['woodmart_wishlist_count'])));
+    }
+
+    private static function logError($e)
+    {
+        if (defined('MKTR_DEBUG') && MKTR_DEBUG) {
+            \Mktr\Tracker\Logs::debug(array($e->getMessage(), $e->getTraceAsString()), 'sync_events_error');
+        }
     }
 }

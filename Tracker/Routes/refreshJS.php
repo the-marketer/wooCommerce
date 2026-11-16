@@ -34,29 +34,41 @@ class refreshJS
         return self::$init;
     }
 
-    /** How long a replaced mktr.<time>.js stays on disk for pages still cached with it. */
-    const KEEP_OLD_FILES = 30 * DAY_IN_SECONDS;
+    const FILE = 'mktr.js';
 
-    /** Removes generated scripts older than $maxAge seconds, never the one in $keep. */
-    public static function pruneFiles($keep = null, $maxAge = 0)
+    private static function deleteGenerated($legacyVersion)
     {
-        $files = glob(Config::getDir() . 'assets/mktr.*.js');
-
-        if (empty($files)) {
-            return;
+        $assets = Config::getDir() . 'assets/';
+        $files = array($assets . self::FILE);
+        if ($legacyVersion !== null) {
+            $files[] = $assets . 'mktr.' . $legacyVersion . '.js';
         }
-
         foreach ($files as $file) {
-            if (!preg_match('/^mktr\.(\d+)\.js$/', basename($file), $m)) {
-                continue;
-            }
-            if ($keep !== null && (string) $m[1] === (string) $keep) {
-                continue;
-            }
-            if (time() - (int) $m[1] >= $maxAge) {
+            if (file_exists($file)) {
                 wp_delete_file($file);
             }
         }
+    }
+
+    private static function publish($content)
+    {
+        \Mktr\Tracker\FileSystem::setWorkDirectory('assets/');
+        $target = \Mktr\Tracker\FileSystem::getPath() . self::FILE;
+        $staging = $target . '.tmp';
+        $fileSystem = \Mktr\Tracker\Helpers\FileHelper::init();
+
+        if ($fileSystem->put_contents($staging, $content) !== true) {
+            $fileSystem->delete($staging);
+            return false;
+        }
+
+        if ($fileSystem->move($staging, $target, true) === true) {
+            return true;
+        }
+
+        $fileSystem->delete($staging);
+
+        return $fileSystem->put_contents($target, $content) === true;
     }
 
     public static function execute( $mime = true )
@@ -107,9 +119,9 @@ window.mktr.setSM = function(name, value, daysToExpire = 365) {
     const cookieValue = encodeURIComponent(value) + (daysToExpire ? `; expires=${expirationDate.toUTCString()}` : "");
     document.cookie = `${name}=${cookieValue}; path=/`;
 };
-/* Cache compatible mode: the HTML is the same for every visitor, so the visitor id is made
-   here and events are fetched only when the server or the cart says something changed. */
 window.mktr.cacheMode = mktr_data.cache_mode === "1";
+window.mktr.syncInFlight = false;
+window.mktr.syncRequestedInFlight = false;
 window.mktr.getCookie = function(name) {
     var parts = document.cookie ? document.cookie.split(";") : [];
     for (var i = 0; i < parts.length; i++) {
@@ -126,6 +138,7 @@ window.mktr.setCookie = function(name, value, maxAge) {
     if (window.location.protocol === "https:") { cookie += "; Secure"; }
     document.cookie = cookie;
 };
+window.mktr.isUid = function(value) { return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value || ""); };
 window.mktr.newUid = function() {
     if (window.crypto && typeof window.crypto.randomUUID === "function") { return window.crypto.randomUUID(); }
     var b = new Uint8Array(16), h = "", i;
@@ -134,39 +147,63 @@ window.mktr.newUid = function() {
     for (i = 0; i < 16; i++) { h += (b[i] + 256).toString(16).substring(1); }
     return h.substring(0, 8) + "-" + h.substring(8, 12) + "-" + h.substring(12, 16) + "-" + h.substring(16, 20) + "-" + h.substring(20);
 };
-/* An id the server set as HttpOnly is invisible here; the browser then ignores this write. */
 window.mktr.ensureUid = function() {
-    if (window.mktr.getCookie("__sm__uid") === null) { window.mktr.setCookie("__sm__uid", window.mktr.newUid(), 31536000); }
+    if (!window.mktr.isUid(window.mktr.getCookie("__sm__uid"))) { window.mktr.setCookie("__sm__uid", window.mktr.newUid(), 31536000); }
 };
 window.mktr.cartHash = function() { return window.mktr.getCookie("woocommerce_cart_hash") || ""; };
-window.mktr.rememberCart = function() { try { window.localStorage.setItem("mktr_cart_hash", window.mktr.cartHash()); } catch (e) {} };
+window.mktr.rememberCart = function(hash) { window.mktr.setCookie("__mktr_cart", hash, 31536000); };
 window.mktr.cartChanged = function() {
-    var last = null;
-    try { last = window.localStorage.getItem("mktr_cart_hash"); } catch (e) { return false; }
-    return last === null ? window.mktr.cartHash() !== "" : last !== window.mktr.cartHash();
+    var seen = window.mktr.getCookie("__mktr_cart");
+    return seen === null ? window.mktr.cartHash() !== "" : seen !== window.mktr.cartHash();
 };
 window.mktr.needsSync = function() {
     return mktr_data.sync === "1" || window.mktr.getCookie("__mktr_sync") !== null || window.mktr.cartChanged();
 };
-window.mktr.syncEvents = function() {
-    var done = function(data) {
-        if (Array.isArray(data)) { window.mktr.addToDataLayer(data); }
-        /* The response clears it too; this covers a proxy that drops Set-Cookie. */
-        if (window.mktr.getCookie("__mktr_sync") !== null) { window.mktr.setCookie("__mktr_sync", "", 0); }
-        window.mktr.rememberCart();
-        window.mktr.LoadEventsBool = true;
-    };
-    var url = window.mktr.url + "?mktr=syncEvents";
+window.mktr.post = function(action, fields, onDone, onFail, keepalive) {
+    var url = window.mktr.url + "?mktr=" + action;
+    var headers = { "X-Requested-With": "XMLHttpRequest" };
     if (typeof fetch === "function") {
-        fetch(url, { method: "POST", credentials: "same-origin", cache: "no-store" })
+        fetch(url, { method: "POST", credentials: "same-origin", cache: "no-store", keepalive: keepalive === true, headers: headers, body: new URLSearchParams(fields) })
         .then(function(response) { return response.json(); })
-        .then(done).catch(function() { window.mktr.LoadEventsBool = true; });
+        .then(onDone).catch(onFail);
     } else if (typeof jQuery === "function") {
-        jQuery.ajax({ url: url, method: "POST", dataType: "json", cache: false })
-        .done(done).fail(function() { window.mktr.LoadEventsBool = true; });
+        jQuery.ajax({ url: url, method: "POST", dataType: "json", headers: headers, data: fields }).done(onDone).fail(onFail);
+    } else {
+        onFail();
     }
 };
+window.mktr.syncEvents = function() {
+    var hintSent = window.mktr.getCookie("__mktr_sync");
+    var cartSent = window.mktr.cartHash();
+    var clearHint = function() {
+        if (hintSent !== null && window.mktr.getCookie("__mktr_sync") === hintSent) { window.mktr.setCookie("__mktr_sync", "", 0); }
+    };
+    var finish = function() {
+        window.mktr.syncInFlight = false;
+        window.mktr.LoadEventsBool = true;
+        if (window.mktr.syncRequestedInFlight) {
+            window.mktr.syncRequestedInFlight = false;
+            window.mktr.LoadEventsFunc();
+        }
+    };
+    window.mktr.syncInFlight = true;
+    window.mktr.post("syncEvents", {}, function(data) {
+        if (data && Array.isArray(data.events)) { window.mktr.addToDataLayer(data.events); }
+        window.mktr.rememberCart(cartSent);
+        if (data && data.deliver) {
+            var fields = { orders: JSON.stringify(data.deliver.orders || []), emails: JSON.stringify(data.deliver.emails || []) };
+            window.mktr.post("deliverEvents", fields, function() { clearHint(); finish(); }, finish, true);
+        } else {
+            clearHint();
+            finish();
+        }
+    }, finish);
+};
 window.mktr.LoadEventsFunc = function() {
+    if (window.mktr.cacheMode && window.mktr.syncInFlight) {
+        window.mktr.syncRequestedInFlight = true;
+        return;
+    }
     if (window.mktr.LoadEventsBool) {
         window.mktr.LoadEventsBool = false;
         try {
@@ -237,10 +274,10 @@ window.mktr.events = function () {
             $js[] = 'window.mktr.LoadOn();';
             $js[] = '';
             $js[] = 'document.addEventListener("click", function(event){ if (window.mktr.selectors !== "" && (event.target.matches(window.mktr.selectors) || event.target.closest(window.mktr.selectors))) { window.mktr.LoadEventsFunc(); } });';
-            $js[] = 'window.addEventListener("load", function() { if (!window.mktr.cacheMode || window.mktr.needsSync()) { window.mktr.LoadEventsFunc(); } });';
+            $js[] = 'window.addEventListener("load", function() { if (!window.mktr.cacheMode) { window.mktr.LoadEventsFunc(); } });';
             $js[] = '/* window.mktr.addToDataLayer(mktr_data.evData); */';
             $js[] = '';
-            $js[] = 'if (window.mktr.cacheMode) { window.mktr.ensureUid(); } else if (mktr_data.uuid !== null) { window.mktr.setSM("__sm__uid", mktr_data.uuid); }';
+            $js[] = 'if (window.mktr.cacheMode) { window.mktr.ensureUid(); if (window.mktr.needsSync()) { window.mktr.LoadEventsBool = false; window.mktr.events(); } } else if (mktr_data.uuid !== null) { window.mktr.setSM("__sm__uid", mktr_data.uuid); }';
             $js[] = '';
             $js[] = 'if (mktr_data.isWoodMart === "1") {
     mktr.checkAdded = function(n, o) { return Object.keys(n).filter(i => !o[i]); }
@@ -255,7 +292,7 @@ window.mktr.events = function () {
     }
 
     mktr.storage = {
-        _wishlist: mktr_data.wishList !== undefined ? mktr_data.wishList : mktr.jsonDecode(mktr.cookie("woodmart_wishlist_products")),
+        _wishlist: window.mktr.cacheMode ? mktr.jsonDecode(window.mktr.getCookie("woodmart_wishlist_products")) : mktr_data.wishList,
         get wishlist() { return this._wishlist; },
         set wishlist(value) {
             let add = mktr.checkAdded(value, this._wishlist); let remove = mktr.checkAdded(this._wishlist, value);
@@ -323,19 +360,16 @@ window.mktr.events = function () {
                 }
             }
 
-            $js_file = time();
-            
-            Config::setValue('js_file', $js_file);
+            $legacyVersion = Config::getValue('js_file');
+            if ($legacyVersion !== null && file_exists(Config::getDir() . 'assets/mktr.' . $legacyVersion . '.js')) {
+                wp_delete_file(Config::getDir() . 'assets/mktr.' . $legacyVersion . '.js');
+            }
 
-            \Mktr\Tracker\FileSystem::setWorkDirectory('assets/');
-            \Mktr\Tracker\FileSystem::writeFile('mktr.' . $js_file . '.js', implode(PHP_EOL, $js));
-
-            /* Pages already in a full-page cache still load the file they were rendered with,
-               so earlier versions stay until such a cache has surely expired. */
-            self::pruneFiles($js_file, self::KEEP_OLD_FILES);
+            if (self::publish(implode(PHP_EOL, $js))) {
+                Config::setValue('js_file', time());
+            }
         } else {
-            /* Tracking was turned off: cached pages must stop tracking too. */
-            self::pruneFiles(null, 0);
+            self::deleteGenerated(Config::getValue('js_file'));
             Config::setValue('js_file', null);
         }
 

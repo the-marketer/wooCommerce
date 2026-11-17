@@ -360,12 +360,13 @@ window.mktr.events = function () {
                 }
             }
 
-            $legacyVersion = Config::getValue('js_file');
-            if ($legacyVersion !== null && file_exists(Config::getDir() . 'assets/mktr.' . $legacyVersion . '.js')) {
-                wp_delete_file(Config::getDir() . 'assets/mktr.' . $legacyVersion . '.js');
-            }
-
+            /* The old file goes only once the new one is written, so a failed write
+               still leaves the pages a script to load. */
             if (self::publish(implode(PHP_EOL, $js))) {
+                $legacyVersion = Config::getValue('js_file');
+                if ($legacyVersion !== null && file_exists(Config::getDir() . 'assets/mktr.' . $legacyVersion . '.js')) {
+                    wp_delete_file(Config::getDir() . 'assets/mktr.' . $legacyVersion . '.js');
+                }
                 Config::setValue('js_file', time());
             }
         } else {

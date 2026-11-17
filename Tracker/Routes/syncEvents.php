@@ -21,6 +21,7 @@ class syncEvents
     const MAX_DELIVERY_ATTEMPTS = 3;
     const DELIVERY_ATTEMPTS = 'mktrDeliveryAttempts';
     const PUSHED_EMAILS = 'mktrPushedEmails';
+    const PUSHED_ORDERS = 'mktrPushedOrders';
 
     public static function maybeHandle()
     {
@@ -90,12 +91,18 @@ class syncEvents
             self::rememberWishlistBaseline();
             $events = loadEvents::execute(false);
 
-            foreach (self::deliverableOrders() as $orderId) {
-                $event = Events::getEvent('__sm__order', $orderId);
-                if ($event !== false) {
+            /* An order already in the browser's dataLayer is only retried on the
+               server; pushing __sm__order again would count it twice. */
+            $pushedOrders = Config::session()->get(self::PUSHED_ORDERS, array());
+            foreach (self::deliverableOrders() as $key => $orderId) {
+                if (!isset($pushedOrders[$key])) {
+                    $event = Events::getEvent('__sm__order', $orderId);
+                    if ($event === false) {
+                        continue;
+                    }
                     $events[] = $event->toArray();
-                    $deliver['orders'][] = $orderId;
                 }
+                $deliver['orders'][] = $key;
             }
 
             $pushed = Config::session()->get(self::PUSHED_EMAILS, array());
@@ -131,6 +138,7 @@ class syncEvents
 
         try {
             self::markEmailsPushed($emailKeys);
+            self::markOrdersPushed($orderIds);
 
             foreach (array_keys(self::deliverableOrders(array_flip($orderIds))) as $orderId) {
                 $retry = self::deliverItem('saveOrder', 'order', $orderId, function () {
@@ -143,11 +151,16 @@ class syncEvents
                     setEmail::execute();
                 }) || $retry;
             }
+        } catch (\Exception $e) {
+            $retry = true;
+            self::logError($e);
         } catch (\Throwable $e) {
+            $retry = true;
             self::logError($e);
         }
 
         self::forgetDeliveredEmails();
+        self::forgetDeliveredOrders();
         self::forgetSettledAttempts();
 
         if ($retry) {
@@ -170,8 +183,13 @@ class syncEvents
 
         Config::session()->set($sessionKey, $item);
 
+        /* A failing item is logged and retried; it must not stop the items after it. */
         try {
             $send();
+        } catch (\Exception $e) {
+            self::logError($e);
+        } catch (\Throwable $e) {
+            self::logError($e);
         } finally {
             $left = Config::session()->get($sessionKey);
             $stillPending = is_array($left) && isset($left[$key]);
@@ -227,6 +245,21 @@ class syncEvents
         $pushed = Config::session()->get(self::PUSHED_EMAILS, array());
 
         Config::session()->set(self::PUSHED_EMAILS, array_intersect_key($pushed, self::pendingEmails()));
+    }
+
+    private static function markOrdersPushed($keys)
+    {
+        $pushed = Config::session()->get(self::PUSHED_ORDERS, array());
+        $known = array_intersect_key(array_fill_keys($keys, true), self::deliverableOrders());
+
+        Config::session()->set(self::PUSHED_ORDERS, $pushed + $known);
+    }
+
+    private static function forgetDeliveredOrders()
+    {
+        $pushed = array_intersect_key(Config::session()->get(self::PUSHED_ORDERS, array()), self::deliverableOrders());
+
+        Config::session()->set(self::PUSHED_ORDERS, empty($pushed) ? null : $pushed);
     }
 
     private static function attemptKey($type, $key)

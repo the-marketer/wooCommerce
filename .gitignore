@@ -5,3 +5,5 @@ Storage/*
 .wp-env.json
 wp-env.json
 assets/mktr.*.js
+assets/mktr.js
+assets/mktr.js.tmp

@@ -101,7 +101,9 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 * Fix: the newsletter opt-in tick is no longer lost when the checkout refreshes, and the checkbox now works on the block checkout.
 * Fix: the opt-in request no longer delays the checkout.
 * Fix: product feed always uses the shop base currency when generated server-side or via cron, instead of converting prices based on the server IP (multi-currency / GeoIP plugins).
-* Fix: product feed sale_price now reflects the single-unit price for Woo Discount Rules (quantity 1), preventing bulk/quantity rules from appearing as a product discount when no sale price is s
+* Fix: product feed sale_price now reflects the single-unit price for Woo Discount Rules (quantity 1), preventing bulk/quantity rules from appearing as a product discount when no sale price is set.
+* Fix: products no longer reach the feed with sale_price 0 when Woo Discount Rules has no rule for them.
+* Fix: XML feeds are served as application/xml.
 
 = 1.5.6 =
 * Update: bulk order status changes.

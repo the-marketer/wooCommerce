@@ -18,7 +18,7 @@ class Valid
     private static $error = null;
 
     const mime = array(
-        'xml' => 'application/xhtml+xml',
+        'xml' => 'application/xml',
         'js' => 'application/javascript',
         'json' => 'application/json',
         'csv' => 'text/csv'

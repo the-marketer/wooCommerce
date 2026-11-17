@@ -52,6 +52,7 @@ class Reviews
             $t = strtotime('-1 year');
         }
 
+        $requestedAt = time();
         $o = Api::send("product_reviews", array(
             't' => $t
         ), false);
@@ -68,6 +69,12 @@ class Reviews
             'skipped_no_date'  => 0,
             'errors'           => 0,
         );
+
+        if ((int) $stats['http'] !== 200) {
+            $stats['errors']++;
+            self::log('Unexpected HTTP status', $stats);
+            return false;
+        }
 
         $body = $o ? $o->getContent() : '';
         $xml = @simplexml_load_string($body, 'SimpleXMLElement', LIBXML_NOCDATA);
@@ -179,8 +186,12 @@ class Reviews
             $stats['inserted']++;
         }
 
-        $data->last_review_sync = time();
-        $data->save();
+        /* The next run starts one day before the cursor, so the cursor only moves
+           when every review was handled; otherwise the same window is asked again. */
+        if ($stats['errors'] === 0) {
+            $data->last_review_sync = $requestedAt;
+            $data->save();
+        }
 
         self::log('Reviews sync finished', $stats);
 

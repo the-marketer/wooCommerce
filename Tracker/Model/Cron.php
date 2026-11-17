@@ -10,6 +10,7 @@
 
 namespace Mktr\Tracker\Model;
 
+use Mktr\Tracker\BaseCurrency;
 use Mktr\Tracker\Config;
 use Mktr\Tracker\Data;
 use Mktr\Tracker\FileSystem;
@@ -44,6 +45,7 @@ class Cron
         if (Config::getStatus() != 0) {
 
             if (Config::getCronFeed() != 0 && $upFeed < time()) {
+                BaseCurrency::apply();
 
                 if ($sitepress !== null) {
                     $langs = $sitepress->get_active_languages();

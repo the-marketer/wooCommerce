@@ -39,6 +39,8 @@ class Front
             
             add_action('woocommerce_loaded', array(self::init(), 'loadModule'));
             add_action('woocommerce_update_order', array(Observer::init(), 'orderUpApi'), 10, 2);
+
+            add_action('wp_loaded', array(\Mktr\Tracker\Routes\syncEvents::class, 'maybeHandle'), 100);
         } else {
             add_action('template_redirect', array(self::init(), 'routeCheck'), -10000);
         }

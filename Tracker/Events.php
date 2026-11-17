@@ -169,9 +169,53 @@ class Events
         return self::$init;
     }
 
-    public static function mktr_data()
+    public static function visitorNeutralData()
     {
         $mktr_data = array(
+            'cache_mode' => 1,
+            'uuid' => null,
+            'clear' => 0,
+            'isWoodMart' => (int) self::$isWoodMart,
+            'push' => array(),
+            'base_url' => Config::getBaseURL(),
+            'js' => array(),
+            'email_capture_checkout' => (string) Config::getValue('email_capture_checkout'),
+            'sync' => (int) self::isNeverCachedPage(),
+            'cookie_path' => COOKIEPATH,
+            'cookie_domain' => COOKIE_DOMAIN ? COOKIE_DOMAIN : ''
+        );
+
+        $orderReceived = function_exists('is_order_received_page') && is_order_received_page();
+
+        foreach (self::actions as $key => $value) {
+            if ($key === 'is_checkout' && $orderReceived) {
+                continue;
+            }
+            if ($key() || $key === 'is_home' && is_front_page()) {
+                $ev = self::getEvent($value);
+                if ($ev !== false) {
+                    $mktr_data['push'][] = $ev->toArray();
+                }
+                break;
+            }
+        }
+
+        return $mktr_data;
+    }
+
+    private static function isNeverCachedPage()
+    {
+        return is_cart() || is_checkout() || is_account_page();
+    }
+
+    public static function mktr_data()
+    {
+        if (Session::cacheMode()) {
+            return self::visitorNeutralData();
+        }
+
+        $mktr_data = array(
+            'cache_mode' => 0,
             'uuid'=> null,
             'clear' => 0,
             'isWoodMart' => (int) self::$isWoodMart,
@@ -249,11 +293,7 @@ class Events
     public function initEvents() {
         if (self::$load_js) {
             self::$load_js = false;
-            $js_file = Config::getValue('js_file');
-            if ( $js_file !== null ) {
-                wp_enqueue_script('mktr-loader', Run::plug_url('/assets/mktr.' . $js_file . '.js'), array(), false, array('strategy' => 'async'));
-                wp_localize_script('mktr-loader', 'mktr_data', self::mktr_data());
-            }
+            self::enqueueLoader();
         }
     }
 
@@ -261,11 +301,16 @@ class Events
     {
         if (self::$load_js) {
             self::$load_js = false;
-            $js_file = Config::getValue('js_file');
-            if ( $js_file !== null ) {
-                wp_enqueue_script('mktr-loader', Run::plug_url('/assets/mktr.' . $js_file . '.js'), array(), false, array('strategy' => 'async'));
-                wp_localize_script('mktr-loader', 'mktr_data', self::mktr_data());
-            }
+            self::enqueueLoader();
+        }
+    }
+
+    private static function enqueueLoader()
+    {
+        $version = Config::getValue('js_file');
+        if ($version !== null) {
+            wp_enqueue_script('mktr-loader', Run::plug_url('/assets/' . \Mktr\Tracker\Routes\refreshJS::FILE), array(), $version, array('strategy' => 'async'));
+            wp_localize_script('mktr-loader', 'mktr_data', self::mktr_data());
         }
     }
 

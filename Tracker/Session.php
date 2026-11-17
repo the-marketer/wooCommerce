@@ -38,20 +38,64 @@ class Session
         return $this;
     }
 
+    private static $uidCookieDeferred = false;
+    private static $syncHintSent = false;
+
+    public static $syncHint = true;
+
+    const UID_COOKIE = '__sm__uid';
+    const SYNC_COOKIE = '__mktr_sync';
+    const UUID_V4 = '/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i';
+    const LEGACY_UID = '/^[A-Za-z0-9-]{8,50}$/';
+
+    public static function cacheMode() {
+        return Config::getCacheMode() === 1;
+    }
+
+    public static function isValidUid($uid) {
+        return is_string($uid) && preg_match(self::cacheMode() ? self::UUID_V4 : self::LEGACY_UID, $uid) === 1;
+    }
+
     public static function getUid() {
         if (self::$uid === null) {
-            if (!isset($_COOKIE['__sm__uid'])) {
-                self::$uid = uniqid();
-                if (!headers_sent()) {
-                    setcookie('__sm__uid', self::$uid, strtotime('+365 days'), COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true);
+            $cookie = isset($_COOKIE[self::UID_COOKIE]) ? sanitize_text_field(wp_unslash($_COOKIE[self::UID_COOKIE])) : '';
+
+            if (self::isValidUid($cookie)) {
+                self::$uid = $cookie;
+            } else {
+                self::$uid = wp_generate_uuid4();
+
+                if (self::cacheMode()) {
+                    self::$uidCookieDeferred = true;
+                } else if (!headers_sent()) {
+                    setcookie(self::UID_COOKIE, self::$uid, strtotime('+365 days'), COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true);
                 } else {
                     self::$saveCookie = true;
                 }
-            } else {
-                self::$uid = sanitize_text_field(wp_unslash($_COOKIE['__sm__uid']));
             }
         }
         return self::$uid;
+    }
+
+    private static function sendDeferredUidCookie() {
+        if (self::$uidCookieDeferred && !headers_sent()) {
+            self::$uidCookieDeferred = false;
+            setcookie(self::UID_COOKIE, self::getUid(), strtotime('+365 days'), COOKIEPATH, COOKIE_DOMAIN, is_ssl(), true);
+        }
+    }
+
+    private static function armSyncHintForQueuedEvent($key, $value) {
+        if (self::$syncHint && !empty($value) && isset(Events::observerGetEvents[$key])) {
+            self::armSyncHint();
+        }
+    }
+
+    public static function armSyncHint() {
+        if (self::$syncHintSent || headers_sent()) {
+            return;
+        }
+        self::$syncHintSent = true;
+        setcookie(self::SYNC_COOKIE, (string) wp_rand(), 0, COOKIEPATH, COOKIE_DOMAIN, is_ssl(), false);
     }
 
     public function __construct() {
@@ -72,6 +116,10 @@ class Session
     }
 
     public static function set($key, $value = null) {
+        if (self::cacheMode()) {
+            self::sendDeferredUidCookie();
+            self::armSyncHintForQueuedEvent($key, $value);
+        }
         if ($value === null) {
             self::init()->remove($key);
         } else {

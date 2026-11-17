@@ -17,6 +17,9 @@ use Mktr\Tracker\Valid;
 
 class Reviews
 {
+    /* Imported reviews are stored as "review"; older plugin versions stored them as plain comments. */
+    const COMMENT_TYPES = array('review', 'comment');
+
     private static $init = null;
 
     private static $map = array();
@@ -119,7 +122,9 @@ class Reviews
 
             $dup = 0;
             if ($reviewId !== '') {
+                /* WooCommerce leaves product reviews out of get_comments() unless the type is asked for. */
                 $dup = (int) get_comments(array(
+                    'type__in'   => self::COMMENT_TYPES,
                     'meta_key'   => 'mktr_review_id',
                     'meta_value' => $reviewId,
                     'count'      => true,
@@ -222,6 +227,7 @@ class Reviews
     private static function hasLegacyCopy($productId, $email, $text)
     {
         $comments = get_comments(array(
+            'type__in'     => self::COMMENT_TYPES,
             'post_id'      => $productId,
             'author_email' => $email,
         ));

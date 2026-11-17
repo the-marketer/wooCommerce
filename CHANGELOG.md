@@ -11,6 +11,11 @@ Fixed the opt-in order meta being written with update_post_meta, which does not 
 The opt-in add_subscriber call is deferred to shutdown, so it no longer adds up to 3 seconds to the checkout.
 Fixed the session order queue keeping every order when a single one failed, an undefined variable in the subscriber path, and a notice for guest orders with no user account.
 Temporary: theMarketer rejects an order with 422 when lastname is empty, so a name with no second part is sent with firstname repeated. To be removed once the API accepts an empty lastname.
+Fix: product feed always uses the shop base currency when generated server-side or via cron, instead of converting prices based on the server IP (multi-currency / GeoIP plugins).
+Fix: product feed sale_price now reflects the single-unit price for Woo Discount Rules (quantity 1), preventing bulk/quantity rules from appearing as a product discount when no sale price is set.
+
+## 1.5.6
+Update: bulk order status changes.
 
 ## 1.5.0
 Remove Composer AutoLoad

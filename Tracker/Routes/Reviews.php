@@ -125,13 +125,8 @@ class Reviews
                     'count'      => true,
                 ));
             }
-            if ($dup === 0) {
-                $legacy = get_comments(array(
-                    'author_email' => $email,
-                    'search'       => $text,
-                    'post_id'      => $productId,
-                ));
-                $dup = empty($legacy) ? 0 : count($legacy);
+            if ($dup === 0 && self::hasLegacyCopy($productId, $email, $text)) {
+                $dup = 1;
             }
 
             if ($dup > 0) {
@@ -173,7 +168,7 @@ class Reviews
                 continue;
             }
 
-            $meta = array('rating' => $rating, 'verified' => 1);
+            $meta = array('rating' => $rating, 'verified' => self::boughtProduct($email, $user ? $user->ID : 0, $productId) ? 1 : 0);
             if ($reviewId !== '') {
                 $meta['mktr_review_id'] = $reviewId;
             }
@@ -209,8 +204,10 @@ class Reviews
         }
 
         /* The next run starts one day before the cursor, so the cursor only moves
-           when every review was handled; otherwise the same window is asked again. */
-        if ($stats['errors'] === 0) {
+           when every review was handled; otherwise the same window is asked again.
+           A manual start_date covers a window of its own choosing, which may skip
+           part of the gap since the last automatic run, so it leaves the cursor alone. */
+        if ($stats['errors'] === 0 && $startParam === null) {
             $data->last_review_sync = $requestedAt;
             $data->save();
         }
@@ -218,6 +215,32 @@ class Reviews
         self::log('Reviews sync finished', $stats);
 
         return $xml;
+    }
+
+    /* Reviews imported before mktr_review_id existed are matched by exact text,
+       never by the partial `search` match, so a different review is not skipped. */
+    private static function hasLegacyCopy($productId, $email, $text)
+    {
+        $comments = get_comments(array(
+            'post_id'      => $productId,
+            'author_email' => $email,
+        ));
+
+        foreach ($comments as $comment) {
+            if (trim($comment->comment_content) === trim($text)
+                && get_comment_meta($comment->comment_ID, 'mktr_review_id', true) === '') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /* The "verified owner" badge is only shown for a customer who bought the product. */
+    private static function boughtProduct($email, $userId, $productId)
+    {
+        return function_exists('wc_customer_bought_product')
+            && wc_customer_bought_product($email, $userId, $productId);
     }
 
     /* Reviews belong to the product; a variation id or variation SKU resolves to its parent. */

@@ -3,7 +3,7 @@
  * @copyright   Copyright (c) 2023 TheMarketer.com
  * @project     TheMarketer.com
  * @website     https://themarketer.com/
- * @author      Alexandru Buzica (EAX LEX S.R.L.) <b.alex@eax.ro>
+ * @author      theMarketer
  * @license     https://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
  * @docs        https://themarketer.com/resources/api
  */
@@ -177,8 +177,8 @@ class Order
                 $nn = explode(' ', str_replace('_', ' ', $em[0]), 2);
             }
 
-            if (!isset($nn[1])) { $nn[1] = ''; }
-            
+            if (!isset($nn[1]) || $nn[1] === '') { $nn[1] = $nn[0]; }
+
             self::$names = array(
                 'firstname' => $nn[0],
                 'lastname' => $nn[1]

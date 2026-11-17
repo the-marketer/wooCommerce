@@ -70,6 +70,9 @@ class Route
         'Cron' => array(
             'key' => 'Required|Key'
         ),
+        'OrderSync' => array(
+            'key' => 'Required|Key'
+        ),
         'refreshJS' => array(
             'key' => 'Required|Key'
         )
@@ -90,6 +93,7 @@ class Route
         'setEmail' => 'js',
         'saveOrder' => 'js',
         'Cron' => 'json',
+        'OrderSync' => 'json',
         'FeedBack' => 'json',
         'refreshJS' => 'json'
     );
@@ -254,6 +258,15 @@ class Route
     public static function Cron()
     {
         return Cron::init();
+    }
+
+    /**
+     * Order delivery cron endpoint, for a real cron job in cPanel / crontab.
+     * Fully qualified because the model class carries the same name.
+     */
+    public static function OrderSync()
+    {
+        return \Mktr\Tracker\Routes\OrderSync::init();
     }
 
     public static function Brands()

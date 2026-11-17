@@ -1,3 +1,7 @@
 Storage/*
 !.gitkeep
 .DS_Store
+.idea/
+.wp-env.json
+wp-env.json
+assets/mktr.*.js

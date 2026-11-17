@@ -3,7 +3,7 @@
  * @copyright   Copyright (c) 2023 TheMarketer.com
  * @project     TheMarketer.com
  * @website     https://themarketer.com/
- * @author      Alexandru Buzica (EAX LEX S.R.L.) <b.alex@eax.ro>
+ * @author      theMarketer
  * @license     https://opensource.org/licenses/osl-3.0.php - Open Software License (OSL 3.0)
  * @docs        https://themarketer.com/resources/api
  */
@@ -12,6 +12,9 @@ namespace Mktr\Tracker;
 
 class Run
 {
+    const ORDER_SYNC_CRON_HOOK = 'MKTR_ORDER_SYNC_CRON';
+    const ORDER_SYNC_CRON_SCHEDULE = 'mktr_order_sync_every_five_minutes';
+
     private static $add = null;
     private static $ajax = null;
     private static $init = null;
@@ -73,6 +76,9 @@ class Run
 	    add_action( 'deactivate_' . MKTR_BASE, [$this, 'unInstall']);
 
         add_action( 'init', array($this, 'addRoute'), 0 );
+        add_filter('cron_schedules', array($this, 'addOrderSyncCronSchedule'));
+        add_action('init', array($this, 'scheduleOrderSyncCron'));
+        add_action(self::ORDER_SYNC_CRON_HOOK, array($this, 'orderSyncCronAction'));
 
         add_filter( 'gform_after_submission', array($this, 'gform_observer'), 10, 2 );
         
@@ -150,6 +156,16 @@ class Run
         // add_action('woocommerce_paypal_payments_before_capture_order', function ($order){ $order->status()->is(\WooCommerce\PayPalCommerce\ApiClient\Entity\OrderStatus::COMPLETED) });
         
         add_action('MKTR_CRON', array($this, "cronAction"));
+
+        /* Outside the is_admin() split above: orders are also created by gateway
+           webhooks, the Store API, the admin and WP-CLI, where the tracker never runs. */
+        add_action('woocommerce_checkout_order_processed', array($this, 'orderSyncSchedule'), 20, 1);
+        add_action('woocommerce_store_api_checkout_order_processed', array($this, 'orderSyncScheduleOrder'), 20, 1);
+        add_action('woocommerce_new_order', array($this, 'orderSyncSchedule'), 20, 1);
+        add_action('woocommerce_payment_complete', array($this, 'orderSyncSchedule'), 20, 1);
+        /* Catches orders that were still empty when created, typically from the admin. */
+        add_action('woocommerce_order_status_changed', array($this, 'orderSyncSchedule'), 20, 1);
+
         add_action('template_redirect', array($this, 'mktr_auto_add_to_cart_checkout'));
         add_action('template_redirect', array($this, 'mktr_auto_apply_discount_code'));
         add_action('woocommerce_cart_emptied', array($this, 'remove_all_coupons'));
@@ -464,8 +480,46 @@ class Run
         \Mktr\Tracker\Model\Cron::cronAction();
     }
 
+    public function orderSyncCronAction() {
+        \Mktr\Tracker\Model\OrderSync::retry();
+    }
+
+    public function addOrderSyncCronSchedule($schedules) {
+        if (!isset($schedules[self::ORDER_SYNC_CRON_SCHEDULE])) {
+            $schedules[self::ORDER_SYNC_CRON_SCHEDULE] = array(
+                'interval' => 5 * MINUTE_IN_SECONDS,
+                'display' => 'Every five minutes'
+            );
+        }
+
+        return $schedules;
+    }
+
+    public function scheduleOrderSyncCron() {
+        if (!\Mktr\Tracker\Model\OrderSync::isEnabled()) {
+            \wp_clear_scheduled_hook(self::ORDER_SYNC_CRON_HOOK);
+            return;
+        }
+
+        if (!\wp_next_scheduled(self::ORDER_SYNC_CRON_HOOK)) {
+            \wp_schedule_event(time() + (5 * MINUTE_IN_SECONDS), self::ORDER_SYNC_CRON_SCHEDULE, self::ORDER_SYNC_CRON_HOOK);
+        }
+    }
+
+    public function orderSyncSchedule($orderId = null) {
+        \Mktr\Tracker\Model\OrderSync::schedule($orderId);
+    }
+
+    public function orderSyncScheduleOrder($order = null) {
+        if (is_object($order) && method_exists($order, 'get_id')) {
+            \Mktr\Tracker\Model\OrderSync::schedule($order->get_id());
+        }
+    }
+
     public function addRoute() {
         if (MKTR_INSTALL) { self::Update(); }
+
+        \Mktr\Tracker\Model\OrderSync::checkDb();
 
         add_rewrite_tag('%'.Config::$name.'%', '([^&]+)');
 
@@ -526,6 +580,7 @@ class Run
 
     public function Install() {
         Session::up();
+        \Mktr\Tracker\Model\OrderSync::up();
         Config::setValue("redirect", 1);
         Config::setValue("onboarding", 0);
         Config::setValue("rated_install", time() + 1209600 );
@@ -545,6 +600,9 @@ class Run
     public function unInstall() {
         Session::down();
         \wp_clear_scheduled_hook('MKTR_CRON');
+        \wp_clear_scheduled_hook(self::ORDER_SYNC_CRON_HOOK);
+
+        \Mktr\Tracker\Model\OrderSync::down();
 
         \wp_remote_post('https://connector.themarketer.com/feedback/install', array(
             'method'      => 'POST',

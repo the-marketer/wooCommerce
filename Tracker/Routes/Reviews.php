@@ -97,14 +97,14 @@ class Reviews
             $email    = (string) $value->review_email;
             $text     = (string) $value->review_text;
 
-            $productId = (int) $value->product_id;
-            if (get_post_type($productId) !== 'product') {
+            $productId = self::reviewableProduct((int) $value->product_id);
+            if ($productId === 0) {
                 $bySku = function_exists('wc_get_product_id_by_sku')
-                    ? wc_get_product_id_by_sku((string) $value->product_sku)
+                    ? self::reviewableProduct((int) wc_get_product_id_by_sku((string) $value->product_sku))
                     : 0;
 
-                if ($bySku && get_post_type($bySku) === 'product') {
-                    $productId = (int) $bySku;
+                if ($bySku !== 0) {
+                    $productId = $bySku;
                 } else {
                     $stats['skipped_product']++;
                     self::log('Product not found', array(
@@ -173,10 +173,32 @@ class Reviews
                 continue;
             }
 
-            update_comment_meta($comment_id, 'rating', $rating);
-            update_comment_meta($comment_id, 'verified', 1);
+            $meta = array('rating' => $rating, 'verified' => 1);
             if ($reviewId !== '') {
-                update_comment_meta($comment_id, 'mktr_review_id', $reviewId);
+                $meta['mktr_review_id'] = $reviewId;
+            }
+
+            /* update_comment_meta() also returns false when the value is already there,
+               so the stored values are read back instead. */
+            $metaSaved = true;
+            foreach ($meta as $metaKey => $metaValue) {
+                update_comment_meta($comment_id, $metaKey, $metaValue);
+                if ((string) get_comment_meta($comment_id, $metaKey, true) !== (string) $metaValue) {
+                    $metaSaved = false;
+                }
+            }
+
+            /* A review left without its rating or external id would be skipped as a
+               duplicate on the next run and never repaired, so it is removed and retried. */
+            if (!$metaSaved) {
+                wp_delete_comment($comment_id, true);
+                $stats['errors']++;
+                self::log('update_comment_meta failed', array(
+                    'review_id'  => $reviewId,
+                    'product_id' => $productId,
+                    'email'      => $email,
+                ));
+                continue;
             }
 
             if (class_exists('\WC_Comments')) {
@@ -196,6 +218,23 @@ class Reviews
         self::log('Reviews sync finished', $stats);
 
         return $xml;
+    }
+
+    /* Reviews belong to the product; a variation id or variation SKU resolves to its parent. */
+    private static function reviewableProduct($id)
+    {
+        if ($id <= 0) {
+            return 0;
+        }
+
+        $type = get_post_type($id);
+
+        if ($type === 'product_variation') {
+            $id = (int) wp_get_post_parent_id($id);
+            $type = $id > 0 ? get_post_type($id) : false;
+        }
+
+        return $type === 'product' ? $id : 0;
     }
 
     private static function log($message, $context = array())

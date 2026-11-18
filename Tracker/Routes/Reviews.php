@@ -61,12 +61,22 @@ class Reviews
         } elseif ($lastSync > 0) {
             $t = $lastSync - DAY_IN_SECONDS;
         } else {
-            /* First run after the update: older reviews are imported with a manual start_date. */
-            $t = strtotime('-1 day');
+            /* First run after the update: older reviews are imported with a manual start_date.
+               The start is saved before the request and reused until the cursor moves, so a
+               review that fails on the first run is still inside the window on the next one. */
+            $t = (int) $data->review_first_from;
+            if ($t <= 0) {
+                $t = strtotime('-1 day');
+                $data->review_first_from = $t;
+                $data->save();
+            }
         }
 
         $failures = is_array($data->review_failures) ? $data->review_failures : array();
         $failedNow = array();
+
+        /* Reviews whose comment was inserted but could neither get its meta nor be deleted. */
+        $incomplete = is_array($data->review_incomplete) ? $data->review_incomplete : array();
 
         $requestedAt = time();
         $o = Api::send("product_reviews", array(
@@ -83,6 +93,7 @@ class Reviews
             'skipped_exists'   => 0,
             'skipped_product'  => 0,
             'skipped_no_date'  => 0,
+            'repaired'         => 0,
             'errors'           => 0,
             'given_up'         => 0,
         );
@@ -136,6 +147,40 @@ class Reviews
                 }
             }
 
+            $failKey = $reviewId !== '' ? $reviewId : md5($productId . '|' . $email . '|' . $text);
+
+            /* theMarketer rates out of 10. A missing rating stays 0, which WooCommerce
+               leaves out of the product average, instead of counting as one star. */
+            $rawRating = (int) $value->rating;
+            $rating = $rawRating > 0 ? max(1, min(5, (int) round($rawRating / 2))) : 0;
+
+            $user = get_user_by('email', $email);
+
+            /* A comment left without its meta on an earlier run is repaired before the
+               duplicate check, which would otherwise take it for an old import. Only the
+               meta is written, so a review the merchant moved to trash or spam stays there. */
+            if (isset($incomplete[$failKey])) {
+                $leftover = get_comment((int) $incomplete[$failKey]);
+
+                if ($leftover) {
+                    if (self::saveMeta($leftover->comment_ID, self::buildMeta($rating, $reviewId, $email, $user, $productId))) {
+                        unset($incomplete[$failKey]);
+                        self::clearProductCache($productId);
+                        $stats['repaired']++;
+                    } else {
+                        self::failed($stats, $failures, $failedNow, $failKey);
+                        self::log('update_comment_meta failed on repair', array(
+                            'review_id'  => $reviewId,
+                            'comment_id' => $leftover->comment_ID,
+                        ));
+                    }
+                    continue;
+                }
+
+                /* The comment is gone, so the review is imported again. */
+                unset($incomplete[$failKey]);
+            }
+
             $dup = 0;
             if ($reviewId !== '') {
                 /* WooCommerce leaves product reviews out of get_comments() unless the type is asked for. */
@@ -156,13 +201,6 @@ class Reviews
                 continue;
             }
 
-            /* theMarketer rates out of 10. A missing rating stays 0, which WooCommerce
-               leaves out of the product average, instead of counting as one star. */
-            $rawRating = (int) $value->rating;
-            $rating = $rawRating > 0 ? max(1, min(5, (int) round($rawRating / 2))) : 0;
-
-            $failKey = $reviewId !== '' ? $reviewId : md5($productId . '|' . $email . '|' . $text);
-
             $add = array(
                 'comment_post_ID'      => $productId,
                 'comment_author'       => (string) $value->review_author,
@@ -177,7 +215,6 @@ class Reviews
                 'comment_approved'     => 1,
             );
 
-            $user = get_user_by('email', $email);
             if ($user) {
                 $add['user_id'] = $user->ID;
             }
@@ -194,37 +231,24 @@ class Reviews
                 continue;
             }
 
-            $meta = array('rating' => $rating, 'verified' => self::boughtProduct($email, $user ? $user->ID : 0, $productId) ? 1 : 0);
-            if ($reviewId !== '') {
-                $meta['mktr_review_id'] = $reviewId;
-            }
-
-            /* update_comment_meta() also returns false when the value is already there,
-               so the stored values are read back instead. */
-            $metaSaved = true;
-            foreach ($meta as $metaKey => $metaValue) {
-                update_comment_meta($comment_id, $metaKey, $metaValue);
-                if ((string) get_comment_meta($comment_id, $metaKey, true) !== (string) $metaValue) {
-                    $metaSaved = false;
-                }
-            }
-
             /* A review left without its rating or external id would be skipped as a
-               duplicate on the next run and never repaired, so it is removed and retried. */
-            if (!$metaSaved) {
-                wp_delete_comment($comment_id, true);
+               duplicate on the next run, so it is removed and retried. When the delete
+               fails too, the comment id is kept and the meta is repaired on the next run. */
+            if (!self::saveMeta($comment_id, self::buildMeta($rating, $reviewId, $email, $user, $productId))) {
+                if (!wp_delete_comment($comment_id, true)) {
+                    $incomplete[$failKey] = (int) $comment_id;
+                }
                 self::failed($stats, $failures, $failedNow, $failKey);
                 self::log('update_comment_meta failed', array(
                     'review_id'  => $reviewId,
                     'product_id' => $productId,
                     'email'      => $email,
+                    'kept'       => isset($incomplete[$failKey]),
                 ));
                 continue;
             }
 
-            if (class_exists('\WC_Comments')) {
-                \WC_Comments::clear_transients($productId);
-            }
+            self::clearProductCache($productId);
 
             $stats['inserted']++;
         }
@@ -232,6 +256,7 @@ class Reviews
         /* Only reviews that failed in this window are kept, so the list does not grow.
            A manual run adds its failures without dropping the automatic run's counts. */
         $data->review_failures = $startParam === null ? $failedNow : array_replace($failures, $failedNow);
+        $data->review_incomplete = $incomplete;
 
         /* The next run starts one day before the cursor, so the cursor only moves
            when every review was handled; otherwise the same window is asked again.
@@ -239,6 +264,7 @@ class Reviews
            part of the gap since the last automatic run, so it leaves the cursor alone. */
         if ($stats['errors'] === 0 && $startParam === null) {
             $data->last_review_sync = $requestedAt;
+            Data::del('review_first_from');
         }
 
         self::log('Reviews sync finished', $stats);
@@ -259,6 +285,39 @@ class Reviews
             $stats['given_up']++;
         } else {
             $stats['errors']++;
+        }
+    }
+
+    private static function buildMeta($rating, $reviewId, $email, $user, $productId)
+    {
+        $meta = array(
+            'rating'   => $rating,
+            'verified' => self::boughtProduct($email, $user ? $user->ID : 0, $productId) ? 1 : 0,
+        );
+        if ($reviewId !== '') {
+            $meta['mktr_review_id'] = $reviewId;
+        }
+        return $meta;
+    }
+
+    /* update_comment_meta() also returns false when the value is already there,
+       so the stored values are read back instead. */
+    private static function saveMeta($commentId, $meta)
+    {
+        $saved = true;
+        foreach ($meta as $metaKey => $metaValue) {
+            update_comment_meta($commentId, $metaKey, $metaValue);
+            if ((string) get_comment_meta($commentId, $metaKey, true) !== (string) $metaValue) {
+                $saved = false;
+            }
+        }
+        return $saved;
+    }
+
+    private static function clearProductCache($productId)
+    {
+        if (class_exists('\WC_Comments')) {
+            \WC_Comments::clear_transients($productId);
         }
     }
 

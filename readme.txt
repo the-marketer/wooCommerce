@@ -115,6 +115,8 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 * Fix: a review without a rating no longer counts as one star.
 * Fix: a review that keeps failing no longer stops the review sync; the last run's result shows in the Cron response.
 * Fix: feeds generated server-side keep the shop's state for per-state taxes.
+* Fix: a review that fails on the first sync is tried again on the next run.
+* Fix: a review saved without its rating is repaired on the next run.
 
 = 1.5.6 =
 * Update: bulk order status changes.

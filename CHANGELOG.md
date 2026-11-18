@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project are documented in this file.
 ## 1.5.7
+New setting: Cache compatible mode, under Extra Settings, off by default. When it is on, every visitor gets the same page HTML and no Set-Cookie header, so the pages can be cached by page caches such as LiteSpeed Cache, FlyingPress or Cloudflare. The visitor id is created in the browser, and cart, wishlist, order and email events are fetched with a POST request only when there is something to send. A plain page view makes no request to the shop.
+Visitor ids are now UUID v4 in both modes.
+The tracking script is served from a stable URL, assets/mktr.js?ver=<timestamp>, and is written in one step, so a cached page never points to a missing file. The script is removed when tracking is turned off.
 Orders are sent to theMarketer server-side, from woocommerce_checkout_order_processed, the Store API, woocommerce_new_order, woocommerce_payment_complete and woocommerce_order_status_changed, so an order no longer depends on the customer reaching the thank-you page. Gateway webhooks, admin and WP-CLI orders are covered as well.
 Delivery state is tracked in a new table, {prefix}mktr_order_sync. An order is sent once: a status change afterwards carries no new save_order payload, since order_status travels on update_order_status.
 Undelivered orders are retried hourly on the MKTR_ORDER_SYNC schedule, and through /mktr/api/OrderSync/?key=<REST key> for shops running a real cron. Retries are ordered least-recently-tried first, so an order that is not yet complete cannot hold up the rest of the queue. Entries expire after 7 days, delivered ones are remembered for 30.

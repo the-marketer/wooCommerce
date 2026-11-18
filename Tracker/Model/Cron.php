@@ -10,6 +10,7 @@
 
 namespace Mktr\Tracker\Model;
 
+use Mktr\Tracker\BaseCurrency;
 use Mktr\Tracker\Config;
 use Mktr\Tracker\Data;
 use Mktr\Tracker\FileSystem;
@@ -44,23 +45,29 @@ class Cron
         if (Config::getStatus() != 0) {
 
             if (Config::getCronFeed() != 0 && $upFeed < time()) {
+                BaseCurrency::apply();
 
-                if ($sitepress !== null) {
-                    $langs = $sitepress->get_active_languages();
-                } else {
-                    $langs = ['noLang' => 'lang'];
-                }
-                
-                foreach ($langs as $key => $value) {
-                    if ($key !== 'noLang') { $sitepress->switch_lang($key); }
-                    Valid::setParam('mime-type','xml');
-                    $run = Feed::init();
-                    
-                    Valid::Output($run->get('fileName'), array( $run->get('secondName') => $run->execute()), null, true);
-    
-                    $fileName = $run->get('fileName') . "." . ( $key !== 'noLang' ? $key . '.' : '' ) . Valid::getParam('mime-type','xml');
-                    
-                    FileSystem::writeFile($fileName, Valid::getOutPut());
+                try {
+                    if ($sitepress !== null) {
+                        $langs = $sitepress->get_active_languages();
+                    } else {
+                        $langs = ['noLang' => 'lang'];
+                    }
+
+                    foreach ($langs as $key => $value) {
+                        if ($key !== 'noLang') { $sitepress->switch_lang($key); }
+                        Valid::setParam('mime-type','xml');
+                        $run = Feed::init();
+
+                        Valid::Output($run->get('fileName'), array( $run->get('secondName') => $run->execute()), null, true);
+
+                        $fileName = $run->get('fileName') . "." . ( $key !== 'noLang' ? $key . '.' : '' ) . Valid::getParam('mime-type','xml');
+
+                        FileSystem::writeFile($fileName, Valid::getOutPut());
+                    }
+                } finally {
+                    /* Other WP-Cron tasks run later in this request with the shop's own currency. */
+                    BaseCurrency::restore();
                 }
 
                 $data->update_feed = strtotime("+" . Config::getUpdateFeed() . " hour");

@@ -1,12 +1,12 @@
 === theMarketer - Email marketing, Newsletters, Automation & Loyalty for Woocommerce ===
 Contributors: themarketer2023
 Tags: Email marketing, Loyalty Program, Newsletter, Marketing automation, Email workflows
-Requires at least: 4.6
-Tested up to: 6.8
-Requires PHP: 5.6
+Requires at least: 4.7
+Tested up to: 7.1
+Requires PHP: 7.1
 Stable tag: 1.5.7
 Requires WooCommerce at least: 4.0.0
-Tested WooCommerce up to: 9.6.1
+Tested WooCommerce up to: 11.3.0
 License: GNU General Public License v2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -90,16 +90,34 @@ Click the support icon in the lower right corner of your dashboard when logged i
 
 Email us at iam[at]themarketer.com. We’re always here to help!
 
+= Does the plugin work with a page cache? =
+
+Yes. Turn on Cache compatible mode under Extra Settings. The plugin then sends the same page to every visitor and sets no cookies from the server, so LiteSpeed Cache, FlyingPress, Cloudflare and other page caches can store your pages.
+
 = How can I report security bugs? =
 
 You can report security bugs through the Patchstack Vulnerability Disclosure Program. The Patchstack team helps validate, triage and handle any security vulnerabilities. [Report a security vulnerability.]( https://patchstack.com/database/vdp/546bd576-2c1e-4367-85cb-368663d4f85f )
 
 == Changelog ==
 = 1.5.7 =
+* New: Cache compatible mode, under Extra Settings. When it is on, the plugin no longer sets cookies from the server on page views, so pages can be cached by LiteSpeed Cache, FlyingPress, Cloudflare and other page caches.
+* The tracking script now has a stable URL, so cached pages keep working after the script is regenerated.
 * Orders are now sent to theMarketer from the server, so an order still arrives when the customer does not return from the payment page.
 * Failed sends are retried on an hourly schedule instead of being lost.
 * Fix: the newsletter opt-in tick is no longer lost when the checkout refreshes, and the checkbox now works on the block checkout.
 * Fix: the opt-in request no longer delays the checkout.
+* Fix: product feed always uses the shop base currency when generated server-side or via cron, instead of converting prices based on the server IP (multi-currency / GeoIP plugins).
+* Fix: product feed sale_price now reflects the single-unit price for Woo Discount Rules (quantity 1), preventing bulk/quantity rules from appearing as a product discount when no sale price is set.
+* Fix: products no longer reach the feed with sale_price 0 when Woo Discount Rules has no rule for them.
+* Fix: XML feeds are served as application/xml.
+* Fix: imported reviews are kept in sync with a cursor; the first run starts one day back and older reviews are imported with start_date.
+* Fix: imported reviews are attached to the parent product, marked verified only for buyers, and reviews in trash or spam are not imported again.
+* Fix: a review without a rating no longer counts as one star.
+* Fix: a review that keeps failing no longer stops the review sync; the last run's result shows in the Cron response.
+* Fix: feeds generated server-side keep the shop's state for per-state taxes.
+* Fix: a review that fails on the first sync is tried again on the next run.
+* Fix: a review saved without its rating is repaired on the next run.
+* Requires PHP 7.1 and WordPress 4.7.
 
 = 1.5.6 =
 * Update: bulk order status changes.

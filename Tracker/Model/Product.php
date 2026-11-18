@@ -436,7 +436,12 @@ class Product
         $out = 0;
         
         if (self::checkWooDiscountRules()) {
-            $out = apply_filters('advanced_woo_discount_rules_get_product_discount_price', ($check === true || $p > 0 ? $p : self::getRegularPrice(true)), self::$asset, 2);
+            $base = ($check === true || $p > 0 ? $p : self::getRegularPrice(true));
+            $out = apply_filters('advanced_woo_discount_rules_get_product_discount_price', $base, self::$asset, 1);
+            // Woo Discount Rules returns false when no rule applies.
+            if (!is_numeric($out) || $out <= 0) {
+                $out = $base;
+            }
         } else if (self::cOverWrite()) {
             $out = ($check === true || $p > 0 ? $p : self::getRegularPrice(true));
         } else {
@@ -740,7 +745,10 @@ class Product
                     $val['old_display_price'] = $val['display_price'];
 
                     if (self::checkWooDiscountRules()) {
-                        $val['display_price'] = apply_filters('advanced_woo_discount_rules_get_product_discount_price', $val['display_price'], $val['variation_id'], 2);
+                        $wdrPrice = apply_filters('advanced_woo_discount_rules_get_product_discount_price', $val['display_price'], $val['variation_id'], 1);
+                        if (is_numeric($wdrPrice) && $wdrPrice > 0) {
+                            $val['display_price'] = $wdrPrice;
+                        }
                     }
 
                     if (self::checkBooster()) {

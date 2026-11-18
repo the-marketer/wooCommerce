@@ -3,9 +3,9 @@
  * Plugin Name:             theMarketer - Email marketing, Newsletters, Automation & Loyalty for Woocommerce
  * Plugin URI:              https://themarketer.com/integrations/woocommerce
  * Description:             Automate and transform the way you communicate with WooCommerce customers and cultivate lasting loyalty using your store’s real-time data.
- * Version:                 1.5.6
- * Requires at least:       4.6
- * Requires PHP:            5.6
+ * Version:                 1.5.7
+ * Requires at least:       4.7
+ * Requires PHP:            7.1
  * Requires Plugins: woocommerce
  * Author:                  themarketer.com
  * Author URI:              https://themarketer.com
@@ -13,7 +13,7 @@
  * License: GNU General Public License v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  * WC requires at least:    4.0.0
- * WC tested up to:         8.4.0
+ * WC tested up to:         11.3.0
  *
  * @package mktr
  */
@@ -53,7 +53,7 @@ if (!defined('MKTR_MAILPOET_SEGMENT')) {
 }
 
 if (!defined('MKTR_VERSION')) {
-    define('MKTR_VERSION', 'v1.5.6');
+    define('MKTR_VERSION', 'v1.5.7');
 }
 
 spl_autoload_register(function ($class) {

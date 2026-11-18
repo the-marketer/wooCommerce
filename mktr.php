@@ -4,8 +4,8 @@
  * Plugin URI:              https://themarketer.com/integrations/woocommerce
  * Description:             Automate and transform the way you communicate with WooCommerce customers and cultivate lasting loyalty using your store’s real-time data.
  * Version:                 1.5.7
- * Requires at least:       4.6
- * Requires PHP:            5.6
+ * Requires at least:       4.7
+ * Requires PHP:            7.1
  * Requires Plugins: woocommerce
  * Author:                  themarketer.com
  * Author URI:              https://themarketer.com

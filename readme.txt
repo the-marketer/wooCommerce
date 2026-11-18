@@ -1,9 +1,9 @@
 === theMarketer - Email marketing, Newsletters, Automation & Loyalty for Woocommerce ===
 Contributors: themarketer2023
 Tags: Email marketing, Loyalty Program, Newsletter, Marketing automation, Email workflows
-Requires at least: 4.6
+Requires at least: 4.7
 Tested up to: 7.1
-Requires PHP: 5.6
+Requires PHP: 7.1
 Stable tag: 1.5.7
 Requires WooCommerce at least: 4.0.0
 Tested WooCommerce up to: 11.3.0
@@ -117,6 +117,7 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 * Fix: feeds generated server-side keep the shop's state for per-state taxes.
 * Fix: a review that fails on the first sync is tried again on the next run.
 * Fix: a review saved without its rating is repaired on the next run.
+* Requires PHP 7.1 and WordPress 4.7.
 
 = 1.5.6 =
 * Update: bulk order status changes.

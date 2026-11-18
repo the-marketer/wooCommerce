@@ -28,6 +28,7 @@ Fix: the product_reviews request has a 30 second timeout instead of 3.
 Fix: feeds generated server-side keep the shop's state (for example US:CA) in the default customer location, so per-state taxes still apply.
 Fix: the first review sync after the update saves the start of its window and reuses it until the sync succeeds, so a review that fails is asked for again on the next run.
 Fix: a review saved without its rating or id that could not be removed is repaired on the next run, instead of being skipped as a duplicate.
+Requires PHP 7.1 and WordPress 4.7. The XML feeds already needed PHP 7.1, and the visitor id uses wp_generate_uuid4(), added in WordPress 4.7.
 
 ## 1.5.6
 Update: bulk order status changes.

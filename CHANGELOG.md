@@ -30,6 +30,16 @@ Fix: feeds generated server-side keep the shop's state (for example US:CA) in th
 ## 1.5.6
 Update: bulk order status changes.
 
+## 1.5.5
+Improved removed subscriber implementation.
+
+## 1.5.4
+Add subscription checkbox on checkout page.
+Add email capture feature for checkout page.
+
+## 1.5.3
+Support for geolocation with WPML Multilingual & Multicurrency for WooCommerce.
+
 ## 1.5.0
 Remove Composer AutoLoad
 

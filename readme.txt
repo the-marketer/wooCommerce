@@ -2,11 +2,11 @@
 Contributors: themarketer2023
 Tags: Email marketing, Loyalty Program, Newsletter, Marketing automation, Email workflows
 Requires at least: 4.6
-Tested up to: 6.8
+Tested up to: 7.1
 Requires PHP: 5.6
 Stable tag: 1.5.7
 Requires WooCommerce at least: 4.0.0
-Tested WooCommerce up to: 9.6.1
+Tested WooCommerce up to: 11.3.0
 License: GNU General Public License v2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 

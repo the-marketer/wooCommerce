@@ -20,6 +20,12 @@ class Reviews
     /* Imported reviews are stored as "review"; older plugin versions stored them as plain comments. */
     const COMMENT_TYPES = array('review', 'comment');
 
+    /* Seconds allowed for the product_reviews call; the default 3 is too short for a long window. */
+    const API_TIMEOUT = 30;
+
+    /* A review that keeps failing stops holding the cursor after this many attempts. */
+    const MAX_ATTEMPTS = 3;
+
     private static $init = null;
 
     private static $map = array();
@@ -49,16 +55,23 @@ class Reviews
 
         if ($startParam !== null) {
             $t = strtotime($startParam);
+            if ($t === false) {
+                return array('status' => 'Incorrect Start Date start_date - ' . $startParam);
+            }
         } elseif ($lastSync > 0) {
             $t = $lastSync - DAY_IN_SECONDS;
         } else {
-            $t = strtotime('-1 year');
+            /* First run after the update: older reviews are imported with a manual start_date. */
+            $t = strtotime('-1 day');
         }
+
+        $failures = is_array($data->review_failures) ? $data->review_failures : array();
+        $failedNow = array();
 
         $requestedAt = time();
         $o = Api::send("product_reviews", array(
             't' => $t
-        ), false);
+        ), false, self::API_TIMEOUT);
 
         $stats = array(
             'url'              => Api::getUrl(),
@@ -71,11 +84,13 @@ class Reviews
             'skipped_product'  => 0,
             'skipped_no_date'  => 0,
             'errors'           => 0,
+            'given_up'         => 0,
         );
 
         if ((int) $stats['http'] !== 200) {
             $stats['errors']++;
             self::log('Unexpected HTTP status', $stats);
+            self::saveStats($data, $stats);
             return false;
         }
 
@@ -85,6 +100,7 @@ class Reviews
         if ($xml === false) {
             $stats['errors']++;
             self::log('XML parse failed', $stats);
+            self::saveStats($data, $stats);
             return false;
         }
 
@@ -127,6 +143,7 @@ class Reviews
                     'type__in'   => self::COMMENT_TYPES,
                     'meta_key'   => 'mktr_review_id',
                     'meta_value' => $reviewId,
+                    'status'     => 'any',
                     'count'      => true,
                 ));
             }
@@ -139,8 +156,12 @@ class Reviews
                 continue;
             }
 
-            $rating = (int) round((int) $value->rating / 2);
-            $rating = max(1, min(5, $rating));
+            /* theMarketer rates out of 10. A missing rating stays 0, which WooCommerce
+               leaves out of the product average, instead of counting as one star. */
+            $rawRating = (int) $value->rating;
+            $rating = $rawRating > 0 ? max(1, min(5, (int) round($rawRating / 2))) : 0;
+
+            $failKey = $reviewId !== '' ? $reviewId : md5($productId . '|' . $email . '|' . $text);
 
             $add = array(
                 'comment_post_ID'      => $productId,
@@ -164,7 +185,7 @@ class Reviews
             $comment_id = wp_insert_comment($add);
 
             if (!$comment_id) {
-                $stats['errors']++;
+                self::failed($stats, $failures, $failedNow, $failKey);
                 self::log('wp_insert_comment failed', array(
                     'review_id'  => $reviewId,
                     'product_id' => $productId,
@@ -192,7 +213,7 @@ class Reviews
                duplicate on the next run and never repaired, so it is removed and retried. */
             if (!$metaSaved) {
                 wp_delete_comment($comment_id, true);
-                $stats['errors']++;
+                self::failed($stats, $failures, $failedNow, $failKey);
                 self::log('update_comment_meta failed', array(
                     'review_id'  => $reviewId,
                     'product_id' => $productId,
@@ -208,18 +229,46 @@ class Reviews
             $stats['inserted']++;
         }
 
+        /* Only reviews that failed in this window are kept, so the list does not grow.
+           A manual run adds its failures without dropping the automatic run's counts. */
+        $data->review_failures = $startParam === null ? $failedNow : array_replace($failures, $failedNow);
+
         /* The next run starts one day before the cursor, so the cursor only moves
            when every review was handled; otherwise the same window is asked again.
            A manual start_date covers a window of its own choosing, which may skip
            part of the gap since the last automatic run, so it leaves the cursor alone. */
         if ($stats['errors'] === 0 && $startParam === null) {
             $data->last_review_sync = $requestedAt;
-            $data->save();
         }
 
         self::log('Reviews sync finished', $stats);
+        self::saveStats($data, $stats);
 
         return $xml;
+    }
+
+    /* Counts a failed review. After MAX_ATTEMPTS it no longer holds the cursor, so one
+       review the shop cannot store (for example an emoji on a utf8 table) does not stop
+       the sync; it is still tried again while it stays inside the requested window. */
+    private static function failed(&$stats, $failures, &$failedNow, $key)
+    {
+        $attempts = (isset($failures[$key]) ? (int) $failures[$key] : 0) + 1;
+        $failedNow[$key] = $attempts;
+
+        if ($attempts >= self::MAX_ATTEMPTS) {
+            $stats['given_up']++;
+        } else {
+            $stats['errors']++;
+        }
+    }
+
+    /* The last run's result is kept in Data, so it shows in the Cron route response
+       without WP_DEBUG. */
+    private static function saveStats($data, $stats)
+    {
+        $stats['finished_at'] = gmdate('Y-m-d H:i:s');
+        $data->last_review_stats = $stats;
+        $data->save();
     }
 
     /* Reviews imported before mktr_review_id existed are matched by exact text,
@@ -230,6 +279,7 @@ class Reviews
             'type__in'     => self::COMMENT_TYPES,
             'post_id'      => $productId,
             'author_email' => $email,
+            'status'       => 'any',
         ));
 
         foreach ($comments as $comment) {

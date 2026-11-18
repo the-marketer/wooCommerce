@@ -37,9 +37,9 @@ class Api
     private static $exec = null;
     private static $requestType = null;
     /** @noinspection PhpUnused */
-    public static function send($name, $data = [], $post = true)
+    public static function send($name, $data = [], $post = true, $timeout = null)
     {
-        return self::REST(self::$mURL . $name, $data, $post);
+        return self::REST(self::$mURL . $name, $data, $post, $timeout);
     }
 
     /** @noinspection PhpUnused */
@@ -83,7 +83,8 @@ class Api
         return wp_remote_retrieve_body(self::$exec);
     }
 
-    public static function REST($url, $data = [], $post = true)
+    /* $timeout overrides the default for this call only. */
+    public static function REST($url, $data = [], $post = true, $timeout = null)
     {
         try {
             if (empty(Config::getRestKey())) {
@@ -93,6 +94,8 @@ class Api
             if (self::$timeOut == null) {
                 self::$timeOut = 3;
             }
+
+            $callTimeout = $timeout !== null ? (int) $timeout : self::$timeOut;
 
             self::$params = array_merge([
                 'k' => Config::getRestKey(),
@@ -106,14 +109,14 @@ class Api
                 self::$lastUrl = $url;
                 self::$exec = wp_remote_post(self::$lastUrl, array(
                     'method'      => 'POST',
-                    'timeout'     => self::$timeOut,
+                    'timeout'     => $callTimeout,
                     'body' => self::$params
                 ));
             } else {
                 self::$lastUrl = $url; // .'?'. http_build_query(self::$params);
                 self::$exec = wp_remote_get(self::$lastUrl, array(
                     'method'      => 'GET',
-                    'timeout'     => self::$timeOut,
+                    'timeout'     => $callTimeout,
                     'body' => self::$params
                 ));
             }

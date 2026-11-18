@@ -104,6 +104,11 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 * Fix: product feed sale_price now reflects the single-unit price for Woo Discount Rules (quantity 1), preventing bulk/quantity rules from appearing as a product discount when no sale price is set.
 * Fix: products no longer reach the feed with sale_price 0 when Woo Discount Rules has no rule for them.
 * Fix: XML feeds are served as application/xml.
+* Fix: imported reviews are kept in sync with a cursor; the first run starts one day back and older reviews are imported with start_date.
+* Fix: imported reviews are attached to the parent product, marked verified only for buyers, and reviews in trash or spam are not imported again.
+* Fix: a review without a rating no longer counts as one star.
+* Fix: a review that keeps failing no longer stops the review sync; the last run's result shows in the Cron response.
+* Fix: feeds generated server-side keep the shop's state for per-state taxes.
 
 = 1.5.6 =
 * Update: bulk order status changes.

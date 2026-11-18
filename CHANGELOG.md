@@ -15,6 +15,14 @@ Temporary: theMarketer rejects an order with 422 when lastname is empty, so a na
 Fix: product feed always uses the shop base currency when generated server-side or via cron, instead of converting prices based on the server IP (multi-currency / GeoIP plugins).
 Fix: product feed sale_price now reflects the single-unit price for Woo Discount Rules (quantity 1), preventing bulk/quantity rules from appearing as a product discount when no sale price is set.
 Fix: XML feeds are served as application/xml instead of application/xhtml+xml.
+Fix: imported reviews: the sync keeps a cursor and only moves it once every review in the window was handled; the first run after the update starts one day back, older reviews are imported with start_date.
+Fix: imported reviews are stored as WooCommerce reviews on the parent product (a variation id or SKU resolves to its parent), with the verified flag set only for customers who bought the product.
+Fix: reviews the merchant moved to trash or marked as spam are no longer imported again as approved.
+Fix: a review sent without a rating no longer counts as one star; it stays unrated and out of the product average.
+Fix: a review that fails 3 times no longer holds the sync; the result of the last review run is kept in the Cron route response (last_review_stats).
+Fix: an invalid start_date on the Reviews route returns an error instead of calling the API.
+Fix: the product_reviews request has a 30 second timeout instead of 3.
+Fix: feeds generated server-side keep the shop's state (for example US:CA) in the default customer location, so per-state taxes still apply.
 
 ## 1.5.6
 Update: bulk order status changes.

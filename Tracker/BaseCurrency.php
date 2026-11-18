@@ -34,13 +34,22 @@ class BaseCurrency
 
         $baseCurrency = get_option('woocommerce_currency');
 
+        /* woocommerce_customer_default_location expects "CC:ST", so the shop's state is
+           kept when no country is forced; per-state tax rates then still apply. */
+        $baseLocation = null;
+
         if ($country !== null && strlen($country) === 2) {
             $baseCountry = strtoupper($country);
         } else {
+            $defaultCountry = (string) get_option('woocommerce_default_country');
+            if (strpos($defaultCountry, ':') !== false) {
+                $baseLocation = $defaultCountry;
+            }
+
             $base = function_exists('wc_get_base_location') ? wc_get_base_location() : array();
             $baseCountry = isset($base['country']) && !empty($base['country'])
                 ? $base['country']
-                : substr((string) get_option('woocommerce_default_country'), 0, 2);
+                : substr($defaultCountry, 0, 2);
         }
 
         if (!empty($baseCountry)) {
@@ -49,7 +58,10 @@ class BaseCurrency
             };
             self::addFilter('woocommerce_geolocate_ip', $forceCountry);
             self::addFilter('woocommerce_geolocation_ip_country', $forceCountry);
-            self::addFilter('woocommerce_customer_default_location', $forceCountry);
+            $baseLocation = $baseLocation !== null ? $baseLocation : $baseCountry;
+            self::addFilter('woocommerce_customer_default_location', function () use ($baseLocation) {
+                return $baseLocation;
+            });
             // WPML / WooCommerce Multilingual & Multicurrency (WCML)
             self::addFilter('wcml_geolocation_get_user_country', $forceCountry, 2);
         }

@@ -4,7 +4,7 @@ Tags: Email marketing, Loyalty Program, Newsletter, Marketing automation, Email 
 Requires at least: 4.7
 Tested up to: 7.1
 Requires PHP: 7.1
-Stable tag: 1.5.8
+Stable tag: 1.5.9
 Requires WooCommerce at least: 4.0.0
 Tested WooCommerce up to: 11.3.0
 License: GNU General Public License v2 or later
@@ -99,6 +99,10 @@ Yes. Turn on Cache compatible mode under Extra Settings. The plugin then sends t
 You can report security bugs through the Patchstack Vulnerability Disclosure Program. The Patchstack team helps validate, triage and handle any security vulnerabilities. [Report a security vulnerability.]( https://patchstack.com/database/vdp/546bd576-2c1e-4367-85cb-368663d4f85f )
 
 == Changelog ==
+= 1.5.9 =
+* Fix: the plugin no longer ships a hidden file; its Storage folder is created on first use.
+* Code standards: wp_parse_url() for the request path, and the Contacts query builds its table name from the database prefix.
+
 = 1.5.8 =
 * Fix: push notifications load the Firebase SDK bundled with the plugin instead of the Google CDN, as WordPress.org requires.
 * Fix: the Contacts feed returns customers again; its query has been broken since 1.4.7.

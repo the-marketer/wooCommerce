@@ -32,8 +32,11 @@ class Cron
     public static function cronAction() {
         global $sitepress;
 
-        set_time_limit(3600);
-        ini_set('memory_limit', '2G');
+        if (function_exists('wc_set_time_limit')) {
+            wc_set_time_limit(3600);
+        }
+        add_filter('mktr_cron_memory_limit', function () { return '2G'; });
+        wp_raise_memory_limit('mktr_cron');
 
         //  $sitepress->switch_lang()
         $data = Data::init();

@@ -39,8 +39,9 @@ class Valid
         if (isset(self::$params[$name])) {
             
             return self::$params[$name];
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Route parameters; the routes authenticate with the REST key instead of a nonce.
         } else if (isset($_GET[$name])) {
-
+            // phpcs:ignore WordPress.Security.NonceVerification.Recommended
             self::$params[$name] = sanitize_text_field(wp_unslash($_GET[$name]));
             return self::$params[$name];
         }

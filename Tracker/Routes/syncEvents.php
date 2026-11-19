@@ -35,14 +35,18 @@ class syncEvents
             return;
         }
 
+        // DONOTCACHEPAGE is the shared constant page-cache plugins read, so it cannot carry our prefix.
         if (!defined('DONOTCACHEPAGE')) {
-            define('DONOTCACHEPAGE', true);
+            define('DONOTCACHEPAGE', true); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedConstantFound
         }
         nocache_headers();
 
         wp_send_json($action === self::SYNC ? self::execute() : self::deliver(self::postedKeys('orders'), self::postedKeys('emails')));
     }
 
+    // No nonce on these requests: they come from fully cached pages, where a nonce would be stale.
+    // They only read or acknowledge the visitor's own events, found through the WooCommerce session cookie.
+    // phpcs:disable WordPress.Security.NonceVerification.Recommended, WordPress.Security.NonceVerification.Missing
     private static function requestedAction()
     {
         if (!isset($_GET[Config::$name])) {
@@ -68,7 +72,7 @@ class syncEvents
             return array();
         }
 
-        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+        // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON, decoded and filtered to string/int keys below.
         $keys = json_decode(wp_unslash($_POST[$field]), true);
 
         if (!is_array($keys)) {
@@ -79,6 +83,7 @@ class syncEvents
             return is_string($key) || is_int($key);
         }));
     }
+    // phpcs:enable WordPress.Security.NonceVerification.Recommended, WordPress.Security.NonceVerification.Missing
 
     public static function execute()
     {

@@ -377,8 +377,9 @@ class Reviews
 
     private static function log($message, $context = array())
     {
-        if (defined('WP_DEBUG') && WP_DEBUG) {
-            error_log('[Mktr Reviews] ' . $message . ' ' . wp_json_encode($context));
+        // Goes to WooCommerce > Status > Logs (source "themarketer-reviews") instead of the PHP error log.
+        if (defined('WP_DEBUG') && WP_DEBUG && function_exists('wc_get_logger')) {
+            wc_get_logger()->debug($message . ' ' . wp_json_encode($context), array('source' => 'themarketer-reviews'));
         }
     }
 }

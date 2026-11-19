@@ -4,7 +4,7 @@ Tags: Email marketing, Loyalty Program, Newsletter, Marketing automation, Email 
 Requires at least: 4.7
 Tested up to: 7.1
 Requires PHP: 7.1
-Stable tag: 1.5.7
+Stable tag: 1.5.8
 Requires WooCommerce at least: 4.0.0
 Tested WooCommerce up to: 11.3.0
 License: GNU General Public License v2 or later
@@ -99,6 +99,14 @@ Yes. Turn on Cache compatible mode under Extra Settings. The plugin then sends t
 You can report security bugs through the Patchstack Vulnerability Disclosure Program. The Patchstack team helps validate, triage and handle any security vulnerabilities. [Report a security vulnerability.]( https://patchstack.com/database/vdp/546bd576-2c1e-4367-85cb-368663d4f85f )
 
 == Changelog ==
+= 1.5.8 =
+* Fix: push notifications load the Firebase SDK bundled with the plugin instead of the Google CDN, as WordPress.org requires.
+* Fix: the Contacts feed returns customers again; its query has been broken since 1.4.7.
+* Security: the deactivation and rating feedback requires a nonce.
+* Security: the LEMS and MailPoet switches on the FeedBack route require the REST key.
+* Removed leftover debug code; review sync debug messages go to WooCommerce > Status > Logs.
+* Code standards: sanitized request input and documented the requests that cannot carry a nonce.
+
 = 1.5.7 =
 * New: Cache compatible mode, under Extra Settings. When it is on, the plugin no longer sets cookies from the server on page views, so pages can be cached by LiteSpeed Cache, FlyingPress, Cloudflare and other page caches.
 * The tracking script now has a stable URL, so cached pages keep working after the script is regenerated.

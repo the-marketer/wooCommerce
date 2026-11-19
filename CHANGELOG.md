@@ -1,5 +1,16 @@
 # Changelog
 All notable changes to this project are documented in this file.
+## 1.5.8
+WordPress.org Plugin Check fixes for 1.5.7.
+Push notifications: the service worker (firebase-messaging-sw.js) imports firebase-app-compat.js and firebase-messaging-compat.js 9.23.0 from assets/js/firebase/ instead of www.gstatic.com 9.4.0, through a path relative to the site root. Existing shops get the new worker on the first request after the update, when Run::Update() calls Observer::pushStatus().
+Fix: the Contacts route queried a table name wrapped in invisible characters (U+2060, U+202F) with a hardcoded wp_ prefix, so it returned no customers since 1.4.7. It now reads {prefix}wc_customer_lookup.
+Security: FeedBack POST (deactivation and rating feedback) verifies the mktr_feedback nonce, passed to assets/deactivation.js with wp_localize_script. deactivation.js is enqueued with the plugin version so browsers fetch the new file.
+Security: FeedBack GET with LEMS or MAILPOET changes the setting only with a valid key=<REST key>; it was open to anyone before.
+Removed the unused eDebug() function, which ended any request carrying an EAX_DEBUG cookie, and the error_log() fallback in mktr.php. Reviews debug messages (WP_DEBUG only) go to the WooCommerce logger, source themarketer-reviews.
+Cron uses wc_set_time_limit(3600) and wp_raise_memory_limit('mktr_cron') with 2G, instead of set_time_limit() and ini_set(); the memory limit is no longer lowered when the server already allows more.
+Request input: Config::REQUEST() and the wishlist fragments use map_deep() with sanitize_text_field (same result as wc_clean()), the WoodMart wishlist cookie is unslashed, post_data is sanitized before parse_str(), and the onboarding back link checks that _wpnonce is present.
+Added phpcs annotations explaining requests that cannot carry a nonce (REST key routes, email links, cached-page sync requests, WooCommerce checkout) and third-party names that cannot be prefixed (WooCommerce and Woo Discount Rules filters, the global $product, DONOTCACHEPAGE).
+
 ## 1.5.7
 New setting: Cache compatible mode, under Extra Settings, off by default. When it is on, every visitor gets the same page HTML and no Set-Cookie header, so the pages can be cached by page caches such as LiteSpeed Cache, FlyingPress or Cloudflare. The visitor id is created in the browser, and cart, wishlist, order and email events are fetched with a POST request only when there is something to send. A plain page view makes no request to the shop.
 Visitor ids are now UUID v4 in both modes.

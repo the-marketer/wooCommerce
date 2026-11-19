@@ -197,11 +197,9 @@ class Config
 };
 
 firebase.initializeApp(firebaseConfig);';
-/* TODO: LINK */ 
-    const FireBaseMessaging = 'importScripts("https://www.gstatic.com/firebasejs/9.4.0/firebase-app-compat.js");
-importScripts("https://www.gstatic.com/firebasejs/9.4.0/firebase-messaging-compat.js");
-importScripts("./firebase-config.js");
-importScripts("https://t.themarketer.com/firebase.js");';
+
+    // Firebase compat SDK shipped in assets/js/firebase/ (WordPress.org does not allow loading it from a CDN).
+    const FireBaseSdkVersion = '9.23.0';
 
     private static $configValues = array();
 
@@ -363,13 +361,16 @@ importScripts("https://t.themarketer.com/firebase.js");';
     }
 
     public static function GET($key, $default = false) {
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read by the feed routes, which authenticate with the REST key instead of a nonce.
         return in_array($key, self::$checkList) && array_key_exists($key, $_GET) ? sanitize_text_field(wp_unslash($_GET[$key])) : $default;
     }
 
     public static function POST($key) {
+        // phpcs:disable WordPress.Security.NonceVerification.Missing -- The caller (Form::initProcess) verifies the save-config nonce before using the data.
         if (Config::$name === $key && isset($_POST[$key])) {
             return self::sanitize($key, $_POST);
         }
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
         return null;
     }
 
@@ -390,11 +391,11 @@ importScripts("https://t.themarketer.com/firebase.js");';
     }
 
     public static function REQUEST($key) {
+        // Only reads WooCommerce cart/wishlist/subscribe requests to track them; their own handlers verify nonces where they have one.
+        // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+        $value = isset($_REQUEST[$key]) ? map_deep(wp_unslash($_REQUEST[$key]), 'sanitize_text_field') : '';
 
-        $checkKey =  ( isset( $_REQUEST[$key] ) ? wc_clean( wp_unslash( $_REQUEST[$key] ) ) : '' );
-
-        if ($checkKey) {
-            $value = wc_clean(wp_unslash($_REQUEST[$key]));
+        if ($value) {
             if (is_array($value)) {
                 $list = [];
                 foreach ($value as $k => $v) {
@@ -589,7 +590,14 @@ importScripts("https://t.themarketer.com/firebase.js");';
     /** @noinspection PhpUnused */
     public static function getFireBaseMessaging()
     {
-        return self::FireBaseMessaging;
+        // Root-relative path: the worker lives at the site root, so it does not depend on the scheme of the request that writes it.
+        $sdk = wp_parse_url(Run::plug_url('/assets/js/firebase/'), PHP_URL_PATH);
+        $ver = '?ver=' . self::FireBaseSdkVersion;
+
+        return 'importScripts("' . esc_js($sdk . 'firebase-app-compat.js' . $ver) . '");
+importScripts("' . esc_js($sdk . 'firebase-messaging-compat.js' . $ver) . '");
+importScripts("./firebase-config.js");
+importScripts("https://t.themarketer.com/firebase.js");';
     }
 
     /** @noinspection PhpUnused */

@@ -368,7 +368,8 @@ class Admin
         $d = self::deactivation();
         if ($d[1] || self::rateActive()) {
             wp_enqueue_style('mktr-survey', Run::plug_url('/assets/deactivation.css'));
-            wp_enqueue_script('mktr-survey', Run::plug_url('/assets/deactivation.js'));
+            wp_enqueue_script('mktr-survey', Run::plug_url('/assets/deactivation.js'), array(), Run::$version);
+            wp_localize_script('mktr-survey', 'mktr_feedback', array('nonce' => wp_create_nonce('mktr_feedback')));
         }
         if ($d[0]) {
             wp_enqueue_style('mktr-admin', Run::plug_url('/assets/style.css'));
@@ -695,7 +696,7 @@ class Admin
     }
     public static function onboarding(){
         if (isset($_GET['back'])) {
-            if (!wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])))) {
+            if (!isset($_GET['_wpnonce']) || !wp_verify_nonce(sanitize_text_field(wp_unslash($_GET['_wpnonce'])))) {
                 return;
             } else {
                 Config::setValue('onboarding', 0);

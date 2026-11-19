@@ -233,7 +233,7 @@ class Events
         if ($mktr_data['isWoodMart']) {
             $wishList = Config::session()->get("woodmart_wishlist_products");
             if ($wishList === null) {
-                $wishList = isset($_COOKIE['woodmart_wishlist_products']) ? sanitize_text_field($_COOKIE['woodmart_wishlist_products']) : '{}';
+                $wishList = isset($_COOKIE['woodmart_wishlist_products']) ? sanitize_text_field(wp_unslash($_COOKIE['woodmart_wishlist_products'])) : '{}';
                 Config::session()->set("woodmart_wishlist_products", $wishList);
                 $wishListCount = isset($_COOKIE['woodmart_wishlist_count']) ? intval($_COOKIE['woodmart_wishlist_count']) : 0;
                 Config::session()->set("woodmart_wishlist_count", $wishListCount);

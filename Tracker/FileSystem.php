@@ -47,6 +47,11 @@ class FileSystem
     {
         self::$lastPath = self::getPath() . $fName;
 
+        // Storage/ is not shipped (WordPress.org does not allow the .gitkeep that kept it in git), so create it on first write.
+        if (!is_dir(dirname(self::$lastPath))) {
+            wp_mkdir_p(dirname(self::$lastPath));
+        }
+
         $result = FileHelper::putContents(self::$lastPath, $content);
 
         self::$status[] = [

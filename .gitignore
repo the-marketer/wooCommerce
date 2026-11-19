@@ -1,5 +1,4 @@
-Storage/*
-!.gitkeep
+Storage/
 .DS_Store
 .idea/
 .wp-env.json

@@ -159,7 +159,7 @@ class Front
             $p = array();
             $path = '';
             if (isset($_SERVER['REQUEST_URI'])) {
-                $path = parse_url(sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI'])), PHP_URL_PATH);
+                $path = (string) wp_parse_url(sanitize_text_field(wp_unslash($_SERVER['REQUEST_URI'])), PHP_URL_PATH);
             }
             preg_match("/([^\/]+)\/([^\/]+)\/([^\/]+)/i", $path, $p);
 

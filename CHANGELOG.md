@@ -1,5 +1,11 @@
 # Changelog
 All notable changes to this project are documented in this file.
+## 1.5.9
+WordPress.org Plugin Check follow-up to 1.5.8.
+Removed the hidden Storage/.gitkeep file. Storage/ is no longer shipped; FileSystem::writeFile() creates it on the first write, so data.json, logs and feed caches still work on a fresh install.
+Front: wp_parse_url() instead of parse_url() for the request path, cast to string before preg_match().
+Contacts: the table name is built from $wpdb->prefix inside the query ({prefix}wc_customer_lookup), so the plugin check no longer reports an unescaped parameter. Same table, same results.
+
 ## 1.5.8
 WordPress.org Plugin Check fixes for 1.5.7.
 Push notifications: the service worker (firebase-messaging-sw.js) imports firebase-app-compat.js and firebase-messaging-compat.js 9.23.0 from assets/js/firebase/ instead of www.gstatic.com 9.4.0, through a path relative to the site root. Existing shops get the new worker on the first request after the update, when Run::Update() calls Observer::pushStatus().

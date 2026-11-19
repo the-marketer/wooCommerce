@@ -3,7 +3,7 @@
  * Plugin Name:             theMarketer - Email marketing, Newsletters, Automation & Loyalty for Woocommerce
  * Plugin URI:              https://themarketer.com/integrations/woocommerce
  * Description:             Automate and transform the way you communicate with WooCommerce customers and cultivate lasting loyalty using your store’s real-time data.
- * Version:                 1.5.7
+ * Version:                 1.5.8
  * Requires at least:       4.7
  * Requires PHP:            7.1
  * Requires Plugins: woocommerce
@@ -53,7 +53,7 @@ if (!defined('MKTR_MAILPOET_SEGMENT')) {
 }
 
 if (!defined('MKTR_VERSION')) {
-    define('MKTR_VERSION', 'v1.5.7');
+    define('MKTR_VERSION', 'v1.5.8');
 }
 
 spl_autoload_register(function ($class) {
@@ -68,22 +68,11 @@ spl_autoload_register(function ($class) {
     }
 }, true, true);
 
-function eDebug() {
-    if (isset($_COOKIE['EAX_DEBUG'])) {
-//        var_dump(func_get_args());
-        die();
-    }
-}
-
 /** @noinspection PhpFullyQualifiedNameUsageInspection */
 try {
     \Mktr\Tracker\Run::init();
 } catch (\Exception $e) {
     if (defined('MKTR_DEBUG') && MKTR_DEBUG) {
-        if (class_exists('\\Mktr\\Tracker\\Logs')) {
-            \Mktr\Tracker\Logs::debug([ 'message' => $e->getMessage(), 'trace' => $e->getTraceAsString() ], 'init_error');
-        } else {
-            error_log('[theMarketer] Init error: ' . $e->getMessage());
-        }
+        \Mktr\Tracker\Logs::debug([ 'message' => $e->getMessage(), 'trace' => $e->getTraceAsString() ], 'init_error');
     }
 }

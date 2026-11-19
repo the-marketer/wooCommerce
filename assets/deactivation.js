@@ -51,6 +51,7 @@ document.addEventListener("click", function(event){
             window.mktr.send = false;
             try {
                 let formData = new FormData();
+                formData.append('_wpnonce', window.mktr_feedback ? window.mktr_feedback.nonce : '');
 
                 formData.append('message', document.querySelector('#mktr_message').value);
 
@@ -72,6 +73,7 @@ document.addEventListener("click", function(event){
             window.mktr.send = false;
             try {
                 let formData = new FormData();
+                formData.append('_wpnonce', window.mktr_feedback ? window.mktr_feedback.nonce : '');
 
                 formData.append('rating', document.querySelector('#mktr-rating-value').value);
                 formData.append('message', document.querySelector('#mktr-rating-message').value);
@@ -104,6 +106,7 @@ document.addEventListener("click", function(event){
                 window.mktr.send = false;
                 try {
                     let formData = new FormData();
+                    formData.append('_wpnonce', window.mktr_feedback ? window.mktr_feedback.nonce : '');
 
                     formData.append('rating', document.querySelector('#mktr-rating-value').value);
                     

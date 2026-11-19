@@ -311,7 +311,7 @@ class Run
 
         $fragments = [];
         if (isset($_REQUEST['fragments']) && is_array($_REQUEST['fragments'])) {
-            $fragments = wc_clean(wp_unslash($_REQUEST['fragments']));
+            $fragments = map_deep(wp_unslash($_REQUEST['fragments']), 'sanitize_text_field');
         }
 
         foreach ($fragments as $fragment) {
@@ -407,6 +407,9 @@ class Run
         return $product_id;
     }
 
+    // mktrAddCart / mktrAddDiscount are links in theMarketer emails, opened by shoppers, so they cannot carry a nonce.
+    // They only add a published product or a valid coupon to the visitor's own cart, like WooCommerce's ?add-to-cart= links.
+    // phpcs:disable WordPress.Security.NonceVerification.Recommended
     public function mktr_auto_add_to_cart_checkout() {
         if (isset($_GET['mktrAddCart']) && $_GET['mktrAddCart'] == 1 && isset($_GET['mktrPID']) && is_numeric($_GET['mktrPID'])) {
             $product_id = absint($_GET['mktrPID']);
@@ -465,6 +468,7 @@ class Run
             echo 'Message: ' . esc_html($e->getMessage());
         }
     }
+    // phpcs:enable WordPress.Security.NonceVerification.Recommended
 
     public function remove_all_coupons() {
         if (!function_exists('WC') || !WC()->cart) {

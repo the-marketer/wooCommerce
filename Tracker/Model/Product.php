@@ -245,6 +245,7 @@ class Product
 
     public static function getName() {
         $name = (self::nameConvert() ? self::qTranslate(self::getVarValue('getName', self::$asset)) : self::getVarValue('getName', self::$asset));
+        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- WooCommerce core filter.
         $nameFilter = apply_filters( 'woocommerce_product_title', $name, self::$asset );
         if (empty($nameFilter)) {
             return $name;
@@ -437,6 +438,7 @@ class Product
         
         if (self::checkWooDiscountRules()) {
             $base = ($check === true || $p > 0 ? $p : self::getRegularPrice(true));
+            // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Woo Discount Rules' own filter.
             $out = apply_filters('advanced_woo_discount_rules_get_product_discount_price', $base, self::$asset, 1);
             // Woo Discount Rules returns false when no rule applies.
             if (!is_numeric($out) || $out <= 0) {
@@ -660,7 +662,8 @@ class Product
 
         global $product;
 
-        $product = self::$asset;
+        // WooCommerce's global product, which variation filters read while get_available_variation() runs.
+        $product = self::$asset; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited, WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedVariableFound
 
         foreach ( $variation_ids as $variation_id ) {
             if (!empty($variation_id)) {
@@ -745,6 +748,7 @@ class Product
                     $val['old_display_price'] = $val['display_price'];
 
                     if (self::checkWooDiscountRules()) {
+                        // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Woo Discount Rules' own filter.
                         $wdrPrice = apply_filters('advanced_woo_discount_rules_get_product_discount_price', $val['display_price'], $val['variation_id'], 1);
                         if (is_numeric($wdrPrice) && $wdrPrice > 0) {
                             $val['display_price'] = $wdrPrice;

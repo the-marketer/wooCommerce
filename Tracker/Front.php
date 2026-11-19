@@ -200,14 +200,17 @@ class Front
 
     public static function optinChecked()
     {
+        // Runs inside WooCommerce's checkout and update_order_review requests, which verify their own nonces.
+        // phpcs:disable WordPress.Security.NonceVerification.Missing
         if (isset($_POST['mktr_optin_subscribe'])) {
             return 1;
         }
 
         if (isset($_POST['post_data']) && is_string($_POST['post_data'])) {
-            parse_str(wp_unslash($_POST['post_data']), $posted);
+            parse_str(sanitize_text_field(wp_unslash($_POST['post_data'])), $posted);
             return isset($posted['mktr_optin_subscribe']) ? 1 : 0;
         }
+        // phpcs:enable WordPress.Security.NonceVerification.Missing
 
         return 0;
     }

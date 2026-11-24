@@ -173,12 +173,6 @@ class Route
             $file = Valid::getParam('file');
             $lang = Valid::getParam('lang');
 
-            $start_date = Valid::getParam('start_date');
-
-            if ($start_date !== null) {
-                $script = '.'. base64_encode($start_date);
-            }
-            
             if ( defined( 'ICL_SITEPRESS_VERSION' ) ) { // wpml current  language.
 				global $sitepress;
 				$lang = $sitepress->get_current_language();

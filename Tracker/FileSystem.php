@@ -19,6 +19,10 @@ class FileSystem
     private static $lastPath = null;
     private static $status = array();
     private static $useRoot = false;
+    private static $storagePath = null;
+
+    const STORAGE = 'Storage/';
+    const STORAGE_HTACCESS = "<IfModule mod_authz_core.c>\nRequire all denied\n</IfModule>\n<IfModule !mod_authz_core.c>\nDeny from all\n</IfModule>\n";
 
     private static $init = null;
 
@@ -30,9 +34,12 @@ class FileSystem
     }
 
     /** @noinspection PhpUnused */
-    public static function setWorkDirectory($name = 'Storage/')
+    public static function setWorkDirectory($name = self::STORAGE)
     {
-        if ($name != 'base' && !self::$useRoot)
+        if ($name === self::STORAGE && !self::$useRoot)
+        {
+            self::$path = self::storagePath();
+        } elseif ($name != 'base' && !self::$useRoot)
         {
             self::$path = Config::getDir() . $name;
         } else {
@@ -45,6 +52,10 @@ class FileSystem
     /** @noinspection PhpUnused */
     public static function writeFile($fName, $content)
     {
+        if (!is_dir(self::getPath())) {
+            wp_mkdir_p(self::getPath());
+        }
+
         if (!self::isInsideWorkDirectory($fName)) {
             self::$status[] = [
                 'path' => self::getPath(),
@@ -57,9 +68,12 @@ class FileSystem
 
         self::$lastPath = self::getPath() . $fName;
 
-        // Storage/ is not shipped (WordPress.org does not allow the .gitkeep that kept it in git), so create it on first write.
         if (!is_dir(dirname(self::$lastPath))) {
             wp_mkdir_p(dirname(self::$lastPath));
+        }
+
+        if (self::getPath() === self::storagePath()) {
+            self::protectStorage();
         }
 
         $result = FileHelper::putContents(self::$lastPath, $content);
@@ -72,6 +86,65 @@ class FileSystem
         ];
 
         return self::init();
+    }
+
+    public static function storagePath()
+    {
+        if (self::$storagePath === null) {
+            $key = (string) Config::getValue('storage_key');
+            if (!preg_match('/^[a-f0-9]{32}$/', $key)) {
+                $key = bin2hex(random_bytes(16));
+                Config::setValue('storage_key', $key);
+            }
+
+            $uploads = wp_upload_dir(null, false);
+            self::$storagePath = trailingslashit(wp_normalize_path($uploads['basedir'])) . 'mktr-' . $key . '/';
+        }
+
+        return self::$storagePath;
+    }
+
+    private static function protectStorage()
+    {
+        $dir = self::storagePath();
+
+        if (is_dir($dir) && !file_exists($dir . 'index.php')) {
+            FileHelper::putContents($dir . 'index.php', "<?php\n");
+        }
+
+        if (is_dir($dir) && !file_exists($dir . '.htaccess')) {
+            FileHelper::putContents($dir . '.htaccess', self::STORAGE_HTACCESS);
+        }
+    }
+
+    public static function migrateLegacyStorage()
+    {
+        $legacy = Config::getDir() . self::STORAGE;
+
+        if (!is_dir($legacy) || is_link(rtrim($legacy, '/'))) {
+            return;
+        }
+
+        $target = self::storagePath();
+        $names = scandir($legacy);
+
+        foreach ($names === false ? array() : $names as $name) {
+            $source = $legacy . $name;
+            if (is_link($source) || !is_file($source) || strpos($name, 'orders.') === 0
+                || !preg_match('/^[A-Za-z0-9_=+-]+(\.[A-Za-z0-9_=+-]+)*\.(xml|json|js|csv)$/', $name)
+                || file_exists($target . $name)) {
+                continue;
+            }
+
+            if (!is_dir($target)) {
+                wp_mkdir_p($target);
+            }
+            FileHelper::putContents($target . $name, FileHelper::getContents($source));
+        }
+
+        self::protectStorage();
+
+        FileHelper::removeDirectory($legacy);
     }
 
     /** @noinspection PhpUnused */
@@ -113,7 +186,7 @@ class FileSystem
 
         $base = realpath(self::getPath());
         if ($base === false) {
-            return true;
+            return false;
         }
         $base = trailingslashit(wp_normalize_path($base));
 

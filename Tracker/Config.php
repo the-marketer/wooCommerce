@@ -105,7 +105,8 @@ class Config
         'mailpoet_segment' => 'mktr_tracker/tracker/mailpoet_segment',
         'optin_checkout' => 'mktr_tracker/tracker/optin_checkout',
         'optin_message' => 'mktr_tracker/tracker/optin_message',
-        'optin_position' => 'mktr_tracker/tracker/optin_position'
+        'optin_position' => 'mktr_tracker/tracker/optin_position',
+        'storage_key' => 'mktr_tracker/tracker/storage_key'
     );
 
     const configDefaults = array(
@@ -148,7 +149,8 @@ class Config
         'mailpoet_segment' => 0,
         'optin_checkout' => 0,
         'optin_message' => 'I would like to receive exclusive emails with discounts and product information',
-        'optin_position' => 'woocommerce_review_order_before_submit'
+        'optin_position' => 'woocommerce_review_order_before_submit',
+        'storage_key' => ''
     );
 
     const funcNames = array(

@@ -75,7 +75,7 @@ class FeedBack
             $lems = Valid::getParam('LEMS');
             $mailpoet_segment = Valid::getParam('MAILPOET');
 
-            if (($lems !== null || $mailpoet_segment !== null) && !self::validRestKey()) {
+            if (($lems !== null || $mailpoet_segment !== null) && !Valid::validRestKey(Valid::getParam('key'))) {
                 return array('status' => 'error');
             }
 
@@ -91,13 +91,5 @@ class FeedBack
             }
         }
         return array('status' => 'error');
-    }
-
-    private static function validRestKey()
-    {
-        $restKey = (string) \Mktr\Tracker\Config::getRestKey();
-        $key = Valid::getParam('key');
-
-        return $restKey !== '' && is_string($key) && hash_equals($restKey, $key);
     }
 }

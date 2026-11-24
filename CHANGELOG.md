@@ -1,5 +1,13 @@
 # Changelog
 All notable changes to this project are documented in this file.
+## 1.6.0
+Security release for the reported unauthenticated file read/write and empty REST key bypass in 1.5.9.
+Valid: Required treats an empty value as missing; the Key rule needs a non-empty configured rest_key and compares with hash_equals() (Valid::validRestKey, also used by FeedBack); the error no longer echoes the submitted key. New Amount rule for CodeGenerator: numeric, finite, not negative, at most 100 for percent and free_shipping.
+Route: mime-type is limited to the keys of Valid::mime (Valid::sanitizeMime, falls back to the route default); lang, including the WPML language, must match ^[A-Za-z0-9_-]{1,20}$ or is dropped; the dispatcher only accepts the route names in $defMime instead of every Route method.
+FileSystem: read, write, exists and delete refuse names with "..", absolute paths, drive letters or NUL bytes, and names that resolve (symlinks included) outside the work directory, before wp_mkdir_p() runs.
+Front: on sites that are not onboarded or have tracking off, only the FeedBack route is dispatched while no rest_key is set.
+Orders: the export is no longer written to Storage/orders.*; Run::Update() deletes the order cache files left by earlier versions.
+
 ## 1.5.9
 WordPress.org Plugin Check follow-up to 1.5.8.
 Removed the hidden Storage/.gitkeep file. Storage/ is no longer shipped; FileSystem::writeFile() creates it on the first write, so data.json, logs and feed caches still work on a fresh install.

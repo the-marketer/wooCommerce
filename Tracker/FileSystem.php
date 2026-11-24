@@ -45,6 +45,16 @@ class FileSystem
     /** @noinspection PhpUnused */
     public static function writeFile($fName, $content)
     {
+        if (!self::isInsideWorkDirectory($fName)) {
+            self::$status[] = [
+                'path' => self::getPath(),
+                'fileName' => $fName,
+                'fullPath' => null,
+                'status' => false
+            ];
+            return self::init();
+        }
+
         self::$lastPath = self::getPath() . $fName;
 
         // Storage/ is not shipped (WordPress.org does not allow the .gitkeep that kept it in git), so create it on first write.
@@ -86,7 +96,38 @@ class FileSystem
     /** @noinspection PhpUnused */
     public static function fileExists($fName)
     {
-        return file_exists(self::getPath() . $fName);
+        return self::isInsideWorkDirectory($fName) && file_exists(self::getPath() . $fName);
+    }
+
+    private static function isInsideWorkDirectory($fName)
+    {
+        if (!is_string($fName) || $fName === '' || strpos($fName, "\0") !== false) {
+            return false;
+        }
+
+        $name = wp_normalize_path($fName);
+
+        if (preg_match('#(^|/)\.\.(/|$)#', $name) || $name[0] === '/' || preg_match('#^[A-Za-z]:#', $name)) {
+            return false;
+        }
+
+        $base = realpath(self::getPath());
+        if ($base === false) {
+            return true;
+        }
+        $base = trailingslashit(wp_normalize_path($base));
+
+        $target = self::getPath() . $fName;
+        while (!file_exists($target) && dirname($target) !== $target) {
+            $target = dirname($target);
+        }
+        $real = realpath($target);
+        if ($real === false) {
+            return false;
+        }
+        $real = wp_normalize_path($real);
+
+        return $real . '/' === $base || strpos($real, $base) === 0;
     }
 
     /** @noinspection PhpUnused */

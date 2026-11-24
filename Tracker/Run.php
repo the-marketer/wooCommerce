@@ -539,6 +539,12 @@ class Run
     {
         \Mktr\Tracker\Routes\refreshJS::execute(false);
         \Mktr\Tracker\Observer::pushStatus();
+
+        foreach ((array) glob(Config::getDir() . 'Storage/orders.*') as $ordersCache) {
+            if (is_file($ordersCache)) {
+                wp_delete_file($ordersCache);
+            }
+        }
         
         $name = 'mktr.php';
         FileSystem::setWorkDirectory('');

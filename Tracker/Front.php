@@ -42,7 +42,7 @@ class Front
 
             add_action('wp_loaded', array(\Mktr\Tracker\Routes\syncEvents::class, 'maybeHandle'), 100);
         } else {
-            add_action('template_redirect', array(self::init(), 'routeCheck'), -10000);
+            add_action('template_redirect', array(self::init(), 'routeCheckUnconfigured'), -10000);
         }
 
         //add_action('shutdown', array($this, 'sd'), 0);
@@ -153,9 +153,34 @@ class Front
             unset($_COOKIE['mktr']);
         }
 
-        self::$Page = get_query_var(Config::$name, false);
+        self::$Page = self::resolvePage();
+
+        if (self::$Page !== false) {
+            Route::checkPage(self::$Page);
+        }
+    }
+
+    public function routeCheckUnconfigured()
+    {
+        self::$Page = self::resolvePage();
 
         if (self::$Page === false) {
+            return;
+        }
+
+        $isFeedBack = is_string(self::$Page) && strtolower(self::$Page) === 'feedback';
+        $restKey = (string) Config::getRestKey();
+
+        if ($isFeedBack || $restKey !== '') {
+            Route::checkPage(self::$Page);
+        }
+    }
+
+    private static function resolvePage()
+    {
+        $page = get_query_var(Config::$name, false);
+
+        if ($page === false) {
             $p = array();
             $path = '';
             if (isset($_SERVER['REQUEST_URI'])) {
@@ -169,7 +194,7 @@ class Front
             foreach ($p as $v) {
                 if (!empty($v)) {
                     if ($ch[Config::$name] && $ch['api']) {
-                        self::$Page = $v;
+                        $page = $v;
                     } elseif ($v === Config::$name) {
                         $ch[Config::$name] = true;
                     } elseif ($v === 'api') {
@@ -179,9 +204,7 @@ class Front
             }
         }
 
-        if (self::$Page !== false) {
-            Route::checkPage(self::$Page);
-        }
+        return $page;
     }
 
     public static function displayOptinCheckbox()

@@ -72,7 +72,7 @@ class FileSystem
             wp_mkdir_p(dirname(self::$lastPath));
         }
 
-        if (self::getPath() === self::storagePath()) {
+        if (self::$storagePath !== null && self::getPath() === self::$storagePath) {
             self::protectStorage();
         }
 
@@ -91,14 +91,9 @@ class FileSystem
     public static function storagePath()
     {
         if (self::$storagePath === null) {
-            $key = (string) Config::getValue('storage_key');
-            if (!preg_match('/^[a-f0-9]{32}$/', $key)) {
-                $key = bin2hex(random_bytes(16));
-                Config::setValue('storage_key', $key);
-            }
-
             $uploads = wp_upload_dir(null, false);
-            self::$storagePath = trailingslashit(wp_normalize_path($uploads['basedir'])) . 'mktr-' . $key . '/';
+            self::$storagePath = trailingslashit(wp_normalize_path($uploads['basedir']))
+                . 'mktr-' . substr(wp_hash('mktr_storage'), 0, 32) . '/';
         }
 
         return self::$storagePath;
@@ -119,30 +114,30 @@ class FileSystem
 
     public static function migrateLegacyStorage()
     {
-        $legacy = Config::getDir() . self::STORAGE;
+        $legacy = rtrim(Config::getDir() . self::STORAGE, '/');
 
-        if (!is_dir($legacy) || is_link(rtrim($legacy, '/'))) {
+        if (is_link($legacy)) {
+            wp_delete_file($legacy);
             return;
         }
 
-        $target = self::storagePath();
-        $names = scandir($legacy);
-
-        foreach ($names === false ? array() : $names as $name) {
-            $source = $legacy . $name;
-            if (is_link($source) || !is_file($source) || strpos($name, 'orders.') === 0
-                || !preg_match('/^[A-Za-z0-9_=+-]+(\.[A-Za-z0-9_=+-]+)*\.(xml|json|js|csv)$/', $name)
-                || file_exists($target . $name)) {
-                continue;
-            }
-
-            if (!is_dir($target)) {
-                wp_mkdir_p($target);
-            }
-            FileHelper::putContents($target . $name, FileHelper::getContents($source));
+        if (!is_dir($legacy)) {
+            return;
         }
 
-        self::protectStorage();
+        $data = $legacy . '/data.json';
+        $target = self::storagePath();
+
+        if (!is_link($data) && is_file($data) && !file_exists($target . 'data.json')) {
+            $content = FileHelper::getContents($data);
+            if (is_string($content) && $content !== '') {
+                if (!is_dir($target)) {
+                    wp_mkdir_p($target);
+                }
+                self::protectStorage();
+                FileHelper::putContents($target . 'data.json', $content);
+            }
+        }
 
         FileHelper::removeDirectory($legacy);
     }

@@ -481,6 +481,7 @@ class Run
     }
 
     public function cronAction() {
+        FileSystem::migrateLegacyStorage();
         \Mktr\Tracker\Model\Cron::cronAction();
     }
 

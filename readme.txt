@@ -103,7 +103,7 @@ You can report security bugs through the Patchstack Vulnerability Disclosure Pro
 * Security: the theMarketer API routes reject requests until a REST API key is configured, and compare the key in constant time. An empty key no longer authenticates.
 * Security: feed cache file names accept only known formats (xml, json, js, csv) and plain language codes, and file access stays inside the cache folder. This closes an unauthenticated file read and overwrite.
 * Security: earlier versions cached order exports (customer email, phone and address) in the plugin's Storage folder, where they could be downloaded without authentication. Order exports are no longer cached, and the old Storage folder, with every order file in it, is deleted on update.
-* Security: the cache moved to a folder with a random name in wp-content/uploads, protected by index.php and .htaccess.
+* Security: the cache moved to a folder with an unguessable name in wp-content/uploads, protected by index.php and .htaccess. Product feed caches are rebuilt after the update.
 * Security: discount codes created through the API need a valid amount (not negative, at most 100 for percentage and free shipping).
 * Fix: only the plugin's API routes can be called through the route dispatcher, and the API error no longer repeats the submitted key.
 

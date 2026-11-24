@@ -55,7 +55,7 @@ class FileHelper
             if (!is_link($path) && is_dir($path)) {
                 self::removeDirectory($path);
             } else {
-                wp_delete_file($path);
+                $fileSystem->delete($path, false, 'f');
             }
         }
 

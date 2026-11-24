@@ -35,4 +35,30 @@ class FileHelper
         $fileSystem = self::init();
         return $fileSystem->delete($file);
     }
+
+    public static function removeDirectory($dir)
+    {
+        $fileSystem = self::init();
+        $dir = rtrim($dir, '/\\');
+
+        if (is_link($dir) || !is_dir($dir)) {
+            return false;
+        }
+
+        $names = scandir($dir);
+        foreach ($names === false ? array() : $names as $name) {
+            if ($name === '.' || $name === '..') {
+                continue;
+            }
+
+            $path = $dir . '/' . $name;
+            if (!is_link($path) && is_dir($path)) {
+                self::removeDirectory($path);
+            } else {
+                $fileSystem->delete($path, false, 'f');
+            }
+        }
+
+        return $fileSystem->rmdir($dir);
+    }
 }

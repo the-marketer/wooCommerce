@@ -39,7 +39,7 @@ class FeedBack
         if (isset($_POST['rating']) || isset($_POST['message'])) {
             // Sent by assets/deactivation.js from the admin, which gets the nonce through wp_localize_script.
             $nonce = isset($_POST['_wpnonce']) ? sanitize_text_field(wp_unslash($_POST['_wpnonce'])) : '';
-            if (!wp_verify_nonce($nonce, 'mktr_feedback')) {
+            if (!current_user_can('activate_plugins') || !wp_verify_nonce($nonce, 'mktr_feedback')) {
                 return array('status' => 'error');
             }
 
@@ -75,7 +75,7 @@ class FeedBack
             $lems = Valid::getParam('LEMS');
             $mailpoet_segment = Valid::getParam('MAILPOET');
 
-            if (($lems !== null || $mailpoet_segment !== null) && !self::validRestKey()) {
+            if (($lems !== null || $mailpoet_segment !== null) && !Valid::validRestKey(Valid::getParam('key'))) {
                 return array('status' => 'error');
             }
 
@@ -91,13 +91,5 @@ class FeedBack
             }
         }
         return array('status' => 'error');
-    }
-
-    private static function validRestKey()
-    {
-        $restKey = (string) \Mktr\Tracker\Config::getRestKey();
-        $key = Valid::getParam('key');
-
-        return $restKey !== '' && is_string($key) && hash_equals($restKey, $key);
     }
 }

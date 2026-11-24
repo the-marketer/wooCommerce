@@ -109,7 +109,7 @@ class Valid
                     if (self::$error === null) {
                         switch ($do) {
                             case "Required":
-                                if (self::getParam($k) === null ) {
+                                if (self::getParam($k) === null || self::getParam($k) === '') {
                                     self::$error = "Missing Parameter ". $k;
                                 }
                                 break;
@@ -130,8 +130,8 @@ class Valid
                                 }
                                 break;
                             case "Key":
-                                if (self::getParam($k) !== null && self::getParam($k) !== Config::getRestKey()) {
-                                    self::$error = "Incorrect REST API Key ". self::getParam($k);
+                                if (!self::validRestKey(self::getParam($k))) {
+                                    self::$error = "Incorrect REST API Key";
                                 }
                                 break;
                             case "RuleCheck":
@@ -142,6 +142,16 @@ class Valid
                             case "Int":
                                 if (self::getParam($k) !== null && !is_numeric(self::getParam($k))) {
                                     self::$error = "Incorrect Value ". self::getParam($k);
+                                }
+                                break;
+                            case "Amount":
+                                $amount = self::getParam($k);
+                                if ($amount !== null) {
+                                    $rule = Config::getDiscountRules(self::getParam('type'));
+                                    if (!is_numeric($amount) || !is_finite((float) $amount) || (float) $amount < 0
+                                        || (in_array($rule, array('percent', 'free_shipping'), true) && (float) $amount > 100)) {
+                                        self::$error = "Incorrect Value " . $k;
+                                    }
                                 }
                                 break;
                             case "allow_export":
@@ -159,6 +169,27 @@ class Valid
         return self::init();
     }
 
+    public static function validRestKey($key)
+    {
+        $restKey = (string) Config::getRestKey();
+
+        return $restKey !== '' && is_string($key) && $key !== '' && hash_equals($restKey, $key);
+    }
+
+    public static function sanitizeMime($default = Config::defMime)
+    {
+        $mime = self::getParam('mime-type', $default);
+        $mime = is_string($mime) ? strtolower($mime) : '';
+
+        if (!isset(self::mime[$mime])) {
+            $mime = isset(self::mime[$default]) ? $default : Config::defMime;
+        }
+
+        self::$params['mime-type'] = $mime;
+
+        return $mime;
+    }
+
     public static function status()
     {
         return self::$error == null;
@@ -171,7 +202,7 @@ class Valid
 
     public static function Output($data, $data1 = null, $name = null, $cron = false)
     {
-        $mi = self::getParam('mime-type', Config::defMime);
+        $mi = self::sanitizeMime(Config::defMime);
 
         if (!headers_sent() || $cron === false) {
             header("Content-type: ".self::mime[$mi]."; charset=utf-8");

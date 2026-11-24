@@ -19,6 +19,10 @@ class FileSystem
     private static $lastPath = null;
     private static $status = array();
     private static $useRoot = false;
+    private static $storagePath = null;
+
+    const STORAGE = 'Storage/';
+    const STORAGE_HTACCESS = "<IfModule mod_authz_core.c>\nRequire all denied\n</IfModule>\n<IfModule !mod_authz_core.c>\nDeny from all\n</IfModule>\n";
 
     private static $init = null;
 
@@ -30,9 +34,12 @@ class FileSystem
     }
 
     /** @noinspection PhpUnused */
-    public static function setWorkDirectory($name = 'Storage/')
+    public static function setWorkDirectory($name = self::STORAGE)
     {
-        if ($name != 'base' && !self::$useRoot)
+        if ($name === self::STORAGE && !self::$useRoot)
+        {
+            self::$path = self::storagePath();
+        } elseif ($name != 'base' && !self::$useRoot)
         {
             self::$path = Config::getDir() . $name;
         } else {
@@ -45,11 +52,28 @@ class FileSystem
     /** @noinspection PhpUnused */
     public static function writeFile($fName, $content)
     {
+        if (!is_dir(self::getPath())) {
+            wp_mkdir_p(self::getPath());
+        }
+
+        if (!self::isInsideWorkDirectory($fName)) {
+            self::$status[] = [
+                'path' => self::getPath(),
+                'fileName' => $fName,
+                'fullPath' => null,
+                'status' => false
+            ];
+            return self::init();
+        }
+
         self::$lastPath = self::getPath() . $fName;
 
-        // Storage/ is not shipped (WordPress.org does not allow the .gitkeep that kept it in git), so create it on first write.
         if (!is_dir(dirname(self::$lastPath))) {
             wp_mkdir_p(dirname(self::$lastPath));
+        }
+
+        if (self::$storagePath !== null && self::getPath() === self::$storagePath) {
+            self::protectStorage();
         }
 
         $result = FileHelper::putContents(self::$lastPath, $content);
@@ -62,6 +86,60 @@ class FileSystem
         ];
 
         return self::init();
+    }
+
+    public static function storagePath()
+    {
+        if (self::$storagePath === null) {
+            $uploads = wp_upload_dir(null, false);
+            self::$storagePath = trailingslashit(wp_normalize_path($uploads['basedir']))
+                . 'mktr-' . substr(wp_hash('mktr_storage'), 0, 32) . '/';
+        }
+
+        return self::$storagePath;
+    }
+
+    private static function protectStorage()
+    {
+        $dir = self::storagePath();
+
+        if (is_dir($dir) && !file_exists($dir . 'index.php')) {
+            FileHelper::putContents($dir . 'index.php', "<?php\n");
+        }
+
+        if (is_dir($dir) && !file_exists($dir . '.htaccess')) {
+            FileHelper::putContents($dir . '.htaccess', self::STORAGE_HTACCESS);
+        }
+    }
+
+    public static function migrateLegacyStorage()
+    {
+        $legacy = rtrim(Config::getDir() . self::STORAGE, '/');
+
+        if (is_link($legacy)) {
+            wp_delete_file($legacy);
+            return;
+        }
+
+        if (!is_dir($legacy)) {
+            return;
+        }
+
+        $data = $legacy . '/data.json';
+        $target = self::storagePath();
+
+        if (!is_link($data) && is_file($data) && !file_exists($target . 'data.json')) {
+            $content = FileHelper::getContents($data);
+            if (is_string($content) && $content !== '') {
+                if (!is_dir($target)) {
+                    wp_mkdir_p($target);
+                }
+                self::protectStorage();
+                FileHelper::putContents($target . 'data.json', $content);
+            }
+        }
+
+        FileHelper::removeDirectory($legacy);
     }
 
     /** @noinspection PhpUnused */
@@ -86,7 +164,38 @@ class FileSystem
     /** @noinspection PhpUnused */
     public static function fileExists($fName)
     {
-        return file_exists(self::getPath() . $fName);
+        return self::isInsideWorkDirectory($fName) && file_exists(self::getPath() . $fName);
+    }
+
+    private static function isInsideWorkDirectory($fName)
+    {
+        if (!is_string($fName) || $fName === '' || strpos($fName, "\0") !== false) {
+            return false;
+        }
+
+        $name = wp_normalize_path($fName);
+
+        if (preg_match('#(^|/)\.\.(/|$)#', $name) || $name[0] === '/' || preg_match('#^[A-Za-z]:#', $name)) {
+            return false;
+        }
+
+        $base = realpath(self::getPath());
+        if ($base === false) {
+            return false;
+        }
+        $base = trailingslashit(wp_normalize_path($base));
+
+        $target = self::getPath() . $fName;
+        while (!file_exists($target) && dirname($target) !== $target) {
+            $target = dirname($target);
+        }
+        $real = realpath($target);
+        if ($real === false) {
+            return false;
+        }
+        $real = wp_normalize_path($real);
+
+        return $real . '/' === $base || strpos($real, $base) === 0;
     }
 
     /** @noinspection PhpUnused */

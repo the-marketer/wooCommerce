@@ -1,5 +1,15 @@
 # Changelog
 All notable changes to this project are documented in this file.
+## 1.6.0
+Security release for the reported unauthenticated file read/write and empty REST key bypass in 1.5.9.
+Valid: Required treats an empty value as missing; the Key rule needs a non-empty configured rest_key and compares with hash_equals() (Valid::validRestKey, also used by FeedBack); the error no longer echoes the submitted key. New Amount rule for CodeGenerator: numeric, finite, not negative, at most 100 for percent and free_shipping.
+Route: mime-type is limited to the keys of Valid::mime (Valid::sanitizeMime, falls back to the route default); lang, including the WPML language, must match ^[A-Za-z0-9_-]{1,20}$ or is dropped; the dispatcher only accepts the route names in $defMime instead of every Route method.
+FileSystem: read, write, exists and delete refuse names with "..", absolute paths, drive letters or NUL bytes, and names that resolve (symlinks included) outside the work directory, before wp_mkdir_p() runs. writeFile() creates the work directory first, and a work directory that doesn't exist refuses every name.
+FeedBack: the POST branch (deactivation survey and rating) also requires current_user_can('activate_plugins').
+Storage: the cache (feeds, data.json, logs.json) moved from the plugin's Storage/ folder, which was reachable over HTTP, to wp-content/uploads/mktr-<32 hex from wp_hash()>/, with an index.php and an .htaccess that denies access. Run::Update() and the hourly MKTR_CRON run FileSystem::migrateLegacyStorage(): it keeps data.json (review cursor) and deletes the old Storage/ folder recursively, order files and subfolders included, without following symlinks (a symlinked Storage/ is unlinked). Feed caches are rebuilt by cron or on request. Cache file names no longer contain base64(start_date).
+Front: on sites that are not onboarded or have tracking off, only the FeedBack route is dispatched while no rest_key is set.
+Orders: the export is no longer cached. Up to 1.5.9 every Orders call wrote it (email, phone, address) to Storage/orders.<base64(start_date)>.json, downloadable without authentication; those files go with the old Storage/ folder on update.
+
 ## 1.5.9
 WordPress.org Plugin Check follow-up to 1.5.8.
 Removed the hidden Storage/.gitkeep file. Storage/ is no longer shipped; FileSystem::writeFile() creates it on the first write, so data.json, logs and feed caches still work on a fresh install.

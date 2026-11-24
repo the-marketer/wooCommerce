@@ -42,7 +42,7 @@ class Route
         'CodeGenerator' => array(
             'key' => 'Required|Key',
             'expiration_date' => 'DateCheck',
-            'value' => 'Required|Int',
+            'value' => 'Required|Int|Amount',
             'type' => "Required|RuleCheck"
         ),
         'Reviews' => array(
@@ -99,7 +99,7 @@ class Route
     );
 
     private static $isStatic = array(
-        'Orders' => true,
+        'Orders' => false,
         'Feed' => true,
         'Brands' => true,
         'Category' => true
@@ -118,7 +118,7 @@ class Route
     {
         if (self::$allMethods == null)
         {
-            foreach (get_class_methods(self::init()) as $value) {
+            foreach (array_keys(self::$defMime) as $value) {
                 self::$allMethods[strtolower($value)] = $value;
             }
         }
@@ -144,10 +144,7 @@ class Route
     /** @noinspection PhpReturnValueOfMethodIsNeverUsedInspection */
     private static function check($name)
     {
-        if (isset(self::$defMime[$name]))
-        {
-            Valid::getParam('mime-type', self::$defMime[$name]);
-        }
+        Valid::sanitizeMime(isset(self::$defMime[$name]) ? self::$defMime[$name] : Config::defMime);
 
         if (isset(self::$check[$name]) && !Valid::check(self::$check[$name])->status())
         {
@@ -176,16 +173,14 @@ class Route
             $file = Valid::getParam('file');
             $lang = Valid::getParam('lang');
 
-            $start_date = Valid::getParam('start_date');
-
-            if ($start_date !== null) {
-                $script = '.'. base64_encode($start_date);
-            }
-            
             if ( defined( 'ICL_SITEPRESS_VERSION' ) ) { // wpml current  language.
 				global $sitepress;
 				$lang = $sitepress->get_current_language();
 			}
+
+            if ($lang !== null && (!is_string($lang) || !preg_match('/^[A-Za-z0-9_-]{1,20}$/', $lang))) {
+                $lang = null;
+            }
 
             if ($lang !== null) {
                 $script = $script . '.' . $lang;
@@ -195,20 +190,24 @@ class Route
                 //}
             }
 
-            $fileName = $run->get('fileName').$script.".".Valid::getParam('mime-type',Config::defMime);
+            $fileName = $run->get('fileName').$script.".".Valid::sanitizeMime(self::$defMime[$name]);
 
             if ($file !== null) {
                 header('Content-Disposition: attachment; filename=' . $fileName);
             }
 
+            $diskCache = self::$isStatic[$name];
+
             FileSystem::setWorkDirectory();
-            if ($read !== null && FileSystem::fileExists($fileName)) {
+            if ($diskCache && $read !== null && FileSystem::fileExists($fileName)) {
                 // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is XML/JSON, escaping not needed
                 echo Valid::Output(FileSystem::readFile($fileName));
             } else {
                 // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Output is XML/JSON, escaping not needed
                 echo Valid::Output($run->get('fileName'), array($run->get('secondName') => $run->execute()));
-                FileSystem::writeFile($fileName, Valid::getOutPut());
+                if ($diskCache) {
+                    FileSystem::writeFile($fileName, Valid::getOutPut());
+                }
             }
         } else {
             if ($run->get('fileName') !== null) {

@@ -481,6 +481,7 @@ class Run
     }
 
     public function cronAction() {
+        FileSystem::migrateLegacyStorage();
         \Mktr\Tracker\Model\Cron::cronAction();
     }
 
@@ -539,6 +540,8 @@ class Run
     {
         \Mktr\Tracker\Routes\refreshJS::execute(false);
         \Mktr\Tracker\Observer::pushStatus();
+
+        FileSystem::migrateLegacyStorage();
         
         $name = 'mktr.php';
         FileSystem::setWorkDirectory('');

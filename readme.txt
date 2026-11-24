@@ -4,7 +4,7 @@ Tags: Email marketing, Loyalty Program, Newsletter, Marketing automation, Email 
 Requires at least: 4.7
 Tested up to: 7.1
 Requires PHP: 7.1
-Stable tag: 1.5.9
+Stable tag: 1.6.0
 Requires WooCommerce at least: 4.0.0
 Tested WooCommerce up to: 11.3.0
 License: GNU General Public License v2 or later
@@ -99,6 +99,14 @@ Yes. Turn on Cache compatible mode under Extra Settings. The plugin then sends t
 You can report security bugs through the Patchstack Vulnerability Disclosure Program. The Patchstack team helps validate, triage and handle any security vulnerabilities. [Report a security vulnerability.]( https://patchstack.com/database/vdp/546bd576-2c1e-4367-85cb-368663d4f85f )
 
 == Changelog ==
+= 1.6.0 =
+* Security: the theMarketer API routes reject requests until a REST API key is configured, and compare the key in constant time. An empty key no longer authenticates.
+* Security: feed cache file names accept only known formats (xml, json, js, csv) and plain language codes, and file access stays inside the cache folder. This closes an unauthenticated file read and overwrite.
+* Security: earlier versions cached order exports (customer email, phone and address) in the plugin's Storage folder, where they could be downloaded without authentication. Order exports are no longer cached, and the old Storage folder, with every order file in it, is deleted on update.
+* Security: the cache moved to a folder with an unguessable name in wp-content/uploads, protected by index.php and .htaccess. Product feed caches are rebuilt after the update.
+* Security: discount codes created through the API need a valid amount (not negative, at most 100 for percentage and free shipping).
+* Fix: only the plugin's API routes can be called through the route dispatcher, and the API error no longer repeats the submitted key.
+
 = 1.5.9 =
 * Fix: the plugin no longer ships a hidden file; its Storage folder is created on first use.
 * Code standards: wp_parse_url() for the request path, and the Contacts query builds its table name from the database prefix.
